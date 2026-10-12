@@ -19,8 +19,8 @@ export const esbuild = () => need('esbuild', 'ESBUILD_PATH', ['/home/claude/.npm
 // Chromium без видеокарты (swiftshader). Своя сборка браузера — PW_CHROMIUM=путь
 export async function browser() {
   const {chromium} = need('playwright', 'PLAYWRIGHT_PATH', ['/home/claude/.npm-global/lib/node_modules/playwright']);
-  const exe = process.env.PW_CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
-  return chromium.launch({executablePath: exe, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
+  const exe = process.env.PW_CHROMIUM || process.env.CHROME_PATH || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
+  return chromium.launch({executablePath: exe, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
 }
 
 // фигуры: m — пользователь для проверок посадки (186/83, грудь 110, талия 82, бёдра 98), f — женская для юбок и платьев
