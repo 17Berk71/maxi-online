@@ -14,7 +14,8 @@ const revision = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: ROOT, encoding
 const out = process.env.OUT ? path.resolve(process.env.OUT) : path.join(pack, 'baselines', revision.slice(0, 7));
 fs.mkdirSync(out, {recursive: true});
 if (fs.existsSync(path.join(out, 'baseline.json'))) throw new Error('Baseline already exists: choose another OUT directory');
-execFileSync(process.execPath, [path.join(ROOT, 'tools/lab/make.mjs')], {cwd: ROOT});
+const makeEnv = {...process.env}; delete makeEnv.OUT; // make.mjs uses OUT for an HTML filename
+execFileSync(process.execPath, [path.join(ROOT, 'tools/lab/make.mjs')], {cwd: ROOT, env: makeEnv});
 const sourceHash = crypto.createHash('sha256');
 function hashSources(dir) {
   for (const entry of fs.readdirSync(dir, {withFileTypes: true}).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -76,7 +77,7 @@ try {
     rows.push(row); console.log(ids.join('+'), row.garments.map(g => g.qc?.score).join(','));
   }
   fs.writeFileSync(path.join(out, 'baseline.json'), JSON.stringify({schema_version: 1, created_at: new Date().toISOString(),
-    source_revision: revision, source_sha256: sourceHash.digest('hex'), wardrobe_revision: process.env.WARDROBE_COMMIT || null,
+    source_revision: revision, source_worktree_dirty: !!execFileSync('git', ['status', '--porcelain'], {cwd: ROOT, encoding: 'utf8'}).trim(), source_sha256: sourceHash.digest('hex'), wardrobe_revision: process.env.WARDROBE_COMMIT || null,
     cloth_version: fs.readFileSync(path.join(ROOT, 'src/shop/fitting/worker.js'), 'utf8').match(/CLOTH_VER = '([^']+)'/)?.[1],
     browser: b.version(), viewport: {width: 620, height: 920, dpr: 1}, animation: false, angles: [0, Math.PI / 2, Math.PI],
     assets, rows, issues}, null, 2));

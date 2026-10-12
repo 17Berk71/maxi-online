@@ -51,11 +51,11 @@ export function drapePrepare(item, d, under) {
     // контур половины (x ≥ 0) и метки отрезков; зеркалим
     const arm = [], nA = 6; for (let i = 0; i <= nA; i++) { const t = i / nA, x = M.S / 2 + (M.W / 2 - M.S / 2) * Math.pow(t, 2.2) - 0.012 * Math.sin(t * Math.PI), y = M.SD + (M.AD - M.SD) * t; arm.push([x, y]); }
     // бок от проймы до низа — по ширине вещи на фото (приталенная, прямая, расклешённая книзу — у платья, пальто),
-    // но не уже тела на этой высоте (у длинных вещей ниже шага — бёдра)
-    const flare = k === 'dress' || k === 'coat';
+    // для неизмеренных вещей остаётся оценка по телу; заданную ширину не расширяем
+    const flare = k === 'dress' || k === 'coat', cmMeasured = !!itemCm(item, d.b).chest;
     const sideTail = (pts, labs) => { const n_ = flare ? 10 : 6, rib = k === 'sweater' || k === 'hoodie' || k === 'puffer', i0 = pts.length;
       for (let i = 1; i <= n_; i++) { const t = i / n_, y = M.AD + (M.L - M.AD) * t, yw = Math.max(0.5, (yTop - y) / H), ab = bodyAB(d, yw), bodyF = ellP(ab.a, ab.b) / 2 + 0.012;
-        let w = Math.max(interp(M.sp.Fs, t), bodyF); if (rib && i === n_) w = Math.max(bodyF, Math.min(w, M.HW)); if (i === 1) w = Math.max(w, Math.min(M.W, w * 1.04));
+        let w = cmMeasured ? interp(M.sp.Fs, t) : Math.max(interp(M.sp.Fs, t), bodyF); if (rib && i === n_) w = cmMeasured ? Math.min(w, M.HW) : Math.max(bodyF, Math.min(w, M.HW)); if (i === 1) w = Math.max(w, Math.min(M.W, w * 1.04));
         pts.push([w / 2, y]); labs.push(i < n_ ? 'side' : 'hem'); }
       // клёш от талии: бок длиннее середины — низ у боков поднять (иначе по бокам «углы» ниже подола), низ к середине — дугой
       if (flare) { let iw = i0; for (let i = i0; i < pts.length; i++) if (pts[i][0] < pts[iw][0] - 1e-4) iw = i;
@@ -236,11 +236,11 @@ export function drapePrepare(item, d, under) {
   } else {
     C.tether = null;   // брюки: висят на поясе, вытягивания нет — привязи только мешали штанинам
     const sp = bottomSpec(item, d), cm = itemCm(item, d.b), sh = item.shape || {};
-    const WW = Math.max(sp.ww, ellP(bodyAB(d, sp.yW / H).a, bodyAB(d, sp.yW / H).b) / 2 + 0.01), R = sp.yW - sp.yC, IN = sp.legLen + sp.stack;
+    const WW = cm.waist ? sp.ww : Math.max(sp.ww, ellP(bodyAB(d, sp.yW / H).a, bodyAB(d, sp.yW / H).b) / 2 + 0.01), R = sp.yW - sp.yC, IN = sp.legLen + sp.stack;
     const HP = Math.max(sp.hip || WW * 1.15, ellP(bodyAB(d, 0.53).a, bodyAB(d, 0.53).b) / 2 + 0.03);
-    const lw = sp.lw.slice(), TW = Math.max(lw[0], HP * 0.55, d.thigh * Math.PI + 0.02);
-    // штанина не уже ноги (+ ~1 см по полуобхвату сверх зазора): иначе тесная труба в расчёте соскакивает с ноги вбок
-    const legW = t => { const yf = (sp.yW - R - IN * t) / H, r = Math.min(legR(d, Math.max(0, yf)), d.legX - 0.002) + 0.007; return Math.max(interp(lw, t) * (TW / lw[0]), 0.12, Math.PI * r + 0.012); };   /* r уже с зазором 7 мм; было +3 см по полуобхвату — у бедра штанина выходила шире настоящей (бочка становилась ромбом) */
+    const lw = sp.lw.slice(), measuredLeg = !!(cm.legWidth || cm.knee || cm.leg), TW = measuredLeg ? lw[0] : Math.max(lw[0], HP * 0.55, d.thigh * Math.PI + 0.02);
+    // Измеренный профиль сохраняем; только без мерок оцениваем ширину по ноге.
+    const legW = t => { if (measuredLeg) return interp(lw, t); const yf = (sp.yW - R - IN * t) / H, r = Math.min(legR(d, Math.max(0, yf)), d.legX - 0.002) + 0.007; return Math.max(interp(lw, t) * (TW / lw[0]), 0.12, Math.PI * r + 0.012); };   /* r уже с зазором 7 мм; было +3 см по полуобхвату — у бедра штанина выходила шире настоящей (бочка становилась ромбом) */
     yPin = sp.yW; info = {WW, HP, R, IN, TW, sp}; fit.BOT_YW = sp.yW;
     cover = {y0: sp.yHem + 0.03, y1: sp.yW - 0.005, torso: true, legs: true};
     // выкройка как у настоящих брюк: четыре детали (перед и спинка, левая и правая). Штанина — вокруг своей ноги (ось на legX):

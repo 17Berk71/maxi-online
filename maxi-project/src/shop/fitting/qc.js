@@ -56,8 +56,8 @@ export function qcCloth(C, P, d, item, dr, info, top, aF, aB) {
     add('силуэт', dev < 0.12, 'расхождение ' + (dev * 100).toFixed(0) + '%', Math.min(20, dev * 100), 'форма спереди не похожа на фото');
     out[out.length - 1].prof = {model: w3.map(v => +(v / n3).toFixed(2)), photo: wp.map(v => +(v / np).toFixed(2))};
   }
-  // 7. мерки: выкройка против таблицы (вещь не может быть меньше тела — если пришлось расширить, размер мал)
-  if (top && info.sp) { const want = info.sp.Fs[1], got = info.W; add('мерки', got - want < 0.02, 'ширина ' + (got * 200).toFixed(0) + ' см по кругу, по фото/таблице ' + (want * 200).toFixed(0), 10, 'вещь по меркам меньше фигуры — показана растянутой'); if (out.length) out[out.length - 1].pen = 0; }   // это про размер (о нём говорит подсказка), не про модель
+  // Мерки здесь проверяют исходную выкройку, не точность ткани после симуляции.
+  if (top && info.sp) { const want = info.sp.Fs[1], got = info.W; add('мерки выкройки', Math.abs(got - want) < 0.005, 'обхват выкройки ' + (got * 200).toFixed(0) + ' см, задано ' + (want * 200).toFixed(0), 10, 'выкройка расходится с заданной шириной вещи'); }
   const score = Math.max(0, Math.round(100 - out.reduce((s_, c) => s_ + c.pen, 0)));
   // «проверить» — и при низком итоге, и при одном сильном провале (например, фото с чужим предметом даёт кривой силуэт)
   return {score, ok: score >= 70 && !out.some(c => c.pen >= 20), checks: out};

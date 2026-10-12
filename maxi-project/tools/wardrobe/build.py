@@ -79,6 +79,9 @@ def build(it, out=None, debug=True):
     meta['shape']['hang'] = not f.get('flat')
     for k in ('elastic', 'crop', 'cm', 'fitname'):
         if it.get(k): meta['shape'][k] = it[k]
+    calibration_path = os.path.join(os.path.dirname(__file__), it['id'] + '-calibration.json')
+    if os.path.exists(calibration_path):
+        meta['shape']['calibration'] = json.load(open(calibration_path))
     if it.get('src') == 'model': meta['shape']['hang'] = False; meta['shape']['worn'] = True   # ширины сняты с вещи на человеке
     if meta.get('hem_waist') is not None: meta['shape']['hem_waist'] = meta.pop('hem_waist')
     if it.get('ref_len'): meta['shape']['ref_len'] = it['ref_len']
