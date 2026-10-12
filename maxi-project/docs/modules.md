@@ -179,6 +179,8 @@
   - отдаёт: `DRAPE_ON`, `setDrape`, `legR`, `makeCollider`
 - `shop/fitting/common.js` (0.5 КБ) — Общее для примерочной: ключи хранилища, LIN, названия слотов.
   - отдаёт: `WKEY`, `LIN`, `SLOT_T`
+- `shop/fitting/construction.js` (0.6 КБ) — Photo-derived construction belongs to the captured garment size, not the body. Explicit catalogue measurements take precedence in the calling code.
+  - отдаёт: `constructionCm`
 - `shop/fitting/decor.js` (7.0 КБ) — Декор вещи отдельными объёмными деталями (пуговицы): не нарисован на ткани, а пришит к ней. Положение, размер и цвет — с фото переда (tools/wardrobe/drape_cut.py → drape.front.a.buttons: u, v — доли кадра выреза, r — доля ширины). На ткани пуговица держится за треугольник детали «перед» (весовые доли трёх точек ткани): в кадрах анимации она двигается и поворачивается вместе с тканью.
   - отдаёт: `buildDecor`, `decorUpdate`
 - `shop/fitting/drape-old.js` (12.2 КБ) — Первый прототип расчёта ткани по силуэту фото (drapeGarment).
@@ -197,7 +199,7 @@
   - отдаёт: `uFront`, `ellP`, `solve`, `clamp`, `smooth`, `lerp`, `interp`, `bodyAB`, `armJ`, `armRad`, `armInner`, `fitAB`, `layerAB`, `noteAB`, `ringMesh`, `tubeMesh`, `addShell`
 - `shop/fitting/mannequin.js` (4.6 КБ) — Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
   - отдаёт: `buildBody`
-- `shop/fitting/measures.js` (2.2 КБ) — Мерки верха для выкройки: ширина, длина, плечи, пройма, рукав.
+- `shop/fitting/measures.js` (2.5 КБ) — Мерки верха для выкройки: ширина, длина, плечи, пройма, рукав.
   - отдаёт: `topMeasures`
 - `shop/fitting/paint-body.js` (2.7 КБ) — Тело под вещью окрашено в тёмный тон вещи (в просветах не белое).
   - отдаёт: `paintBody`
@@ -211,7 +213,7 @@
   - отдаёт: `pleatGrid`, `pleatSmooth`, `pleatUpdate`, `liningBand`, `liningUpdate`
 - `shop/fitting/qc.js` (9.0 КБ) — Автопроверка посадки: натяжение, швы, ткань в теле, место, дырки, силуэт, мерки.
   - отдаёт: `QC`, `qcCloth`
-- `shop/fitting/room-api.js` (2.2 КБ) — Что примерочная даёт остальному сайту и проверкам (FIT).
+- `shop/fitting/room-api.js` (2.3 КБ) — Что примерочная даёт остальному сайту и проверкам (FIT).
 - `shop/fitting/room-body-controls.js` (3.1 КБ) — Ползунки фигуры (и в примерочной, и в настройках сайта).
 - `shop/fitting/room-open.js` (1.2 КБ) — Открыть и закрыть окно примерочной, кнопки.
 - `shop/fitting/room-outfit.js` (5.7 КБ) — —
@@ -229,9 +231,9 @@
   - отдаёт: `motionAt`, `runCloth`
 - `shop/fitting/simple-garment.js` (5.5 КБ) — Простые формы вещей (вариант «Б») и слои: вещь не уже той, что под ней.
   - отдаёт: `EASE`, `ui`, `uget`, `commitLayer`, `torsoPiece`, `flarePiece`, `sleeves`, `legPieces`, `frontLine`, `frontZ`
-- `shop/fitting/sizes.js` (2.9 КБ) — Размеры: подбор по таблице, мерки вещи, «как сядет» простыми словами.
+- `shop/fitting/sizes.js` (3.2 КБ) — Размеры: подбор по таблице, мерки вещи, «как сядет» простыми словами.
   - отдаёт: `recommendSize`, `sizeOf`, `itemCm`, `fitNote`
-- `shop/fitting/specs.js` (16.4 КБ) — Мерки вещи по фото: длина и ширина, профиль силуэта, юбка, отведение рук.
+- `shop/fitting/specs.js` (16.6 КБ) — Мерки вещи по фото: длина и ширина, профиль силуэта, юбка, отведение рук.
   - отдаёт: `TOPK`, `trueHem`, `rowSpans`, `topSpec`, `bottomSpec`, `skirtProf`, `armSpread`
 - `shop/fitting/state.js` (1.0 КБ) — Общее изменяемое состояние примерочной: только то, что меняют разные модули. Читать и писать — fit.имя.   UNDER, UNDERZ — ширина и глубина уже надетых вещей по высоте (вещь не уже той, что под ней)   PEND, PENDZ   — слой вещи, которая сейчас строится (записывается после неё, commitLayer)   BOT_YW        — высота пояса надетых брюк/юбки (для заправленного верха)   looks         — сохранённые образы   open          — окно примерочной открыто   shopNow       — магазин, из которого открыли примерочную   raf           — номер кадра анимации окна (requestAnimationFrame)   tab           — открытая вкладка панели ('items' | 'body' | 'looks')
   - отдаёт: `fit`

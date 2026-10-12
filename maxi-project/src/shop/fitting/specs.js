@@ -3,6 +3,7 @@ import {armX} from './body.js';
 import {armJ, armRad, bodyAB, clamp, ellP, interp, solve} from './geometry.js';
 import {EASE} from './simple-garment.js';
 import {itemCm, sizeOf} from './sizes.js';
+import {constructionCm} from './construction.js';
 
 // длина вещи по спинке (м), если мерок нет: типичная для своего размера, чуть зависит от роста
 const LEN0 = {tee: 0.71, sweater: 0.68, hoodie: 0.68, jacket: 0.68, shirt: 0.76, coat: 1.0, puffer: 0.74, dress: 0.95, skirt: 0.62};
@@ -38,9 +39,10 @@ function photoProfile(item) {
 }
 export function topSpec(item, d) {
   const sh = item.shape || {}, cm = itemCm(item, d.b), k = item.kind, H = d.H;
-  let L = cm.len ? cm.len / 100 : (LEN0[k] || 0.7) * (sh.crop ? 0.84 : 1) * Math.pow(H / 1.8, 0.6);
+  const construction = constructionCm(item, cm);
+  let L = cm.len ? cm.len / 100 : construction.len ? construction.len / 100 : (LEN0[k] || 0.7) * (sh.crop ? 0.84 : 1) * Math.pow(H / 1.8, 0.6);
   // вещь снята на модели: длину берём с фото — где низ относительно пояса брюк (hem_waist), разница размеров — по таблице
-  if (sh.worn && sh.hem_waist != null) {
+  if (!cm.len && !construction.len && sh.worn && sh.hem_waist != null) {
     const yW = 0.595 * H, yN = 0.858 * H, yHemPhoto = yW - sh.hem_waist * (yN - yW) - 0.012 * H;
     L = 0.848 * H - yHemPhoto + (cm.len && sh.ref_len ? (cm.len - sh.ref_len) / 100 : 0);
   }

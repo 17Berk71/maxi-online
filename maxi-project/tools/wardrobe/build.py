@@ -20,6 +20,7 @@ import json, os, sys, glob, hashlib
 import numpy as np, cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from capture import remove_measurement_tape, neutralize_surface, repair_regions, align_fabric_chroma
+from construction import attach_construction
 from items import ITEMS  # noqa: E402
 from color_balance import apply_gain, wall_gain  # noqa: E402,F401
 from cutout import segment, studio_mask  # noqa: E402,F401
@@ -113,6 +114,7 @@ def build(it, out=None, debug=True):
     if it['kind'] in TOPS and not f.get('flat'): meta['fit']['len_w'] = round(meta['fit']['len_w'] * HANG_K, 3)
     meta['color'] = '#%02x%02x%02x' % tuple(f['color'])
     meta['sleeve'] = it['kind'] in TOPS
+    attach_construction(meta, os.path.join(os.path.dirname(__file__), it['id'] + '-landmarks.json'))
     digest = hashlib.sha256()
     for filename in sorted(glob.glob(os.path.join(od, '*.webp'))):
         digest.update(os.path.basename(filename).encode()); digest.update(open(filename, 'rb').read())
