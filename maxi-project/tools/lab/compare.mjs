@@ -10,13 +10,18 @@ const digitization = stage === 'digitization';
 const title = digitization ? 'Примерочная: до и после обработки фото' : 'Примерочная: до и после сохранения мерок';
 const labels = digitization ? ['ДО — пакеты этапа 2', 'ПОСЛЕ — новые фото и обработка ткани'] : ['ДО — выкройка расширялась под тело', 'ПОСЛЕ — ширина футболки 54 см, штанины 38 см'];
 const note = digitization ? 'Светотень фото уменьшена; реальные швы и фактура остаются. Физика ткани ещё приближённая.' : 'Это исправление мерок. Фототекстуры и физика ткани ещё требуют отдельной доработки.';
+const captions = stage === 'construction' ? {
+ title:'Примерочная: форма футболки по фото',
+ labels:['ДО — форма этапа 3','ПОСЛЕ — длина, плечи и рукав по фото'],
+ note:'Ширина 54 см подтверждена лентой. Новые параметры выкройки — оценки по фото, не точные замеры.'
+} : {title,labels,note};
 const img = (dir,angle) => 'data:image/png;base64,'+fs.readFileSync(path.join(dir,id+'_'+angle+'.png')).toString('base64');
 const b=await browser();
 try {
  const p=await b.newPage({viewport:{width:1020,height:1160},deviceScaleFactor:1});
  await p.setContent(`<html lang="ru"><meta charset="utf-8"><style>
  body{margin:0;background:#faf9f6;color:#242424;font:18px Arial} main{padding:24px} h1{font-size:25px;margin:0 0 8px} p{margin:0 0 15px;font-size:15px;color:#555}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px} .label{grid-column:1/-1;background:#25394b;color:white;padding:8px 12px;font-weight:bold} img{display:block;width:100%;height:456px;object-fit:contain;background:#eeede8} figcaption{text-align:center;font-size:14px;margin:4px} figure{margin:0}
- </style><main><h1>${title}</h1><p>Одинаковые фигура, камера и свет. Рост 186 см · грудь 110 см · талия 82 см · бёдра 98 см</p><div class="grid">${[[before,labels[0]],[after,labels[1]]].map(([dir,label])=>`<div class="label">${label}</div>`+['front','side','back'].map((angle,i)=>`<figure><img src="${img(dir,angle)}"><figcaption>${['Спереди','Сбоку','Сзади'][i]}</figcaption></figure>`).join('')).join('')}</div><p style="margin-top:12px">${note}</p></main></html>`);
+ </style><main><h1>${captions.title}</h1><p>Одинаковые фигура, камера и свет. Рост 186 см · грудь 110 см · талия 82 см · бёдра 98 см</p><div class="grid">${[[before,captions.labels[0]],[after,captions.labels[1]]].map(([dir,label])=>`<div class="label">${label}</div>`+['front','side','back'].map((angle,i)=>`<figure><img src="${img(dir,angle)}"><figcaption>${['Спереди','Сбоку','Сзади'][i]}</figcaption></figure>`).join('')).join('')}</div><p style="margin-top:12px">${captions.note}</p></main></html>`);
  await p.locator('img').evaluateAll(imgs=>Promise.all(imgs.map(i=>i.decode())));
  await p.screenshot({path:path.resolve(output),fullPage:true});
  console.log(path.resolve(output));
