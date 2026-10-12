@@ -121,8 +121,8 @@ export function clothify(mat, ft) {
 // немного «свечения» фото — чтобы тёмные ткани в тени не уходили в черноту и цвет оставался как на снимке.
 // Белёсый налёт («бледно, засвечено») давали ворс (sheen) и отражение окружения: у ткани они слабые.
 // Сверено по платью: на свету юбка (86,18,35) при цвете на фото (88,19,40). window.__matx — проба настроек
-export function photoMat(url, color, ft, flat) {
-  const t = photoTex(url, flat);
+export function photoMat(url, color, ft, flat, corrected = false) {
+  const t = photoTex(url, flat, corrected);
   if (!t) return new THREE.MeshStandardMaterial({color: LIN(color || '#888'), roughness: 0.86, side: THREE.DoubleSide});
   ft = ft || FT.woven;
   const X = (typeof window !== 'undefined' && window.__matx) || {};   /* проба настроек материала (отладка) */

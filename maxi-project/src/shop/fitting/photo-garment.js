@@ -9,7 +9,7 @@ import {fit} from './state.js';
 
 export function photoGarment(item, d) {
   const g = new THREE.Group(), H = d.H, T = item.tex, k = item.kind, st = item.state || '', base = item.color || '#888';
-  const mF = photoMat(T.front, base), mB = photoMat(T.back || T.front, base), mS = T.sleeve ? photoMat(T.sleeve, base) : photoMat(null, base);
+  const mF = photoMat(T.front, base, undefined, false, item.photoLight === 'corrected-v1'), mB = photoMat(T.back || T.front, base, undefined, false, item.photoLight === 'corrected-v1'), mS = T.sleeve ? photoMat(T.sleeve, base, undefined, false, item.photoLight === 'corrected-v1') : photoMat(null, base);
   [mF, mB, mS].forEach(m => { m.side = THREE.FrontSide; });
   const inner = new THREE.MeshStandardMaterial({color: LIN(base).multiplyScalar(0.45), roughness: 0.95, side: THREE.BackSide});
   const metal = new THREE.MeshStandardMaterial({color: LIN('#c9ccd0'), roughness: 0.3, metalness: 0.9});

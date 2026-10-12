@@ -16,9 +16,10 @@
 Модули фабрики: wardrobe_paths (пути), photo_io (чтение фото), cutout (вырезание), parts_top / parts_bottom (части и мерки),
 drape_cut (выкройка для расчёта ткани), color_balance, model_photo (фото на человеке), debug_view.
 """
-import json, os, sys, glob
+import json, os, sys, glob, hashlib
 import numpy as np, cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from capture import remove_measurement_tape, neutralize_surface, repair_regions, align_fabric_chroma
 from items import ITEMS  # noqa: E402
 from color_balance import apply_gain, wall_gain  # noqa: E402,F401
 from cutout import segment, studio_mask  # noqa: E402,F401
@@ -40,9 +41,21 @@ def build(it, out=None, debug=True):
     if it.get('puff'): meta['puff'] = True
     if it.get('stand'): meta['stand'] = True   # воротник-стойка   # рукав-фонарик: окат шире проймы, собран в неё; внизу — манжета
     if it.get('who'): meta['who'] = it['who']
-    ovs = []
+    recipe_path = os.path.join(os.path.dirname(__file__), it['id'] + '-capture.json')
+    recipe = json.load(open(recipe_path)) if os.path.exists(recipe_path) else {}
+    ovs = []; chroma_reference = None
     for side in ('front', 'back'):
-        if it.get('src') == 'model':
+        capture = recipe.get(side, {})
+        if capture:
+            im = load(capture.get('source', it[side]))
+            if capture.get('tape_rect'):
+                im, removed = remove_measurement_tape(im, capture['tape_rect'])
+                cv2.imwrite(os.path.join(od, side + '_removed.png'), removed)
+            if capture.get('repair_rects'):
+                im = repair_regions(im, capture['repair_rects'])
+            m, flat = segment(im)
+            flat = capture.get('flat', flat)
+        elif it.get('src') == 'model':
             im, m = load_model_photo(it[side], it['kind'])
             flat = False
         elif it.get('src') == 'studio':      # студийное фото магазина (лёжа или на невидимом манекене)
@@ -50,6 +63,11 @@ def build(it, out=None, debug=True):
         else:
             im = load(it[side])
             m, flat = segment(im)
+        surface = recipe.get('surface', {})
+        if surface.get('solid_material'):
+            im = neutralize_surface(im, m, surface.get('shadow_reduction', .72), surface.get('detail_strength', .8))
+            im, chroma_reference = align_fabric_chroma(im, m, chroma_reference)
+            meta['photoLight'] = 'corrected-v1'
         part = top_parts if it['kind'] in TOPS else bottom_parts
         cf = None
         if part is bottom_parts and it['kind'] == 'skirt': cf = 0.97     # у юбки нет шага: вся длина — «посадка», профиль ширины по ней
@@ -58,12 +76,12 @@ def build(it, out=None, debug=True):
             if c0.get('outseam') and c0.get('inseam'): cf = (c0['outseam'] - c0['inseam']) / c0['outseam']
         tex, sleeve, mm, info = part(im, m, it['kind'], flat, cf, flat and it.get('src') != 'studio') if part is bottom_parts else part(im, m, it['kind'])
         if it.get('src') == 'model' and side == 'front' and model_photo.LAST_HEM is not None: meta['hem_waist'] = model_photo.LAST_HEM
-        if not flat and it.get('src') != 'model':
+        if not flat and it.get('src') != 'model' and not surface.get('solid_material'):
             g = wall_gain(im); tex = apply_gain(tex, g)
             if sleeve is not None: sleeve = apply_gain(sleeve, g)
             mm['color'] = tuple(int(c) for c in np.clip(np.array(mm['color']) * g, 0, 255))
         cv2.imwrite(os.path.join(od, side + '.webp'), tex, [cv2.IMWRITE_WEBP_QUALITY, 88])
-        meta.setdefault('drape', {})[side] = cut_for_drape(apply_gain(im, wall_gain(im)) if (not flat and it.get('src') != 'model') else im, m, info, it['kind'], od, side, bool(it.get('zip')), bool(it.get('collar')) and not it.get('stand'))
+        meta.setdefault('drape', {})[side] = cut_for_drape(apply_gain(im, wall_gain(im)) if (not flat and it.get('src') != 'model' and not surface.get('solid_material')) else im, m, info, it['kind'], od, side, bool(it.get('zip')), bool(it.get('collar')) and not it.get('stand'))
         if sleeve is not None and side == 'front': cv2.imwrite(os.path.join(od, 'sleeve.webp'), sleeve, [cv2.IMWRITE_WEBP_QUALITY, 85])
         meta[side] = dict((k, (round(v, 3) if isinstance(v, float) else v)) for k, v in mm.items())
         meta[side]['flat'] = bool(flat)
@@ -72,6 +90,8 @@ def build(it, out=None, debug=True):
     hmax = max(o.shape[0] for o in ovs)
     sheet = np.hstack([np.vstack([o, np.full((hmax - o.shape[0], o.shape[1], 3), 255, np.uint8)]) for o in ovs])
     if debug: cv2.imwrite(os.path.join(od, 'debug.jpg'), sheet, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    if recipe:
+        meta['capture'] = recipe
     # мерки — из фото спереди (сзади — запасной вариант)
     f = meta['front']
     meta['fit'] = dict((k, f[k]) for k in f if k in ('len_w', 'sleeve', 'crotch', 'hem', 'knee', 'full_w'))
@@ -93,6 +113,10 @@ def build(it, out=None, debug=True):
     if it['kind'] in TOPS and not f.get('flat'): meta['fit']['len_w'] = round(meta['fit']['len_w'] * HANG_K, 3)
     meta['color'] = '#%02x%02x%02x' % tuple(f['color'])
     meta['sleeve'] = it['kind'] in TOPS
+    digest = hashlib.sha256()
+    for filename in sorted(glob.glob(os.path.join(od, '*.webp'))):
+        digest.update(os.path.basename(filename).encode()); digest.update(open(filename, 'rb').read())
+    meta['assetRevision'] = digest.hexdigest()[:20]
     json.dump(meta, open(os.path.join(od, 'meta.json'), 'w'), ensure_ascii=False, indent=1)
     return meta
 

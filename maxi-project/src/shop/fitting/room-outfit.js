@@ -1,3 +1,4 @@
+import {garmentKey} from './asset-key.js';
 // Сборка образа: по очереди, в фоне, «Надеваю…»; манекен, вещи, анимация надевания.
 import * as THREE from 'three';
 import {PREFS} from '../../core/settings.js';
@@ -28,7 +29,7 @@ let disposeObj;
     if (e) e.hidden = !on;
   }
   export function rebuild() {
-    if (!R) return; const b = PREFS.body, wn = worn(), key = JSON.stringify(b) + '|' + wn.map(i => i.id + ':' + (i.state || '') + ':' + (i.size || '')).join(',');
+    if (!R) return; const b = PREFS.body, wn = worn(), key = JSON.stringify(b) + '|' + wn.map(garmentKey).join(',');
     if (key === built.key) return; built.key = key; const tok = ++built.tok;
     built.chain = built.chain.then(() => buildOutfit(tok, b, wn)).catch(e => console.error(e));
   }
@@ -47,7 +48,7 @@ let disposeObj;
     fit.UNDER = []; fit.UNDERZ = []; fit.BOT_YW = 0; let below = '', ok = true;
     try {
       for (const it of wn.slice().sort((a, c) => order[a.slot] - order[c.slot])) {
-        const me = it.id + ':' + (it.state || '') + ':' + (it.size || '');
+        const me = garmentKey(it);
         const g = await garmentMeshAsync(it, body.d, DRAPE_ON && it.tex ? CLOTH_VER + '|' + bodyKey + '|' + below + '|' + me : null, alive, {anim, fresh});
         if (!alive() || !g) { ok = false; if (g) disposeObj(g); break; }
         next.add(g); commitLayer(); below += me + ',';
