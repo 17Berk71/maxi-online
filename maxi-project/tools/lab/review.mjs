@@ -8,7 +8,7 @@ import {bundle} from './esb.mjs';
 const output=path.resolve(process.argv[2] || path.join(ROOT,'tools/lab/review-dist'));
 const before=path.resolve(process.argv[3] || path.join(ROOT,'tools/wardrobe/out/stage3-source-backup'));
 const after=path.join(ROOT,'tools/wardrobe/out');
-const reviewCaption=process.env.REVIEW_STAGE==='construction' ? '«До» — форма этапа 3. «После» — длина, плечи и рукав футболки по разложенному фото. Новые параметры оценены приблизительно; ширина 54 см подтверждена лентой.' : '«До» — результат этапа 2. «После» — новые фото переда, очистка ленты, уменьшение светотени и согласование оттенка ткани между сторонами.';
+const reviewCaption=process.env.REVIEW_STAGE==='seams' ? '«До» — рукав этапа 4. «После» — повторный контроль растяжения и столкновений после сглаживания оката. Мерки и текстуры одинаковые; изменение пока включено только для пилотной футболки.' : process.env.REVIEW_STAGE==='construction' ? '«До» — форма этапа 3. «После» — длина, плечи и рукав футболки по разложенному фото. Новые параметры оценены приблизительно; ширина 54 см подтверждена лентой.' : '«До» — результат этапа 2. «После» — новые фото переда, очистка ленты, уменьшение светотени и согласование оттенка ткани между сторонами.';
 const ids=['zolla-tee','barrel-jeans'];
 fs.mkdirSync(output,{recursive:true});
 for(const [version,dir] of [['before',before],['after',after]]){

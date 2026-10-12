@@ -7,7 +7,7 @@ import {makeCollider} from './collider.js';
 export const QC = {};
 export function qcCloth(C, P, d, item, dr, info, top, aF, aB) {
   const H = d.H, out = [], add = (name, ok, val, pen, why) => out.push({name, ok, val, pen: ok ? 0 : pen, why});
-  // 1. натяжение: доля связей, растянутых больше чем на 12%
+  // 1. натяжение: доля связей, растянутых больше чем на 25%
   const roleOf = new Map(); C.meshes.forEach(m => m.verts.forEach(v => roleOf.set(v, m.role || 'sleeve'))); const byRole = {};
   let nE = 0, over = 0; for (let e = 0; e < C.E.length; e += 4) { if (C.E[e + 3] !== 0 && C.E[e + 3] !== 3) continue; const i = C.E[e] * 3, j = C.E[e + 1] * 3, L = Math.hypot(P[j] - P[i], P[j + 1] - P[i + 1], P[j + 2] - P[i + 2]); nE++;
     const r = roleOf.get(C.E[e]), br = byRole[r] = byRole[r] || [0, 0]; br[0]++; if (L > C.E[e + 2] * 1.25) { over++; br[1]++; } }
