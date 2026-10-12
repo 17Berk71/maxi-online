@@ -97,6 +97,8 @@ def build(it, out=None, debug=True):
     f = meta['front']
     meta['fit'] = dict((k, f[k]) for k in f if k in ('len_w', 'sleeve', 'crotch', 'hem', 'knee', 'full_w'))
     meta['shape'] = f.pop('shape'); meta['back'].pop('shape', None)
+    if recipe.get('sleeve_finish') == 'relax-v1':
+        meta['shape']['sleeveFinish'] = 'relax-v1'
     meta['shape']['hang'] = not f.get('flat')
     for k in ('elastic', 'crop', 'cm', 'fitname'):
         if it.get(k): meta['shape'][k] = it[k]
