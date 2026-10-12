@@ -110,6 +110,12 @@ export function bottomSpec(item, d) {
   // ширина штанины по всей длине, измеренная по фото с листом A4 (cm.leg: [доля от шага до низа, см]) — точнее профиля с фото без масштаба
   if (Array.isArray(cm.leg) && cm.leg.length > 1) lw = lw.map((_, i) => { const t = i / (lw.length - 1) * 0.99, L = cm.leg; let k = 0; while (k < L.length - 2 && L[k + 1][0] < t) k++;
     const [t0, v0] = L[k], [t1, v1] = L[k + 1], w = Math.max(0, Math.min(1, (t - t0) / ((t1 - t0) || 1))); return (v0 + (v1 - v0) * w) / 100; });
+  // Лента может лежать не на анатомическом колене. Положение — доля
+  // от шага до низа; её оценка хранится отдельно от подтверждённой ширины.
+  if (cm.legWidth && cm.legWidthAt != null) {
+    const f = cm.legWidth / 100 / interp(lw, cm.legWidthAt);
+    lw = lw.map(v => v * f);
+  }
   // бёдра (полуобхват): по таблице или по фото (середина посадки; ниже на фото лёжа уже расходятся штанины)
   const hip = cm.hip ? cm.hip / 100 : sh.hip && sh.hip.length > 3 ? sh.hip[3] * kk : 0;
   return {yW, yC, yHem, legLen, stack, lw, kk, ww: kW, T, hip};
