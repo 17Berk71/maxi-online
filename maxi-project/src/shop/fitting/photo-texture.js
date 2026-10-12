@@ -41,11 +41,11 @@ function delight(img) {
 }
 // flat — ровная ткань: складки, тени и блики с фото убираются совсем (остаются нити и мелкая фактура). Для вещей,
 // у которых рельеф строится формой (плиссе): иначе нарисованные складки поверх настоящих — «смятая» юбка
-export function photoTex(url, flat) {
+export function photoTex(url, flat, corrected = false) {
   if (!url) return null;
-  const key = flat ? url + '|flat' : url;
+  const key = url + (flat ? '|flat' : '') + (corrected ? '|corrected-v1' : '');
   if (!PTEX[key]) { const t = new THREE.Texture(); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; PTEX[key] = t;
-    const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { let r = typeof window !== 'undefined' && window.__noDelight ? im : delight(im); if (flat) r = flatten(r); t.image = r; t.needsUpdate = true; }; im.src = url; }
+    const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { let r = typeof window !== 'undefined' && window.__noDelight ? im : corrected ? im : delight(im); if (flat) r = flatten(r); t.image = r; t.needsUpdate = true; }; im.src = url; }
   return PTEX[key];
 }
 // ровная ткань: основной цвет × чуть-чуть мелкой фактуры (отношение яркости к размытой в ~4 px), без светотени и линий сгибов
