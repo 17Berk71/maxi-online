@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import {armX, shoulderAxes} from './body.js';
 import {fabricType, photoMat} from './cloth-material.js';
-import {clothMeshes} from './cloth-mesh.js';
+import {clothMeshes, clothProject} from './cloth-mesh.js';
+import {capSurfaceCollider} from './arm-cap-collision.js';
 import {addHood, addStand} from './collars.js';
 import {DRAPE_ON, legR, makeCollider} from './collider.js';
 import {armJ, armRad, bodyAB, ellP, interp, solve} from './geometry.js';
@@ -327,6 +328,7 @@ export function drapePrepare(item, d, under) {
   return P; };
   const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);
+  g.userData.surfacePush=capSurfaceCollider(d);clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
   try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB); g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }

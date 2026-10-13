@@ -1,6 +1,6 @@
 // Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
 import * as THREE from 'three';
-import {armPose, shoulderAxes, bodyDims, limb, loft, sx, sz, torsoR} from './body.js';
+import {armPose, armCapAxes, shoulderAxes, bodyDims, limb, loft, sx, sz, torsoR} from './body.js';
 
 // ---------- тело ----------
 export function buildBody(b, skinMat, d0) {
@@ -27,8 +27,8 @@ export function buildBody(b, skinMat, d0) {
     const pivot = new THREE.Group(); pivot.position.copy(a.pos); pivot.rotation.z = a.rot; pivot.userData.armPivot = {side, rot: a.rot}; g.add(pivot);
     arm.userData.part = 'arm'; arm.userData.L = a.L; pivot.add(arm);
     // торец руки у сустава закрыт пологим куполом: иначе край трубы выступал из шара плеча — «шарнир куклы»
-    { const rr = 0.042 * d.k * d.s, cap = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), skinMat);
-      cap.scale.set(rr, rr * 0.45, rr); cap.userData.part = 'arm'; cap.userData.L = a.L; pivot.add(cap); }
+    { const axes = armCapAxes(d), cap = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), skinMat);
+      cap.scale.set(axes.radius, axes.height, axes.radius); cap.userData.part = 'arm'; cap.userData.L = a.L; pivot.add(cap); }
     const hand = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), skinMat); hand.scale.set(0.022 * d.s, 0.06 * d.s, 0.04 * d.s);
     hand.position.set(0, -(a.L + 0.05 * d.s), 0); pivot.add(hand);
   });

@@ -18,7 +18,7 @@ export function runCloth(C, push, fab, yPin, opt) {
   // капюшон на голове: касающиеся точки не скользят (держится на волосах), иначе тяжесть стаскивает его назад
   const STK = C.stickyIds ? new Uint8Array(n) : null; if (STK) C.stickyIds.forEach(i => { STK[i] = 1; });
   const DBG = typeof window !== 'undefined' ? window : {};   // __dsteps — остановить расчёт раньше (отладка)
-  const REC = opt && opt.rec, settle = REC === 'settle', base = DBG.__dsteps || 320, MOT = REC && !settle ? 144 : 0, steps = base + (REC ? MOT + 84 : 0), iters = 7, dt = 1 / 90, sewEnd = 128;
+  const REC = opt && opt.rec, settle = REC === 'settle', base = DBG.__dsteps || 320, MOT = REC && !settle ? 144 : 0, steps = base + (REC && !settle ? MOT + 84 : 0), iters = 7, dt = 1 / 90, sewEnd = 128;
   const frames = REC ? [] : null, fmeta = REC ? [] : null; let yawPrev = 0, dyPrev = 0, still = null;   // still — покой до движения (итог)
   // доводка точек для показа (итог и каждый кадр анимации): сглаживание «лесенки» сетки (2 прохода) с повторной проверкой
   // столкновений и сведение сшитых точек (остаток зазора после расчёта — иначе виден просвет по шву). Без неё кадры анимации
@@ -77,7 +77,7 @@ export function runCloth(C, push, fab, yPin, opt) {
     for (let i = 0; i < n; i++) if (hit[i]) { V[i * 3] *= cf; V[i * 3 + 1] *= cf; V[i * 3 + 2] *= cf; hit[i] = 0; }
     // после движения ткань плавно возвращается в покой до движения: жёсткая ткань «помнит» случайные заломы, и итог хуже исходного
     /* кадры — с момента, когда ткань уже легла под своим весом (до этого — «надутая») */
-    if (REC && s >= (settle ? base - 24 : sewEnd + 24) && (s - sewEnd) % 3 === 0) { let Fr = P.slice(); if (still && s >= base + MOT) { const w = Math.min(1, (s - base - MOT) / ((steps - base - MOT) * 0.85)), ww = w * w * (3 - 2 * w); for (let i = 0; i < Fr.length; i++) Fr[i] += (still[i] - Fr[i]) * ww; }
+    if (REC && s >= (settle ? Math.max(sewEnd + 24, base - 108) : sewEnd + 24) && (s - sewEnd) % 3 === 0) { let Fr = P.slice(); if (still && s >= base + MOT) { const w = Math.min(1, (s - base - MOT) / ((steps - base - MOT) * 0.85)), ww = w * w * (3 - 2 * w); for (let i = 0; i < Fr.length; i++) Fr[i] += (still[i] - Fr[i]) * ww; }
       frames.push(finishP(Fr)); const m_ = MOT && s >= base && s < base + MOT ? motionAt((s - base + 1) / MOT) : {yaw: 0, arm: 0, dy: 0}; fmeta.push(m_.yaw, m_.arm, m_.dy || 0); }
   }
   if (still) P.set(still);   // итог — покой до движения (тот же, что без анимации)

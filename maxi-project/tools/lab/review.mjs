@@ -8,14 +8,14 @@ import {bundle} from './esb.mjs';
 const output=path.resolve(process.argv[2] || path.join(ROOT,'tools/lab/review-dist'));
 const before=path.resolve(process.argv[3] || path.join(ROOT,'tools/wardrobe/out/stage3-source-backup'));
 const after=path.join(ROOT,'tools/wardrobe/out');
-const reviewCaption=process.env.REVIEW_STAGE==='donning' ? 'Короткое появление и оседание ткани. Пробные размеры футболки приблизительные, не таблица производителя; подтверждена ширина снятой вещи 54 см.' : process.env.REVIEW_STAGE==='anatomy' ? '«До» — манекен и столкновения этапа 5. «После» — восстановленная шея, согласованный объём плеч и ограничение высоты плеч ростом. Одежда и её мерки одинаковые. Это процедурный манекен, а не точный скан тела.' : process.env.REVIEW_STAGE==='seams' ? '«До» — рукав этапа 4. «После» — повторный контроль растяжения и столкновений после сглаживания оката. Мерки и текстуры одинаковые; изменение пока включено только для пилотной футболки.' : process.env.REVIEW_STAGE==='construction' ? '«До» — форма этапа 3. «После» — длина, плечи и рукав футболки по разложенному фото. Новые параметры оценены приблизительно; ширина 54 см подтверждена лентой.' : '«До» — результат этапа 2. «После» — новые фото переда, очистка ленты, уменьшение светотени и согласование оттенка ткани между сторонами.';
+const reviewCaption=process.env.REVIEW_STAGE==='shoulders' ? '«До» — выступы частей рук сквозь футболку. «После» — проверка стыка рук в расчёте и на поверхности одежды. Анимация заканчивается той же посадкой, что статическая примерка. Пробные размеры приблизительные.' : process.env.REVIEW_STAGE==='donning' ? 'Короткое появление и оседание ткани. Пробные размеры футболки приблизительные, не таблица производителя; подтверждена ширина снятой вещи 54 см.' : process.env.REVIEW_STAGE==='anatomy' ? '«До» — манекен и столкновения этапа 5. «После» — восстановленная шея, согласованный объём плеч и ограничение высоты плеч ростом. Одежда и её мерки одинаковые. Это процедурный манекен, а не точный скан тела.' : process.env.REVIEW_STAGE==='seams' ? '«До» — рукав этапа 4. «После» — повторный контроль растяжения и столкновений после сглаживания оката. Мерки и текстуры одинаковые; изменение пока включено только для пилотной футболки.' : process.env.REVIEW_STAGE==='construction' ? '«До» — форма этапа 3. «После» — длина, плечи и рукав футболки по разложенному фото. Новые параметры оценены приблизительно; ширина 54 см подтверждена лентой.' : '«До» — результат этапа 2. «После» — новые фото переда, очистка ленты, уменьшение светотени и согласование оттенка ткани между сторонами.';
 const ids=['zolla-tee','barrel-jeans'];
 const beforeSource=process.env.BEFORE_SOURCE;
 fs.mkdirSync(output,{recursive:true});
 for(const [version,dir] of [['before',before],['after',after]]){
  const list=JSON.parse(fs.readFileSync(path.join(dir,'index.json'),'utf8')).filter(i=>ids.includes(i.id));
  if(list.length!==2)throw new Error('Need both pilot items in '+dir);
- if(process.env.REVIEW_STAGE==='donning'&&version==='after'){
+ if(['donning','shoulders'].includes(process.env.REVIEW_STAGE)&&(version==='after'||process.env.REVIEW_STAGE==='shoulders')){
   const tee=list.find(i=>i.id==='zolla-tee');
   tee.sizes=[{name:'Снятая вещь · ширина 54 см',cm:{chest:54}},
    {name:'Пробная ширина 50 см',estimated:true,cm:{chest:50,len:63.7,shoulder:41,sleeve:18.9,armDepth:22}},

@@ -1,6 +1,7 @@
 // Тело для расчёта ткани (столкновения): туловище, плечи, руки, ноги, нижние слои.
-import {shoulderAxes, sx, sz, torsoR} from './body.js';
+import {armCapAxes, shoulderAxes, sx, sz, torsoR} from './body.js';
 import {armJ, armRad} from './geometry.js';
+import {pushArmCap} from './arm-cap-collision.js';
 
 // ---------- симуляция ткани (вариант «В», прототип) ----------
 // Плоский силуэт вещи с фото — это её выкройка: перед и спинка, сшитые по краю (кроме горловины, низа, рукавов; у брюк — пояса и низа).
@@ -35,7 +36,7 @@ export function makeCollider(d, under, margin) {
   const j = armJ(d); let arms = [];
   // руки можно отвести (анимация примерки): delta — на сколько радиан дальше от тела
   const setArm = delta => { arms = [-1, 1].map(side => ({x0: j.x * side, y0: j.y, dx: Math.sin(j.th + delta) * side, dy: -Math.cos(j.th + delta), L: j.L})); }; setArm(0);
-  const axes = shoulderAxes(d);
+  const axes = shoulderAxes(d), cap = armCapAxes(d), capQ=new Float64Array(3);
   const m = 0.007 + (margin || 0), hr = 0.098 * d.s, SX = axes.x, SY = axes.y, SZ = axes.z;
   // noArm: точка детали корпуса (не рукава). Рука ниже подмышки её не толкает: рука лежит поверх бока вещи,
   // а не вдавливает его внутрь (иначе широкая вещь у кистей «перетянута ремнём»)
@@ -65,7 +66,12 @@ export function makeCollider(d, under, margin) {
     // рука — капсула без шара сверху: выше сустава плечо задаёт эллипсоид (как у видимого тела); шар сустава торчал на ~5 см
     // над видимым плечом — ткань ложилась на невидимый бугор, плечи выходили квадратными
     if (!(noArm && y < j.y - 0.07)) for (const a of arms) {
-      const tt = (x - a.x0) * a.dx + (y - a.y0) * a.dy; if (tt < -0.01) continue;
+      const tt = (x - a.x0) * a.dx + (y - a.y0) * a.dy;
+      if (tt < 0) {
+        capQ[0]=x;capQ[1]=y;capQ[2]=z;
+        if(pushArmCap(capQ,0,a,cap.radius+m,cap.height+m)){[x,y,z]=capQ;hit=true;}
+        continue;
+      }
       const t = Math.max(0, Math.min(a.L, tt)), px = a.x0 + a.dx * t, py = a.y0 + a.dy * t;
       const dx = x - px, dy = y - py, dd = Math.hypot(dx, dy, z), r = armRad(d, t / a.L) + m;
       if (dd < r) { const s = r / Math.max(dd, 1e-5); x = px + dx * s; y = py + dy * s; z *= s; hit = true; }
