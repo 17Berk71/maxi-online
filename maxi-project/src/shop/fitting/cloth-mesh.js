@@ -82,9 +82,15 @@ export function clothUpdate(g, P) {
       nor[r * 3] = hx / hl; nor[r * 3 + 1] = hy / hl; nor[r * 3 + 2] = hz / hl; if (col) col[r * 3] = col[r * 3 + 1] = col[r * 3 + 2] = (col[i * 3] + col[j * 3]) / 2; r++; }
     if (m.relief) pleatRelief(mesh.geometry, m.relief, cm.edges, m.verts.length);
     pa.needsUpdate = true; na.needsUpdate = true; if (ca) ca.needsUpdate = true; mesh.geometry.computeBoundingSphere(); });
+  clothProject(g);
   const pgs = g.children.filter(o => o.userData.pg).map(o => o.userData.pg); if (pgs.length) { pleatSmooth(pgs, P); pgs.forEach(pg => pleatUpdate(pg, P, N, AO)); }
   g.children.forEach(o => { if (o.userData.lining) liningUpdate(o); if (o.userData.edge) edgeUpdate(o); if (o.userData.collar) collarUpdate(o, P, N); });
   decorUpdate(g, P, N);
+}
+export function clothProject(g) {
+  const push=g.userData.surfacePush;if(!push)return;
+  g.children.forEach(m=>{if(!m.userData.cm)return;const pos=m.geometry.attributes.position;for(let i=0;i<pos.array.length;i+=3)push(pos.array,i);pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
+  g.children.forEach(m=>{if(m.userData.edge)edgeUpdate(m);});
 }
 export function clothMeshes(C, P, H) {
   const g = new THREE.Group(), n = P.length / 3, N = new Float32Array(n * 3);

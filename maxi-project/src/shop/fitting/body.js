@@ -77,3 +77,9 @@ export function shoulderAxes(d) {
     y: Math.min(d.chest * 0.42, d.H * 0.038),
     z: Math.min(d.chest * 0.57, torsoR(d, 0.83) * sz(d, 0.83) * 0.95)};
 }
+
+// Видимый купол над плечевым суставом — сплюснутая полусфера, не полный шар.
+export function armCapAxes(d) {
+  const radius = 0.042 * d.k * d.s;
+  return {radius, height: radius * 0.45};
+}
