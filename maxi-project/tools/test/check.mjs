@@ -11,7 +11,7 @@ const OUT = new URL('./out/', import.meta.url).pathname;
 mkdirSync(OUT, {recursive: true});
 
 const exe = process.env.CHROME_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
-const browser = await chromium.launch(exe ? {executablePath: exe} : {});
+const browser = await chromium.launch({...exe?{executablePath:exe}:{},...(process.env.SWIFTSHADER==='1'?{args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']}:{})});
 const errors = [], fails = [];
 const check = (ok, what) => { if (!ok) fails.push(what); console.log((ok ? '  ✓ ' : '  ✗ ') + what); };
 
@@ -24,6 +24,10 @@ async function open(viewport, extra = {}, query = '') {
   const external = u => /fonts\.(googleapis|gstatic)\.com/.test(u || '');
   page.on('console', m => { if (m.type() === 'error' && !external(m.location().url)) errors.push(tag + ': ' + m.text() + ' ' + (m.location().url || '')); });
   page.on('requestfailed', r => { if (external(r.url())) console.log('  (шрифт не загрузился: ' + r.failure().errorText + ')'); });
+  if(process.env.CHECK_DPR||process.env.CHECK_FRAME_DELAY)await page.addInitScript(({ratio,delay})=>{
+    if(ratio)Object.defineProperty(window,'devicePixelRatio',{get:()=>ratio});
+    if(delay){const request=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=callback=>request(t=>setTimeout(()=>callback(t),delay));}
+  },{ratio:Number(process.env.CHECK_DPR)||0,delay:Number(process.env.CHECK_FRAME_DELAY)||0});
   await page.goto(PAGE_URL + query, {timeout: 120000});
   await page.waitForFunction(() => window.__maxi && window.__maxi.loaded, null, {timeout: 120000});
   await page.waitForTimeout(1200);

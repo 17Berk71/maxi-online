@@ -13,7 +13,7 @@ export function recommendSize(item, b) {
     if (!top && sz.cm.waist) return sz.cm.waist * 2 >= b.waist - 1 && (!sz.cm.hip || sz.cm.hip * 2 >= b.hips + 2);
     return false;
   };
-  return (S.find(fits) || S[S.length - 1]).name;
+  return S.find(fits)?.name || null;
 }
 export const sizeOf = (item, b) => item.sizesT ? item.sizesT.find(z => z.name === (item.size || recommendSize(item, b))) || item.sizesT[0] : null;
 export function itemCm(item, b) { const sz = b && sizeOf(item, b); return Object.assign({}, (item.shape && item.shape.cm) || {}, sz ? sz.cm : {}); }
@@ -22,6 +22,9 @@ export function fitNote(item, b) {
   const sz = sizeOf(item, b);
   const c = itemCm(item, b), out = [], top = TOPK.has(item.kind);
   const construction = constructionCm(item, c);
+  if(item.sizesT?.length&&!item.size&&!recommendSize(item,b))out.push('нет подтверждённого подходящего размера; показан первый вариант');
+  if(item.digitization?.pattern?.status==='prototype'&&['structured-outer','puff-dress','pleated-skirt'].includes(item.digitization.pattern.family))out.push('сложная конструкция: предварительная модель');
+  if(Object.values(item.digitization?.measurements||{}).some(r=>r.estimated))out.push('часть мерок оценена по фото');
   if (sz?.estimated) out.push('примерная размерная модель; мерки этого размера не подтверждены');
   if (sz && sz.body && sz.body.chest && top) { const [lo, hi] = sz.body.chest; out.push(b.chest > hi ? 'мало в груди по таблице (' + lo + '–' + hi + ' см)' : b.chest < lo - 4 ? 'велико по таблице' : 'твой размер по таблице магазина'); }
   if (top && c.chest) { const e = c.chest * 2 - b.chest; out.push(e < 0 ? 'обхват вещи меньше груди на ' + Math.round(-e) + ' см; растяжимость ткани не измерена' : e < 8 ? 'по фигуре' : e < 18 ? 'свободно' : 'оверсайз'); }

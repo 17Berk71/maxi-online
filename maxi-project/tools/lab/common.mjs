@@ -3,7 +3,7 @@ import {createRequire} from 'node:module'; import fs from 'node:fs'; import path
 
 export const LAB = path.dirname(new URL(import.meta.url).pathname);   // tools/lab
 export const ROOT = path.resolve(LAB, '../..');                       // maxi-project
-export const WWW = path.join(LAB, 'www');                             // страницы лаборатории (не в git)
+export const WWW = path.resolve(process.env.LAB_WWW || path.join(LAB, 'www')); // isolated test workspace
 export const SHOTS = path.join(LAB, 'shots');                         // снимки (не в git)
 export const PORT = +(process.env.PORT || 8091);
 export const URL0 = `http://localhost:${PORT}/`;

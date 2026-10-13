@@ -12,22 +12,27 @@ import {FABRIC, addPanel, addTube, makeCloth, mirrorPoly, segDist} from './patte
 import {QC, qcCloth} from './qc.js';
 import {runCloth} from './sim.js';
 import {itemCm} from './sizes.js';
-import {TOPK, bottomSpec, rowSpans, skirtProf, trueHem} from './specs.js';
+import {bottomSpec, rowSpans, skirtProf, trueHem} from './specs.js';
 import {seamBend} from './worker.js';
 import {shoulderRound} from './shoulder-round.js';
 import {relaxSleeves} from './sleeve-relax.js';
 import {fit} from './state.js';
+import {patternRecipe} from './families.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
 export function drapePrepare(item, d, under) {
   if (!DRAPE_ON || !item.tex) return null;
-  const k = item.kind, top = TOPK.has(k), bottom = ['jeans', 'pants', 'shorts', 'skirt'].includes(k);
+  const recipe=patternRecipe(item);
+  if(!recipe.supported){if(!item.digitization)return null;throw new Error('Unsupported garment construction: '+recipe.reason);}
+  item={...item,hood:recipe.hood??item.hood,pleats:recipe.pleats??item.pleats,puff:recipe.puff??item.puff,
+    shape:{...item.shape,...(recipe.elastic?{elastic:true}:{})}};
+  const k = item.kind, top = recipe.topology==='top', bottom = !top;
   if (!top && !bottom) return null;
   const st = item.state || '', open = st === 'open', tucked = st === 'tucked', hoodUp = st === 'hood', hooded = k === 'hoodie' || item.hood;
   // заправленный верх: ниже пояса брюк не отталкивается от них — край уходит внутрь, пояс брюк виден поверх
   if (tucked && under && fit.BOT_YW) { const lim = Math.round(fit.BOT_YW / d.H * 100) + 1; under = {a: under.a.map((v, i) => i <= lim ? 0 : v), b: under.b.map((v, i) => i <= lim ? 0 : v)}; }
-  const H = d.H, C = makeCloth(), fab = (k === 'skirt' && item.pleats ? FABRIC.skirtP : FABRIC[k]) || FABRIC.tee, push = makeCollider(d, under, fab.margin), base = item.color || '#888', chains = [];
+  const H = d.H, C = makeCloth(), fab = FABRIC[recipe.fabric||k], push = makeCollider(d, under, fab.margin), base = item.color || '#888', chains = [];
   const dr = item.drape || {}, aF = (dr.front && dr.front.a) || {cx: 0.5}, aB = (dr.back && dr.back.a) || aF;
   // декор с фото переда (пуговицы) — объёмными деталями на детали «перед» (decor.js)
   C.decor = (aF.buttons || []).map(b => Object.assign({role: 'front'}, b));
@@ -55,8 +60,8 @@ export function drapePrepare(item, d, under) {
     const arm = [], nA = 6; for (let i = 0; i <= nA; i++) { const t = i / nA, x = M.S / 2 + (M.W / 2 - M.S / 2) * Math.pow(t, 2.2) - 0.012 * Math.sin(t * Math.PI), y = M.SD + (M.AD - M.SD) * t; arm.push([x, y]); }
     // бок от проймы до низа — по ширине вещи на фото (приталенная, прямая, расклешённая книзу — у платья, пальто),
     // для неизмеренных вещей остаётся оценка по телу; заданную ширину не расширяем
-    const flare = k === 'dress' || k === 'coat', cmMeasured = !!itemCm(item, d.b).chest;
-    const sideTail = (pts, labs) => { const n_ = flare ? 10 : 6, rib = k === 'sweater' || k === 'hoodie' || k === 'puffer', i0 = pts.length;
+    const flare = recipe.flare, cmMeasured = !!itemCm(item, d.b).chest;
+    const sideTail = (pts, labs) => { const n_ = flare ? 10 : 6, rib = recipe.rib||k==='puffer', i0 = pts.length;
       for (let i = 1; i <= n_; i++) { const t = i / n_, y = M.AD + (M.L - M.AD) * t, yw = Math.max(0.5, (yTop - y) / H), ab = bodyAB(d, yw), bodyF = ellP(ab.a, ab.b) / 2 + 0.012;
         let w = cmMeasured ? interp(M.sp.Fs, t) : Math.max(interp(M.sp.Fs, t), bodyF); if (rib && i === n_) w = cmMeasured ? Math.min(w, M.HW) : Math.max(bodyF, Math.min(w, M.HW)); if (i === 1) w = Math.max(w, Math.min(M.W, w * 1.04));
         pts.push([w / 2, y]); labs.push(i < n_ ? 'side' : 'hem'); }
@@ -182,7 +187,7 @@ export function drapePrepare(item, d, under) {
     else if (item.stand) addStand(C, d, yTop, fronts, pb, mF, aF);
     // отложной воротник (поло, рубашка) — объёмной деталью по горловине на показе (collar3d.js)
     if (item.collar && !item.stand && !hooded) C.collar = {ring: fronts.concat([pb]).flatMap(P_ => P_.pts.filter(p => p.edge && p.lab === 'neck').map(p => p.g)), a: aF, hs: 0.028 * d.s, fw: 0.044 * d.s};
-  } else if (k === 'skirt') {
+  } else if (recipe.topology === 'skirt') {
     // юбка: перед и спинка во всю ширину, сшиты по бокам; пояс на талии, книзу — по ширине на фото (прямая, трапеция, клёш)
     const {yW, WW, Lk, wvis} = skirtProf(item, d);
     // складки (item.pleats): ткань заложена гармошкой — у пояса круто (угол α0), книзу раскрываются (α1);
@@ -328,6 +333,7 @@ export function drapePrepare(item, d, under) {
   return P; };
   const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);
+  g.userData.pattern={family:recipe.id,version:recipe.version,status:'prototype',review:!!recipe.review};
   g.userData.surfacePush=capSurfaceCollider(d);clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
