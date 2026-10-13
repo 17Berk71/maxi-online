@@ -1,5 +1,5 @@
 // Тело для расчёта ткани (столкновения): туловище, плечи, руки, ноги, нижние слои.
-import {armX, sx, sz, torsoR} from './body.js';
+import {shoulderAxes, sx, sz, torsoR} from './body.js';
 import {armJ, armRad} from './geometry.js';
 
 // ---------- симуляция ткани (вариант «В», прототип) ----------
@@ -35,7 +35,8 @@ export function makeCollider(d, under, margin) {
   const j = armJ(d); let arms = [];
   // руки можно отвести (анимация примерки): delta — на сколько радиан дальше от тела
   const setArm = delta => { arms = [-1, 1].map(side => ({x0: j.x * side, y0: j.y, dx: Math.sin(j.th + delta) * side, dy: -Math.cos(j.th + delta), L: j.L})); }; setArm(0);
-  const m = 0.007 + (margin || 0), hr = 0.098 * d.s, SX = Math.max(d.chest * d.shX * 0.98, armX(d) + 0.02), SY = d.chest * 0.42, SZ = d.chest * 0.62;
+  const axes = shoulderAxes(d);
+  const m = 0.007 + (margin || 0), hr = 0.098 * d.s, SX = axes.x, SY = axes.y, SZ = axes.z;
   // noArm: точка детали корпуса (не рукава). Рука ниже подмышки её не толкает: рука лежит поверх бока вещи,
   // а не вдавливает его внутрь (иначе широкая вещь у кистей «перетянута ремнём»)
   const push = function (P, i, noArm) {

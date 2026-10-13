@@ -17,3 +17,4 @@ tools/lab/server.log
 tools/test/node_modules
 tools/lab/*.log
 tools/lab/review-dist/
+tools/lab/review-anatomy-dist/

@@ -161,8 +161,8 @@
 
 - `shop/fitting/asset-key.js` (0.6 КБ) — Asset content/version affects geometry, UVs and light preprocessing as well as colour. A pack with the same garment id can be replaced while the fitting room is open.
   - отдаёт: `garmentAssetKey`, `garmentKey`
-- `shop/fitting/body.js` (5.1 КБ) — Фигура по меркам: размеры тела, профиль туловища по высоте, суставы рук.
-  - отдаёт: `sizeHint`, `bodyDims`, `torsoR`, `sx`, `sz`, `loft`, `limb`, `armX`, `armPose`
+- `shop/fitting/body.js` (5.6 КБ) — Фигура по меркам: размеры тела, профиль туловища по высоте, суставы рук.
+  - отдаёт: `sizeHint`, `bodyDims`, `torsoR`, `sx`, `sz`, `loft`, `limb`, `armX`, `armPose`, `shoulderAxes`
 - `shop/fitting/cache.js` (1.7 КБ) — Кэш рассчитанной ткани: в памяти и в IndexedDB браузера.
   - отдаёт: `cacheGet`, `cachePut`
 - `shop/fitting/classify.js` (2.5 КБ) — Что это за вещь: слот (верх, низ, платье, обувь…) и форма (футболка, джинсы, юбка…).
@@ -197,7 +197,7 @@
   - отдаёт: `garmentMesh`
 - `shop/fitting/geometry.js` (9.0 КБ) — Геометрия для посадки: сечения тела, эллипсы по периметру, кольца, трубы, изнанка.
   - отдаёт: `uFront`, `ellP`, `solve`, `clamp`, `smooth`, `lerp`, `interp`, `bodyAB`, `armJ`, `armRad`, `armInner`, `fitAB`, `layerAB`, `noteAB`, `ringMesh`, `tubeMesh`, `addShell`
-- `shop/fitting/mannequin.js` (4.6 КБ) — Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
+- `shop/fitting/mannequin.js` (4.2 КБ) — Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
   - отдаёт: `buildBody`
 - `shop/fitting/measures.js` (2.5 КБ) — Мерки верха для выкройки: ширина, длина, плечи, пройма, рукав.
   - отдаёт: `topMeasures`

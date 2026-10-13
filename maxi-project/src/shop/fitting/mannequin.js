@@ -1,18 +1,19 @@
 // Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
 import * as THREE from 'three';
-import {armPose, armX, bodyDims, limb, loft, sx, sz, torsoR} from './body.js';
+import {armPose, shoulderAxes, bodyDims, limb, loft, sx, sz, torsoR} from './body.js';
 
 // ---------- тело ----------
 export function buildBody(b, skinMat, d0) {
   const d = d0 || bodyDims(b), g = new THREE.Group(), H = d.H;
-  const yProf = []; for (let yf = 0.465; yf <= 0.8521; yf += 0.0129) yProf.push([yf * H, torsoR(d, yf)]);
+  const yProf = []; for (let yf = 0.465; yf <= 0.8521; yf += 0.0043) yProf.push([yf * H, torsoR(d, yf)]);
   // верх туловища закрыт пологим скатом к шее: открытый край кольца выступал из шара плеч волнистой «кокеткой»
   { const [y0, r0] = yProf[yProf.length - 1], rn = d.neck * 0.85 / Math.max(0.5, sx(d, 0.86)); /* верх ската — внутри шеи: иначе кольцо вокруг шеи видно над воротом */ [[0.003, 0.8], [0.0055, 0.55], [0.0075, 0.3]].forEach(([dy, k]) => yProf.push([y0 + dy * H, Math.max(rn, r0 * k)])); }
   const torso = new THREE.Mesh(loft(yProf, 40, y => sx(d, y / H), y => sz(d, y / H)), skinMat); torso.userData.part = 'torso'; g.add(torso);
   // шея и голова (манекен без лица)
   // шея расширяется к плечам (без «трубы»), голова — гладкая форма витринного манекена: шире у темени, уже к подбородку
-  const nk = d.neck, neck = new THREE.Mesh(new THREE.LatheGeometry([[nk * 1.3, -0.05], [nk * 1.1, -0.03], [nk * 0.98, -0.005], [nk * 0.93, 0.025], [nk * 0.9, 0.05]].map(([r, y]) => new THREE.Vector2(r, y * d.s)), 28), skinMat);
-  neck.position.y = 0.862 * H; neck.scale.z = 0.86; neck.userData.part = 'neck';   // основание шеи по глубине не шире верха туловища (сбоку торчали «крылья») neck.userData.s = d.s; g.add(neck);
+  const nk = d.neck, neck = new THREE.Mesh(new THREE.LatheGeometry([[nk * 1.05, -0.05], [nk, -0.03], [nk * 0.98, -0.005], [nk * 0.93, 0.025], [nk * 0.9, 0.05]].map(([r, y]) => new THREE.Vector2(r, y * d.s)), 28), skinMat);
+  neck.position.y = 0.862 * H; neck.scale.z = 0.86; neck.userData.part = 'neck';
+  neck.userData.s = d.s; g.add(neck);
   const hp = [[0.0, -0.113], [0.03, -0.111], [0.052, -0.1], [0.07, -0.075], [0.083, -0.04], [0.089, -0.005], [0.09, 0.03], [0.085, 0.065], [0.071, 0.095], [0.045, 0.115], [0.0, 0.126]];
   const head = new THREE.Mesh(new THREE.LatheGeometry(hp.map(([r, y]) => new THREE.Vector2(r * d.s, y * d.s)), 40), skinMat); head.scale.set(0.98, 1, 1.1); head.position.set(0, 0.93 * H, 0.006); g.add(head);
   // ноги
@@ -31,6 +32,9 @@ export function buildBody(b, skinMat, d0) {
     const hand = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), skinMat); hand.scale.set(0.022 * d.s, 0.06 * d.s, 0.04 * d.s);
     hand.position.set(0, -(a.L + 0.05 * d.s), 0); pivot.add(hand);
   });
-  const sh = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), skinMat); sh.scale.set(Math.max(d.chest * d.shX * 0.98, armX(d) + 0.02) * 0.97, d.chest * 0.41, Math.min(d.chest * 0.57, torsoR(d, 0.83) * sz(d, 0.83) * 0.95)); sh.position.y = 0.8 * H; sh.userData.part = 'sh'; g.add(sh);   // по глубине не толще груди: иначе спереди «кокетка» со складкой   // чуть меньше, чем в расчёте ткани: между узлами сетки тело не просвечивает
+  const axes = shoulderAxes(d);
+  const sh = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), skinMat);
+  sh.scale.set(axes.x * 0.97, axes.y * 0.97, axes.z * 0.97);
+  sh.position.y = 0.8 * H; sh.userData.part = 'sh'; g.add(sh);
   return {g, d};
 }
