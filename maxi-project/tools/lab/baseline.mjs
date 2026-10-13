@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {browser, ROOT, WWW} from './common.mjs';
 
-const pack = path.join(ROOT, 'tools/wardrobe/out');
+const pack = path.resolve(process.env.PACK_DIR || path.join(ROOT, 'tools/wardrobe/out'));
 const index = JSON.parse(fs.readFileSync(path.join(pack, 'index.json'), 'utf8'));
 const selected = (process.env.ITEMS || 'zolla-tee,qs-tee,knit-polo,barrel-jeans,brown-pants').split(',');
 for (const id of selected) if (!index.some(item => item.id === id)) throw new Error(`Missing garment: ${id}`);
@@ -17,14 +17,15 @@ if (fs.existsSync(path.join(out, 'baseline.json'))) throw new Error('Baseline al
 const makeEnv = {...process.env}; delete makeEnv.OUT; // make.mjs uses OUT for an HTML filename
 execFileSync(process.execPath, [path.join(ROOT, 'tools/lab/make.mjs')], {cwd: ROOT, env: makeEnv});
 const sourceHash = crypto.createHash('sha256');
+const src=path.resolve(process.env.SRC||path.join(ROOT,'src'));
 function hashSources(dir) {
   for (const entry of fs.readdirSync(dir, {withFileTypes: true}).sort((a, b) => a.name.localeCompare(b.name))) {
     const p = path.join(dir, entry.name);
     if (entry.isDirectory()) hashSources(p);
-    else if (p.endsWith('.js')) sourceHash.update(path.relative(ROOT, p)).update(fs.readFileSync(p));
+    else if (p.endsWith('.js')) sourceHash.update('src/'+path.relative(src, p)).update(fs.readFileSync(p));
   }
 }
-hashSources(path.join(ROOT, 'src'));
+hashSources(src);
 const assets = [{path: 'index.json', sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(pack, 'index.json'))).digest('hex')}];
 for (const item of index) {
   const meta = path.join(pack, item.id, 'meta.json');
@@ -58,15 +59,16 @@ try {
   page.on('pageerror', e => issues.push(e.message));
   page.on('console', m => {if (m.type() === 'error') issues.push(m.text());});
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
-  await page.evaluate(async body => {localStorage.clear(); Object.assign(PREFS.body, body); await FIT.addPack('wardrobe/'); FIT.setAnim(false); FIT.open();}, body);
+  await page.evaluate(async body => {localStorage.clear();window.__shadowMap=512; Object.assign(PREFS.body, body); await FIT.addPack('wardrobe/'); FIT.setAnim(false); FIT.open();}, body);
   const groups = selected.map(id => [id]);
   if (selected.includes('zolla-tee') && selected.includes('barrel-jeans')) groups.push(['zolla-tee', 'barrel-jeans']);
   for (const ids of groups) {
+    const caseBody=!process.env.BODY&&index.find(i=>i.id===ids[0]).who==='women'?{sex:'f',height:173,weight:56,chest:82,waist:62,hips:92,skin:0}:body;
     const start = Date.now();
-    await page.evaluate(async ids => {FIT.wear(ids.map(id => 'w-' + id), {}); await FIT.ready();}, ids);
+    await page.evaluate(async ({ids,body}) => {Object.assign(PREFS.body,body);FIT.wear(ids.map(id => 'w-' + id), {}); await FIT.ready();}, {ids,body:caseBody});
     await page.waitForFunction(() => Object.values(window.__ptex || {}).every(t => !!t.image?.width));
     await page.evaluate(() => FIT.ready());
-    const row = {ids, body, elapsed_ms: Date.now() - start, garments: await page.evaluate(ids => ids.map(id => ({id, qc: FIT.qc('w-' + id), fit_note: FIT.fitNote('w-' + id)})), ids), shots: []};
+    const row = {ids, body:caseBody, elapsed_ms: Date.now() - start, garments: await page.evaluate(ids => ids.map(id => ({id, qc: FIT.qc('w-' + id), fit_note: FIT.fitNote('w-' + id)})), ids), shots: []};
     for (const [label, angle] of [['front', 0], ['side', Math.PI / 2], ['back', Math.PI]]) {
       await page.evaluate(angle => {FIT.setRot(angle); FIT.setZoom(0.6, 0.5);}, angle);
       await page.waitForTimeout(300);
@@ -78,7 +80,7 @@ try {
   }
   fs.writeFileSync(path.join(out, 'baseline.json'), JSON.stringify({schema_version: 1, created_at: new Date().toISOString(),
     source_revision: revision, source_worktree_dirty: !!execFileSync('git', ['status', '--porcelain'], {cwd: ROOT, encoding: 'utf8'}).trim(), source_sha256: sourceHash.digest('hex'), wardrobe_revision: process.env.WARDROBE_COMMIT || null,
-    cloth_version: fs.readFileSync(path.join(ROOT, 'src/shop/fitting/worker.js'), 'utf8').match(/CLOTH_VER = '([^']+)'/)?.[1],
+    cloth_version: fs.readFileSync(path.join(src, 'shop/fitting/worker.js'), 'utf8').match(/CLOTH_VER = '([^']+)'/)?.[1], shadow_map:512,
     browser: b.version(), viewport: {width: 620, height: 920, dpr: 1}, animation: false, angles: [0, Math.PI / 2, Math.PI],
     assets, rows, issues}, null, 2));
   if (issues.length) throw new Error(issues.join('\n'));

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const dir='tools/lab/review-anatomy-dist';
+const dir=process.env.REVIEW_DIR||'tools/lab/review-anatomy-dist';
 const script=fs.readFileSync(dir+'/frame.js','utf8');
 test('engine reload restores body and camera within the same iframe',async()=>{
  const saved=new Map(),storage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)};

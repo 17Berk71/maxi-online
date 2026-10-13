@@ -137,3 +137,6 @@ if __name__ == '__main__':
     # индекс — по всем собранным вещям (и при сборке части)
     idx = [json.load(open(os.path.join(OUT, it['id'], 'meta.json'))) for it in ITEMS if os.path.exists(os.path.join(OUT, it['id'], 'meta.json'))]
     json.dump(idx, open(os.path.join(OUT, 'index.json'), 'w'), ensure_ascii=False, indent=1)
+    # Versioned provenance/recipe contract is checked after every complete or partial build.
+    import subprocess
+    subprocess.run(['node', os.path.join(os.path.dirname(__file__), 'contract.mjs'), OUT, '--write'], check=True)

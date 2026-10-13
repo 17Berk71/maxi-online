@@ -8,7 +8,7 @@ const three = [process.env.THREE_MIN, path.join(ROOT, 'node_modules/three/build/
  .find(p => p && fs.existsSync(p));
 if (three) fs.copyFileSync(three, path.join(WWW, 'three.min.js'));
 else if (!fs.existsSync(path.join(WWW, 'three.min.js'))) console.log('нет three.min.js (r128): npm install в maxi-project или THREE_MIN=путь');
-for (const [name, to] of [['wardrobe', path.join(ROOT, 'tools/wardrobe/out')], ['feeds', path.join(ROOT, 'public/feeds')]]) {
+for (const [name, to] of [['wardrobe', path.resolve(process.env.PACK_DIR || path.join(ROOT, 'tools/wardrobe/out'))], ['feeds', path.join(ROOT, 'public/feeds')]]) {
   const p = path.join(WWW, name); try { fs.lstatSync(p); } catch (e) { fs.symlinkSync(to, p); } }
 const js = await bundle(`import * as F from './shop/fitting.js'; import * as St from './core/settings.js';
 Object.assign(window, F, {PREFS: St.PREFS});

@@ -185,14 +185,18 @@
   - отдаёт: `constructionCm`
 - `shop/fitting/decor.js` (7.0 КБ) — Декор вещи отдельными объёмными деталями (пуговицы): не нарисован на ткани, а пришит к ней. Положение, размер и цвет — с фото переда (tools/wardrobe/drape_cut.py → drape.front.a.buttons: u, v — доли кадра выреза, r — доля ширины). На ткани пуговица держится за треугольник детали «перед» (весовые доли трёх точек ткани): в кадрах анимации она двигается и поворачивается вместе с тканью.
   - отдаёт: `buildDecor`, `decorUpdate`
+- `shop/fitting/digitization.js` (4.4 КБ) — —
+  - отдаёт: `DIGITIZATION_VERSION`, `measurement`, `legacyContract`, `validateDigitization`
 - `shop/fitting/drape-old.js` (12.2 КБ) — Первый прототип расчёта ткани по силуэту фото (drapeGarment).
   - отдаёт: `drapeGarment`
-- `shop/fitting/drape.js` (47.6 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
+- `shop/fitting/drape.js` (48.0 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
   - отдаёт: `drapePrepare`, `drapeTemplate`
 - `shop/fitting/edges.js` (5.3 КБ) — Толщина ткани на открытых краях (низ, манжеты, горловина, борта): у сетки ткани один слой — край выглядел бумажным. Вдоль каждого края детали, не пришитого к другой детали, — узкий скруглённый бортик: от лица ткани через закруглённый срез к изнанке на толщину ткани. Строится по сетке показа и в кадрах анимации едет вместе с ней.
   - отдаёт: `edgeThickness`, `buildEdge`, `edgeUpdate`
 - `shop/fitting/fabric-simple.js` (2.3 КБ) — Фактуры ткани для простых форм (вариант «Б», без фото).
   - отдаёт: `TEX`, `fabricMat`
+- `shop/fitting/families.js` (2.3 КБ) — Versioned construction recipes. Shared solvers remain prototypes, not manufacturer patterns.
+  - отдаёт: `PATTERN_FAMILIES`, `inferFamily`, `patternRecipe`
 - `shop/fitting/garment-async.js` (1.8 КБ) — Одна вещь: выкройка → расчёт (кэш, фон или здесь) → сетка.
   - отдаёт: `garmentMeshAsync`
 - `shop/fitting/garment.js` (5.6 КБ) — Одна вещь на фигуре (синхронно): ткань по выкройке или простая форма.
@@ -219,7 +223,7 @@
 - `shop/fitting/room-body-controls.js` (3.1 КБ) — Ползунки фигуры (и в примерочной, и в настройках сайта).
 - `shop/fitting/room-open.js` (1.2 КБ) — Открыть и закрыть окно примерочной, кнопки.
 - `shop/fitting/room-outfit.js` (6.0 КБ) — —
-- `shop/fitting/room-packs.js` (3.1 КБ) — Пакеты примерки: вещь из выгрузки магазина или фабрики (выкройка, вырезанное фото, мерки).
+- `shop/fitting/room-packs.js` (3.2 КБ) — Пакеты примерки: вещь из выгрузки магазина или фабрики (выкройка, вырезанное фото, мерки).
 - `shop/fitting/room-panel.js` (9.0 КБ) — Панель примерочной: список вещей, размеры, образы.
   - отдаёт: `h`
 - `shop/fitting/room-playback.js` (4.4 КБ) — Кадр кабины и проигрывание анимации надевания; виды камеры.
@@ -233,7 +237,7 @@
   - отдаёт: `motionAt`, `runCloth`
 - `shop/fitting/simple-garment.js` (5.5 КБ) — Простые формы вещей (вариант «Б») и слои: вещь не уже той, что под ней.
   - отдаёт: `EASE`, `ui`, `uget`, `commitLayer`, `torsoPiece`, `flarePiece`, `sleeves`, `legPieces`, `frontLine`, `frontZ`
-- `shop/fitting/sizes.js` (3.4 КБ) — Размеры: подбор по таблице, мерки вещи, «как сядет» простыми словами.
+- `shop/fitting/sizes.js` (3.9 КБ) — Размеры: подбор по таблице, мерки вещи, «как сядет» простыми словами.
   - отдаёт: `recommendSize`, `sizeOf`, `itemCm`, `fitNote`
 - `shop/fitting/sleeve-relax.js` (1.3 КБ) — После укладки оката сглаживание не должно оставлять растянутые связи. Окат закреплён на пройме; исходные длины выкройки не меняются.
   - отдаёт: `relaxSleeves`

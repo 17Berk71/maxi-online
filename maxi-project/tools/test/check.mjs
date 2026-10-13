@@ -11,7 +11,7 @@ const OUT = new URL('./out/', import.meta.url).pathname;
 mkdirSync(OUT, {recursive: true});
 
 const exe = process.env.CHROME_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
-const browser = await chromium.launch(exe ? {executablePath: exe} : {});
+const browser = await chromium.launch({...exe?{executablePath:exe}:{},...(process.env.SWIFTSHADER==='1'?{args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']}:{})});
 const errors = [], fails = [];
 const check = (ok, what) => { if (!ok) fails.push(what); console.log((ok ? '  ✓ ' : '  ✗ ') + what); };
 
