@@ -37,9 +37,17 @@ export function validateDigitization(item){
     if(r.at!=null&&(!Number.isFinite(r.at)||r.at<0||r.at>1))errors.push(label+':'+key+':location');
   }};
   check(d.measurements,'base');
-  for(const [key,r]of Object.entries(d.measurements||{}))if(item.shape?.cm?.[key]!=null&&item.shape.cm[key]!==r.value)errors.push('base:'+key+':legacy-mismatch');
+  const baseAlias={...item.shape?.construction?.dimensions,...item.shape?.cm};
+  for(const [key,r]of Object.entries(d.measurements||{}))if(baseAlias[key]!==r.value)errors.push('base:'+key+':legacy-mismatch');
   for(const s of d.sizes||[]){if(!s.name||names.has(s.name))errors.push('duplicate-or-empty-size');names.add(s.name);check(s.measurements,'size:'+s.name);
     for(const range of Object.values(s.body||{}))if(!Array.isArray(range)||range.length!==2||!range.every(Number.isFinite)||range[0]<=0||range[1]<range[0])errors.push('body-range:'+s.name);
+    const alias=(item.sizesT||item.sizes||[]).find(row=>row.name===s.name);
+    if(!alias)errors.push('size:'+s.name+':missing-runtime-alias');
+    else{
+      for(const [key,r]of Object.entries(s.measurements||{}))if(alias.cm?.[key]!==r.value)errors.push('size:'+s.name+':'+key+':legacy-mismatch');
+      for(const [key,range]of Object.entries(s.body||{}))if(alias.body?.[key]?.[0]!==range[0]||alias.body?.[key]?.[1]!==range[1])errors.push('size:'+s.name+':'+key+':body-mismatch');
+      if(!!alias.estimated!==Object.values(s.measurements||{}).some(r=>r.estimated))errors.push('size:'+s.name+':estimated-mismatch');
+    }
   }
   for(const side of ['front','back'])if(!/^[a-f0-9]{64}$/.test(d.views?.[side]?.sha256||''))warnings.push('missing-view-evidence:'+side);
   if(d.views?.front?.sha256&&d.views.front.sha256===d.views.back?.sha256)warnings.push('back-view-reused');

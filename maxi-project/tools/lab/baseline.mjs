@@ -26,6 +26,7 @@ function hashSources(dir) {
   }
 }
 hashSources(src);
+const source_sha256=sourceHash.digest('hex');
 const assets = [{path: 'index.json', sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(pack, 'index.json'))).digest('hex')}];
 for (const item of index) {
   const meta = path.join(pack, item.id, 'meta.json');
@@ -76,10 +77,12 @@ try {
       await page.locator('#fitC').screenshot({path: path.join(out, name)});
       row.shots.push(name);
     }
-    rows.push(row); console.log(ids.join('+'), row.garments.map(g => g.qc?.score).join(','));
+    rows.push(row);
+    fs.writeFileSync(path.join(out,'checkpoint.json'),JSON.stringify({schema_version:1,complete:false,source_revision:revision,source_sha256,shadow_map:512,assets,rows,issues},null,2));
+    console.log(ids.join('+'), row.garments.map(g => g.qc?.score).join(','));
   }
   fs.writeFileSync(path.join(out, 'baseline.json'), JSON.stringify({schema_version: 1, created_at: new Date().toISOString(),
-    source_revision: revision, source_worktree_dirty: !!execFileSync('git', ['status', '--porcelain'], {cwd: ROOT, encoding: 'utf8'}).trim(), source_sha256: sourceHash.digest('hex'), wardrobe_revision: process.env.WARDROBE_COMMIT || null,
+    source_revision: revision, source_worktree_dirty: !!execFileSync('git', ['status', '--porcelain'], {cwd: ROOT, encoding: 'utf8'}).trim(), source_sha256, wardrobe_revision: process.env.WARDROBE_COMMIT || null,
     cloth_version: fs.readFileSync(path.join(src, 'shop/fitting/worker.js'), 'utf8').match(/CLOTH_VER = '([^']+)'/)?.[1], shadow_map:512,
     browser: b.version(), viewport: {width: 620, height: 920, dpr: 1}, animation: false, angles: [0, Math.PI / 2, Math.PI],
     assets, rows, issues}, null, 2));
