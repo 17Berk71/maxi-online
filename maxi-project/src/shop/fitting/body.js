@@ -32,7 +32,8 @@ function bodyDims0(b) {
 // радиус туловища на высоте yf (доля роста)
 export function torsoR(d, yf) {
   const T = [[0.465, d.hips * 0.8], [0.5, d.hips * 0.97], [0.53, d.hips], [0.585, d.hips * 0.45 + d.waist * 0.55], [0.625, d.waist],
-    [0.67, d.waist * 0.4 + d.chest * 0.6], [0.72, d.chest], [0.765, d.chest * 0.97], [0.8, d.chest * 0.86], [0.826, d.chest * 0.58], [0.842, d.neck * 1.5], [0.852, d.neck]];
+    [0.67, d.waist * 0.4 + d.chest * 0.6], [0.72, d.chest], [0.765, d.chest * 0.97], [0.8, d.chest * 0.86], [0.826, d.chest * 0.58],
+    [0.842, Math.min(d.chest * 0.58, d.neck * 1.15)], [0.852, d.neck / sx(d, 0.852)]];
   if (yf <= T[0][0]) return T[0][1];
   for (let i = 1; i < T.length; i++) if (yf <= T[i][0]) { const [y0, r0] = T[i - 1], [y1, r1] = T[i], t = (yf - y0) / (y1 - y0); return r0 + (r1 - r0) * (t * t * (3 - 2 * t)); }
   return T[T.length - 1][1];
@@ -67,4 +68,12 @@ export function armX(d) {
 export function armPose(d, side) {
   const y = 0.8 * d.H, x = side * armX(d);
   return {pos: new THREE.Vector3(x, y, 0), rot: side * (d.armA || 0.16), L: 0.335 * d.H};
+}
+
+// Единый объём плеч для видимой поверхности и столкновений с одеждой.
+// Высота ограничена ростом: большой обхват груди не поднимает плечи к голове.
+export function shoulderAxes(d) {
+  return {x: Math.max(d.chest * d.shX * 0.98, armX(d) + 0.02),
+    y: Math.min(d.chest * 0.42, d.H * 0.038),
+    z: Math.min(d.chest * 0.57, torsoR(d, 0.83) * sz(d, 0.83) * 0.95)};
 }

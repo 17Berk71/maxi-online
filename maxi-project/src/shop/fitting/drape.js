@@ -1,6 +1,6 @@
 // Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
 import * as THREE from 'three';
-import {armX} from './body.js';
+import {armX, shoulderAxes} from './body.js';
 import {fabricType, photoMat} from './cloth-material.js';
 import {clothMeshes} from './cloth-mesh.js';
 import {addHood, addStand} from './collars.js';
@@ -45,7 +45,7 @@ export function drapePrepare(item, d, under) {
     const yTuck = (fit.BOT_YW || 0.595 * H) - 0.035;   // ниже пояса брюк: край внутри
     if (tucked) { M.L = Math.min(M.L, yTop - yTuck + 0.045); yPin = yTuck; }
     // скат плеча по фигуре: плечевая точка выкройки ложится на плечо (верх руки), а не висит над ним — иначе у плеча «погоны»
-    { const xs = M.S / 2, ax = armX(d), r = armRad(d, 0) + 0.004, SXb = Math.max(d.chest * d.shX * 0.98, ax + 0.02), SYb = d.chest * 0.42;
+    { const axes = shoulderAxes(d), xs = M.S / 2, ax = armX(d), r = armRad(d, 0) + 0.004, SXb = axes.x, SYb = axes.y;
       const yArmTop = Math.abs(xs - ax) < r ? 0.8 * H + Math.sqrt(r * r - (xs - ax) ** 2) : xs < ax ? 0.8 * H + SYb * Math.sqrt(Math.max(0, 1 - (xs / SXb) ** 2)) : 0.8 * H;
       M.SD = Math.max(0.04, Math.min(0.11, yTop - yArmTop - 0.006)); M.AD = Math.max(M.AD, M.SD + 0.16); }
     // что закрывает вещь на теле (для окраски тела под ней, см. paintBody): корпус от низа до шеи, рука — на длину рукава

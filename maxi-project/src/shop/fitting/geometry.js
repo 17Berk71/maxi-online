@@ -1,6 +1,6 @@
 // Геометрия для посадки: сечения тела, эллипсы по периметру, кольца, трубы, изнанка.
 import * as THREE from 'three';
-import {armX, sx, sz, torsoR} from './body.js';
+import {armX, shoulderAxes, sx, sz, torsoR} from './body.js';
 import {uget, ui} from './simple-garment.js';
 import {fit} from './state.js';
 
@@ -24,8 +24,8 @@ export function interp(arr, t) { t = clamp(t, 0, 1) * (arr.length - 1); const i 
 export function bodyAB(d, yf) {
   let r = yf < 0.53 ? Math.max(torsoR(d, Math.max(0.47, yf)), d.hips * (yf < 0.5 ? 0.99 : 0.97)) : torsoR(d, yf);
   let a = r * (sx(d, Math.max(0.6, yf)) * 0.98 + 0.02), b = r * (sz(d, yf) + (yf < 0.6 ? 0.04 : 0));
-  const dy = (yf - 0.8) * d.H / (d.chest * 0.42);
-  if (Math.abs(dy) < 1) { const k = Math.sqrt(1 - dy * dy); a = Math.max(a, Math.max(d.chest * d.shX * 0.98, armX(d) + 0.02) * k); b = Math.max(b, d.chest * 0.62 * k); }
+  const axes = shoulderAxes(d), dy = (yf - 0.8) * d.H / axes.y;
+  if (Math.abs(dy) < 1) { const k = Math.sqrt(1 - dy * dy); a = Math.max(a, axes.x * k); b = Math.max(b, axes.z * k); }
   if (yf < 0.47) { a = Math.max(a, d.legX + d.thigh); b = Math.max(b, d.thigh); }
   return {a, b};
 }
