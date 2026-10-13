@@ -7,6 +7,7 @@ import {rebuild} from './room-outfit.js';
 import {R, built, el} from './room-scene.js';
 import {ctx} from './ui.js';
 import {fit} from './state.js';
+import {ANIM, calmNow} from './worker.js';
 
   // строка автопроверки под вещью: только если вещь показана неточно (балл ниже 70) — что именно не так
   export function qcLine(e) { const q = QC[e.dataset.qc]; const bad = q && !q.ok; e.hidden = !bad; if (!bad) { e.textContent = ''; return; }
@@ -26,14 +27,16 @@ import {fit} from './state.js';
   }
   // кадры записаны каждые 3 шага расчёта (1/30 с) — проигрываем в реальном времени
   function playStep() {
-    const P_ = R.play, k = P_.fixedK != null ? Math.min(P_.fixedK, P_.nf - 2) : Math.floor((performance.now() - P_.t0) / (1000 / 30));
+    const P_ = R.play, k = !ANIM.on || calmNow() ? P_.nf - 1 : P_.fixedK != null ? Math.min(P_.fixedK, P_.nf - 2) : Math.floor((performance.now() - P_.t0) / (1000 / 30));
     if (k >= P_.nf - 1) { // конец: точная итоговая сетка (после доводки швов и оката), поза манекена — исходная
       P_.list.forEach(g => { const A = g.userData.anim, n3 = A.F.length / A.nf; clothUpdate(g, A.F.subarray((A.nf - 1) * n3, A.nf * n3)); });   // последний кадр — итог: складки, подклад, пуговицы
       P_.list.forEach(g => (g.userData.decor || []).forEach(m => { m.position.copy(m.userData.final.p); m.quaternion.copy(m.userData.final.q); }));
       P_.list.forEach((g, gi) => g.children.filter(m => m.userData.cm).forEach((m, mi) => ['position', 'normal', 'color', 'wrk'].forEach((a, ai) => { const src = P_.saved[gi][mi][ai]; if (src) { m.geometry.attributes[a].array.set(src); m.geometry.attributes[a].needsUpdate = true; } })));
       P_.list.forEach(g => g.children.forEach(m => { if (m.userData.edge) edgeUpdate(m); }));   // толщина краёв — по итоговой сетке
+      (P_.materials || []).forEach(([m,opacity,transparent])=>{m.opacity=opacity;m.transparent=transparent;m.needsUpdate=true;});
       R.rig.rotation.y = 0; R.rig.position.y = 0; P_.pivots.forEach(p => { p.rotation.z = p.userData.armPivot.rot; }); R.play = null; return; }
     if (k === P_.k) return; P_.k = k;
+    (P_.materials || []).forEach(([m,opacity])=>{m.opacity=opacity*Math.min(1,(k+1)/10);});
     P_.list.forEach(g => { const A = g.userData.anim, n3 = A.F.length / A.nf; clothUpdate(g, A.F.subarray(k * n3, (k + 1) * n3)); });
     const M = P_.list[0].userData.anim.M, yaw = M[k * 3], arm = M[k * 3 + 1];
     R.rig.rotation.y = yaw; R.rig.position.y = M[k * 3 + 2]; P_.pivots.forEach(p => { const a = p.userData.armPivot; p.rotation.z = a.rot + a.side * arm; });

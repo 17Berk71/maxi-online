@@ -16,10 +16,11 @@ export async function garmentMeshAsync(item, d, key, alive, opts) {
   if (!job) return garmentMesh(item, d);
   // anim: показать надевание в движении — только при новом расчёте (из кэша вещь сразу на месте); ключ кэша свой: итог после движения
   const anim = !!(opts && opts.anim); if (key && anim) key += '|a';
-  let P = key && !(opts && opts.fresh) ? await cacheGet(key) : null, A = null;
-  if (!P) { job.rec = anim; P = await solveInWorker(job); if (alive && !alive()) return null;
-    if (!P) { const o = {rec: anim}; P = runCloth(job.C, makeCollider(job.d, job.under, job.margin), job.fab, job.yPin, o); if (o.frames) P.anim = {F: o.frames, M: o.meta, nf: o.nf}; }
+  let P = key && !anim && !(opts && opts.fresh) ? await cacheGet(key) : null, A = null;
+  if (!P) { job.rec = anim ? 'settle' : false; P = await solveInWorker(job); if (alive && !alive()) return null;
+    if (!P) { const o = {rec: job.rec}; P = runCloth(job.C, makeCollider(job.d, job.under, job.margin), job.fab, job.yPin, o); if (o.frames) P.anim = {F: o.frames, M: o.meta, nf: o.nf}; }
     A = P.anim || null; if (key) cachePut(key, P); }
   if (alive && !alive()) return null;
+  if (A) { const n3 = P.length; for (let k = 0; k < A.nf; k++) job.finishPoints(A.F.subarray(k * n3, (k + 1) * n3)); }
   const g = job.finish(Float32Array.from(P)); if (g && A) g.userData.anim = Object.assign(A, {C: job.C}); return g;
 }
