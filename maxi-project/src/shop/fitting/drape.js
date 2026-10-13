@@ -308,7 +308,7 @@ export function drapePrepare(item, d, under) {
     C.sector = []; [1, -1].forEach(sg => { const sp_ = spansOf(polyOf(sg)); ['f', 'b'].forEach(k => parts[k + sg].pts.forEach(p => { if (p.y <= R + cell) return; const iv = sp_(p.y); if (!iv) return;
       const inn = sg > 0 ? iv[0] : iv[1], out = sg > 0 ? iv[1] : iv[0], t = (p.x - inn) / ((out - inn) || 1e-4); C.sector.push([p.g, k === 'f' ? 1 : -1, t < 0.3 ? -sg : t > 0.7 ? sg : 0, sg * (d.legX + 0.01)]); })); });
   }
-  const finish = P => { if (typeof window !== 'undefined' && window.__dbgC) window.__dbgC.push({k, C, P, item, info, d});
+  const finishPoints = P => {
   // окат рукава после расчёта кладём точно на край проймы (между сшитыми точками кольцо рукава иначе отходит — видна щель)
   if (!item.puff) shoulderRound(C, P, chains, push);   // плечевая точка без острого угла (до укладки оката на пройму); у рукава-фонарика сборка на плече — задумана
   chains.forEach(({ring, lf, lb, rings}) => { const segs = ring.length;
@@ -324,12 +324,14 @@ export function drapePrepare(item, d, under) {
       for (let k = 0; k < 3; k++) P[b + k] += ((P[a + k] + P[c + k]) / 2 - P[b + k]) * 0.6; push(P, b); } });
   C.ringSewn = chains.flatMap(ch => ch.ring);   // всё верхнее кольцо рукава вшито в пройму (в швах — только часть точек)
   if (item.shape?.sleeveFinish === 'relax-v1') relaxSleeves(C, P, chains, push);
+  return P; };
+  const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
   try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB); g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }
   return g; };
   seamBend(C);
-  return {C, fab, yPin, d, under, margin: fab.margin || 0, finish, run: () => finish(runCloth(C, makeCollider(d, under, fab.margin), fab, yPin))};
+  return {C, fab, yPin, d, under, margin: fab.margin || 0, finishPoints, finish, run: () => finish(runCloth(C, makeCollider(d, under, fab.margin), fab, yPin))};
 }
 export function drapeTemplate(item, d, under) { const j = drapePrepare(item, d, under); return j ? j.run() : null; }

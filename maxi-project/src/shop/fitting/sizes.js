@@ -5,7 +5,7 @@ import {constructionCm} from './construction.js';
 // ---------- размеры из таблицы магазина ----------
 // item.sizesT: [{name, ru, cm:{len, chest | waist, hip, inseam, outseam, hem}, body:{chest:[от,до], waist, hips}}]; item.size — выбранный (или подбор по фигуре)
 export function recommendSize(item, b) {
-  const S = item.sizesT; if (!S || !S.length) return null;
+  const S = (item.sizesT || []).filter(sz=>!sz.estimated); if (!S.length) return null;
   const top = TOPK.has(item.kind);
   const fits = sz => {
     if (sz.body) { const keys = top ? ['chest'] : ['waist', 'hips']; const known = keys.filter(key => sz.body[key]); return known.length > 0 && known.every(key => b[key] <= sz.body[key][1]); }
@@ -22,6 +22,7 @@ export function fitNote(item, b) {
   const sz = sizeOf(item, b);
   const c = itemCm(item, b), out = [], top = TOPK.has(item.kind);
   const construction = constructionCm(item, c);
+  if (sz?.estimated) out.push('примерная размерная модель; мерки этого размера не подтверждены');
   if (sz && sz.body && sz.body.chest && top) { const [lo, hi] = sz.body.chest; out.push(b.chest > hi ? 'мало в груди по таблице (' + lo + '–' + hi + ' см)' : b.chest < lo - 4 ? 'велико по таблице' : 'твой размер по таблице магазина'); }
   if (top && c.chest) { const e = c.chest * 2 - b.chest; out.push(e < 0 ? 'обхват вещи меньше груди на ' + Math.round(-e) + ' см; растяжимость ткани не измерена' : e < 8 ? 'по фигуре' : e < 18 ? 'свободно' : 'оверсайз'); }
   if (!top && c.waist) { const e = c.waist * 2 - b.waist; out.push(e < -2 ? 'пояс мал (' + c.waist * 2 + ' см при талии ' + b.waist + ')' : e <= 4 ? 'пояс по талии' : 'пояс свободный — с ремнём'); }

@@ -63,7 +63,9 @@ let disposeObj;
     const list = rig.children.filter(o => o.userData && o.userData.anim && o.userData.cloth);
     if (list.length) { const pivots = []; body.g.traverse(o => { if (o.userData.armPivot) pivots.push(o); });
       const saved = list.map(g => g.children.filter(m => m.userData.cm).map(m => ['position', 'normal', 'color', 'wrk'].map(a => m.geometry.attributes[a] ? m.geometry.attributes[a].array.slice() : null)));
-      R.play = {t0: performance.now(), list, saved, pivots, nf: Math.min(...list.map(g => g.userData.anim.nf)), k: -1}; }
+      const unique = new Set(); list.forEach(g=>g.traverse(m=>{if(m.isMesh)(Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>unique.add(mat));}));
+      const materials=[...unique].map(m=>[m,m.opacity,m.transparent]);materials.forEach(([m])=>{m.transparent=true;m.opacity=0;m.needsUpdate=true;});
+      R.play = {t0: performance.now(), list, saved, pivots, materials, nf: Math.min(...list.map(g => g.userData.anim.nf)), k: -1}; }
     document.querySelectorAll('[data-qc]').forEach(qcLine);
   }
 
