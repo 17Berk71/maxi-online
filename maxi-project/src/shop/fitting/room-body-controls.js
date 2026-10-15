@@ -3,16 +3,22 @@ import {PREFS, setPref, onPref, BODY0} from '../../core/settings.js';
 import {h, render} from './room-panel.js';
 import {SKIN} from './room-scene.js';
 import {fit} from './state.js';
+import {validateMakeHumanBody} from './makehuman-body.js';
 let SL, boxes;
 
   export function renderBodyControls(box) {
     const b = PREFS.body, wrap = h('div', 'fit-body');
+    const notice=h('p','fit-body-notice');notice.setAttribute('role','status');
+    const apply=update=>{try{const next={...PREFS.body,...update};if(next.model==='makehuman')validateMakeHumanBody(next);notice.textContent='';setPref('body',update);}catch(e){notice.textContent=e.message;}};
+    const model=h('select');model.setAttribute('aria-label','Модель тела');
+    for(const [value,title] of [['legacy','Прежний манекен'],['makehuman','MakeHuman · пробная модель']]){const o=h('option','',title);o.value=value;o.selected=(b.model||'legacy')===value;model.appendChild(o);}
+    model.onchange=()=>apply({model:model.value});wrap.appendChild(model);wrap.appendChild(notice);
     const sx_ = h('div', 'seg3'); [['f', 'Женская'], ['m', 'Мужская']].forEach(([v, t]) => { const bt = h('button', b.sex === v ? 'on' : '', t); bt.onclick = () => { const dflt = v === 'm' ? {sex: 'm', height: 180, weight: 78, chest: 98, waist: 84, hips: 100} : {sex: 'f', height: 168, weight: 60, chest: 90, waist: 72, hips: 98}; setPref('body', dflt); }; sx_.appendChild(bt); });
     wrap.appendChild(h('div', 'sh-lab', 'Фигура')); wrap.appendChild(sx_);
     SL.forEach(([k, t, mn, mx, st, u]) => {
       const row = h('label', 'fit-sl'); const top = h('span'); top.appendChild(h('b', '', t)); const val = h('small', '', k === 'build' ? (b[k] < 0.33 ? 'худощавое' : b[k] > 0.66 ? 'плотное' : 'среднее') : b[k] + ' ' + u); top.appendChild(val); row.appendChild(top);
       const r = h('input'); r.type = 'range'; r.min = mn; r.max = mx; r.step = st; r.value = b[k];
-      r.oninput = () => { const v = +r.value; val.textContent = k === 'build' ? (v < 0.33 ? 'худощавое' : v > 0.66 ? 'плотное' : 'среднее') : v + ' ' + u; setPref('body', {[k]: v}); };
+      r.oninput = () => { const v = +r.value; val.textContent = k === 'build' ? (v < 0.33 ? 'худощавое' : v > 0.66 ? 'плотное' : 'среднее') : v + ' ' + u; apply({[k]: v}); };
       row.appendChild(r); wrap.appendChild(row);
     });
     wrap.appendChild(h('div', 'sh-lab', 'Тон фигуры'));

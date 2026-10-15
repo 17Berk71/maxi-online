@@ -2,6 +2,7 @@
 import {armCapAxes, shoulderAxes, sx, sz, torsoR} from './body.js';
 import {armJ, armRad} from './geometry.js';
 import {pushArmCap} from './arm-cap-collision.js';
+import {makeMeshBodyCollider} from './mesh-body-collision.js';
 
 // ---------- симуляция ткани (вариант «В», прототип) ----------
 // Плоский силуэт вещи с фото — это её выкройка: перед и спинка, сшитые по краю (кроме горловины, низа, рукавов; у брюк — пояса и низа).
@@ -19,6 +20,7 @@ export function legR(d, yf) {
   if (yf > 0.5) return 0; for (let i = 1; i < legTab.length; i++) if (yf <= legTab[i][0]) { const t = (yf - legTab[i - 1][0]) / (legTab[i][0] - legTab[i - 1][0]); return (legTab[i - 1][1] + (legTab[i][1] - legTab[i - 1][1]) * t) * (yf > 0.3 ? 1 : d.s); } return legTab[0][1] * d.s;
 }
 export function makeCollider(d, under, margin) {
+  if(d.mhField)return makeMeshBodyCollider(d,under,margin);
   const H = d.H, N = 400, A = new Float32Array(N), B = new Float32Array(N), LR = new Float32Array(N);
   // нижний слой (пояс брюк, юбка) — ступенька: ткань выше неё не должна сразу прыгать наружу («как под ремнём»).
   // Над ступенькой — пологий скат (как ткань ложится поверх пояса): ширина спадает не быстрее ~0.45 по высоте

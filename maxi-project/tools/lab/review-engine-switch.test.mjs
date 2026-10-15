@@ -7,7 +7,7 @@ const script=fs.readFileSync(dir+'/frame.js','utf8');
 test('engine reload restores body and camera within the same iframe',async()=>{
  const saved=new Map(),storage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)};
  function boot(search){let camera=null,handler,replaced;
-  const fit={getView:()=>camera&&({...camera}),setAnim(){},addPack:async()=>{},wear(){},open(){camera={rot:0,zoom:.6,height:.5};},fitNote:()=>'',ready:async()=>{},setRot:r=>{camera={...(camera||{}),rot:r};},setZoom:(z,h)=>{camera={...(camera||{}),zoom:z,height:h};}};
+  const fit={getView:()=>camera&&({...camera}),setAnim(){},addPack:async()=>{},wear(){},open(){camera={rot:0,zoom:.6,height:.5};},fitNote:()=>'',qc:()=>null,ready:async()=>{},setRot:r=>{camera={...(camera||{}),rot:r};},setZoom:(z,h)=>{camera={...(camera||{}),zoom:z,height:h};}};
   const parent={postMessage(){}},location={origin:'https://review.invalid',href:'https://review.invalid/frame.html'+search,search,replace:u=>{replaced=String(u);}};
   const sandbox={REVIEW:{createFitting:()=>fit,PREFS:{body:{}}},parent,location,sessionStorage:storage,document:{querySelector:()=>({textContent:''})},URL,URLSearchParams,window:{name:'tee',addEventListener:(_,fn)=>{handler=fn;}}};
   vm.createContext(sandbox);vm.runInContext(script,sandbox);

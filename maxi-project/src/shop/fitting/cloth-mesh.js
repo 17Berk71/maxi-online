@@ -89,7 +89,7 @@ export function clothUpdate(g, P) {
 }
 export function clothProject(g) {
   const push=g.userData.surfacePush;if(!push)return;
-  g.children.forEach(m=>{if(!m.userData.cm)return;const pos=m.geometry.attributes.position;for(let i=0;i<pos.array.length;i+=3)push(pos.array,i);pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
+  g.children.forEach(m=>{if(!m.userData.cm)return;const pos=m.geometry.attributes.position;for(let i=0;i<pos.array.length;i+=3)push(pos.array,i,!m.userData.cm.local);pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
   g.children.forEach(m=>{if(m.userData.edge)edgeUpdate(m);});
 }
 export function clothMeshes(C, P, H) {
@@ -130,7 +130,7 @@ export function clothMeshes(C, P, H) {
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('uvm', new THREE.Float32BufferAttribute(uvm, 2)); geo.setAttribute('wrk', new THREE.Float32BufferAttribute(wrk, 2)); geo.setIndex(idx);
     if (!m.mat.vertexColors) { m.mat.vertexColors = true; if (!m.mat.userData.ft) aoEmissive(m.mat); m.mat.needsUpdate = true; }
     const mesh = new THREE.Mesh(geo, m.mat); mesh.castShadow = true; mesh.receiveShadow = true; if (m.role) mesh.userData.role = m.role;
-    mesh.userData.cm = {mi, edges: [...mid.entries()].sort((a_, b_) => a_[1] - b_[1]).map(([key]) => [Math.floor(key / 100000), key % 100000])}; g.add(mesh);
+    mesh.userData.cm = {mi, local:!!m.local, edges: [...mid.entries()].sort((a_, b_) => a_[1] - b_[1]).map(([key]) => [Math.floor(key / 100000), key % 100000])}; g.add(mesh);
     mesh.userData.cm.straight = new Set(mesh.userData.cm.edges.map(([i, j], q) => straight.has(i < j ? i * 100000 + j : j * 100000 + i) ? q : -1).filter(q => q >= 0));
     if (m.relief) pleatRelief(geo, m.relief, mesh.userData.cm.edges, m.verts.length);
     // толщина на открытых краях (низ, манжеты, горловина): пришитые края — нет
