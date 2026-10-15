@@ -1,11 +1,21 @@
 // Текстуры с фото вещи: загрузка и снятие своей светотени снимка (delight).
 import * as THREE from 'three';
+import {padTransparentTexels} from './texture-padding.js';
 
 // ---------- вещь из фото («фабрика», tools/wardrobe/build.py) ----------
 // Текстуры выпрямлены по строкам: левый край текстуры — левый край вещи на фото, правый — правый, верх — горловина или пояс.
 // Поэтому на шаблоне перед берётся из фото спереди, спина — из фото сзади, а боковые швы приходятся на края фото.
 // Мерки (длина к ширине, длина рукава, шаг, ширина штанины) подгоняют шаблон под эту вещь.
 export const PTEX = {};
+function padCorrectedTexture(img) {
+  const width=img.naturalWidth||img.width,height=img.naturalHeight||img.height;
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
+  try{const pixels=ctx.getImageData(0,0,width,height);
+    if(!padTransparentTexels(pixels.data,width,height))return img;
+    ctx.putImageData(pixels,0,0);return canvas;
+  }catch{return img;}
+}
 if (typeof window !== 'undefined') window.__ptex = PTEX;   // отладка: обработанные текстуры фото
 // Фото без своей светотени: на снимке вещь освещена неровно (бок темнее, тень от руки, блик) — в 3D это пятна,
 // потому что складки и свет у нас свои. Крупная светотень оценивается только по пикселям цвета самой ткани
@@ -45,7 +55,7 @@ export function photoTex(url, flat, corrected = false) {
   if (!url) return null;
   const key = url + (flat ? '|flat' : '') + (corrected ? '|corrected-v1' : '');
   if (!PTEX[key]) { const t = new THREE.Texture(); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; PTEX[key] = t;
-    const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { let r = typeof window !== 'undefined' && window.__noDelight ? im : corrected ? im : delight(im); if (flat) r = flatten(r); t.image = r; t.needsUpdate = true; }; im.src = url; }
+    const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { let r = typeof window !== 'undefined' && window.__noDelight ? im : corrected ? padCorrectedTexture(im) : delight(im); if (flat) r = flatten(r); t.image = r; t.needsUpdate = true; }; im.src = url; }
   return PTEX[key];
 }
 // ровная ткань: основной цвет × чуть-чуть мелкой фактуры (отношение яркости к размытой в ~4 px), без светотени и линий сгибов

@@ -8,6 +8,7 @@ import {pleatGrid, pleatUpdate, pleatSmooth, liningBand, liningUpdate} from './p
 import {clothify, FT} from './cloth-material.js';
 import {LIN} from './common.js';
 import {fit} from './state.js';
+import {shareSeamValues} from './seam-groups.js';
 
 function clothAO(C, P, N, n) {
   const sx_ = new Float32Array(n * 3), cnt = new Uint16Array(n), el = new Float32Array(n);
@@ -20,6 +21,7 @@ function clothAO(C, P, N, n) {
   for (let pass = 0; pass < 2; pass++) { const B = A.slice(), acc = new Float32Array(n), c2 = new Uint16Array(n);
     for (let e = 0; e < C.E.length; e += 4) { const k = C.E[e + 3]; if (k !== 0 && k !== 3) continue; const i = C.E[e], j = C.E[e + 1]; acc[i] += B[j]; acc[j] += B[i]; c2[i]++; c2[j]++; }
     for (let i = 0; i < n; i++) if (c2[i]) A[i] = (B[i] + acc[i] / c2[i]) / 2; }
+  shareSeamValues(C, A, 1, true);
   return A;
 }
 // сжатие ткани в расчёте (лишняя ткань, которую сетка 2 см не может показать складками) → мелкие заломы в шейдере:
@@ -48,7 +50,7 @@ function clothNormals(C, P, flips, N) {
   C.meshes.forEach((m, mi) => { for (let t = 0; t < m.tris.length; t += 3) { let a = m.verts[m.tris[t]], b = m.verts[m.tris[t + 1]], c = m.verts[m.tris[t + 2]]; if (flips[mi]) { const x = b; b = c; c = x; }
     const f = cross(sub(b, a), sub(c, a)); for (const v of [a, b, c]) { N[v * 3] += f[0]; N[v * 3 + 1] += f[1]; N[v * 3 + 2] += f[2]; } } });
   // сшитые точки — одна нормаль
-  for (const [i, j] of C.seams) for (let k = 0; k < 3; k++) { const s_ = N[i * 3 + k] + N[j * 3 + k]; N[i * 3 + k] = s_; N[j * 3 + k] = s_; }
+  shareSeamValues(C, N, 3);
   for (let i = 0; i < n; i++) { const l = Math.hypot(N[i * 3], N[i * 3 + 1], N[i * 3 + 2]) || 1; N[i * 3] /= l; N[i * 3 + 1] /= l; N[i * 3 + 2] /= l; }
 }
 // рельеф складок: base-вершины по координатам выкройки (px, py), середины рёбер — среднее концов; нормали пересчитываются (грани складок
@@ -89,7 +91,29 @@ export function clothUpdate(g, P) {
 }
 export function clothProject(g) {
   const push=g.userData.surfacePush;if(!push)return;
-  g.children.forEach(m=>{if(!m.userData.cm)return;const pos=m.geometry.attributes.position;for(let i=0;i<pos.array.length;i+=3)push(pos.array,i,!m.userData.cm.local);pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
+  let changed=false;
+  g.children.forEach(m=>{if(!m.userData.cm)return;const cm=m.userData.cm,pos=m.geometry.attributes.position,cl=g.userData.cloth,part=cl?.C.meshes[cm.mi];
+    for(let i=0;i<pos.array.length;i+=3){const k=i/3,n=part?.verts.length;let shared=part&&k<n&&cl.sewnG.has(part.verts[k]);
+      if(part&&k>=n){const edge=cm.edges[k-n];shared=edge&&edge.every(v=>cl.sewnG.has(part.verts[v]));}
+      changed=push(pos.array,i,!cm.local&&!shared)||changed;
+    }
+    pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
+  // Collision finishing changes the displayed triangles after their normals
+  // were calculated. Rebuild lighting from that final surface, also in playback.
+  if(changed&&g.userData.cloth){
+    const C=g.userData.cloth.C,N=new Float32Array(C.pin.length*3);
+    const meshes=g.children.filter(m=>m.userData.cm);
+    for(const mesh of meshes){mesh.geometry.computeVertexNormals();const normal=mesh.geometry.attributes.normal.array,cm=mesh.userData.cm;
+      C.meshes[cm.mi].verts.forEach((v,k)=>{for(let j=0;j<3;j++)N[v*3+j]=normal[k*3+j];});}
+    shareSeamValues(C,N,3);
+    for(const mesh of meshes){const normal=mesh.geometry.attributes.normal,cm=mesh.userData.cm,m=C.meshes[cm.mi];
+      m.verts.forEach((v,k)=>{const len=Math.hypot(N[v*3],N[v*3+1],N[v*3+2])||1;for(let j=0;j<3;j++)normal.array[k*3+j]=N[v*3+j]/len;});
+      for(const q of cm.straight||[]){const [a,b]=cm.edges[q],r=m.verts.length+q;let len=0;
+        for(let j=0;j<3;j++){const value=normal.array[a*3+j]+normal.array[b*3+j];normal.array[r*3+j]=value;len+=value*value;}
+        len=Math.sqrt(len)||1;for(let j=0;j<3;j++)normal.array[r*3+j]/=len;}
+      normal.needsUpdate=true;
+    }
+  }
   g.children.forEach(m=>{if(m.userData.edge)edgeUpdate(m);});
 }
 export function clothMeshes(C, P, H) {

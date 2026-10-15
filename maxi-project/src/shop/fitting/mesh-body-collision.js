@@ -18,11 +18,13 @@ export function makeMeshBodyCollider(d,under,margin) {
     const f=noArm&&y<d.mhArmY-.07?core:full;
     if(sample(f,x,y)&&z<front+m&&z>back-m){
       const up=front+m-z,down=z-(back-m);let distance=Math.min(up,down),axis=2,dir=up<down?1:-1;
-      // Shoulder tops should support fabric upward instead of dragging it sideways.
-      // Short grid searches also keep points from being trapped near an axilla edge.
-      if(y>.77*H&&y<.88*H){
-        const max=Math.min(10,Math.ceil(distance/f.step)+1);
-        search:for(let k=1;k<=max;k++)for(const [ax,sgn] of [[1,1],[0,1],[0,-1]]){
+      // Front/back columns also need a lateral escape: a sewn side seam near
+      // z=0 must move to the flank, not split between front and back surfaces.
+      // Upward escape is restricted to the shoulder, where it supports fabric.
+      {
+        const directions=y>.77*H&&y<.88*H?[[1,1],[0,1],[0,-1]]:[[0,1],[0,-1]];
+        const max=Math.min(48,Math.ceil(distance/f.step)+1);
+        search:for(let k=1;k<=max;k++)for(const [ax,sgn] of directions){
           const xx=x+(ax===0?sgn*k*f.step:0),yy=y+(ax===1?k*f.step:0);
           if(!sample(f,xx,yy)||z<back-m||z>front+m){const dist=k*f.step+m;if(dist<distance){distance=dist;axis=ax;dir=sgn;}if(axis!==2)break search;}
         }

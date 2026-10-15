@@ -19,6 +19,7 @@ import {relaxSleeves} from './sleeve-relax.js';
 import {fit} from './state.js';
 import {patternRecipe} from './families.js';
 import {meshShoulderHeight} from './makehuman-body.js';
+import {projectSeams} from './seam-groups.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
@@ -332,6 +333,7 @@ export function drapePrepare(item, d, under) {
       for (let k = 0; k < 3; k++) P[b + k] += ((P[a + k] + P[c + k]) / 2 - P[b + k]) * 0.6; push(P, b); } });
   C.ringSewn = chains.flatMap(ch => ch.ring);   // всё верхнее кольцо рукава вшито в пройму (в швах — только часть точек)
   if (item.shape?.sleeveFinish === 'relax-v1') relaxSleeves(C, P, chains, push);
+  if (d.mhField) projectSeams(C, P, push);
   return P; };
   const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);

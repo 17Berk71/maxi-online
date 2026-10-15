@@ -12,6 +12,7 @@ import {commitLayer} from '../../src/shop/fitting/simple-garment.js';
 import {fit} from '../../src/shop/fitting/state.js';
 import {QC} from '../../src/shop/fitting/qc.js';
 import {loadMakeHuman} from '../../src/shop/fitting/makehuman-body.js';
+import {classify} from '../../src/shop/fitting/classify.js';
 const ROOT=path.resolve(path.dirname(new URL(import.meta.url).pathname),'../..');
 const packDir=path.join(ROOT,'tools/wardrobe/out'),out=process.env.OUT;
 if(!out)throw new Error('OUT must be a private output directory');fs.mkdirSync(out,{recursive:true});
@@ -20,6 +21,7 @@ if(!out)throw new Error('OUT must be a private output directory');fs.mkdirSync(o
 globalThis.document={createElement:()=>({getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){}})})};
 const b={sex:'m',height:186,weight:82,chest:110,waist:82,hips:98,...JSON.parse(process.env.BODY||'{}'),model:process.env.MODEL||'makehuman'};
 const ids=(process.env.ITEMS||'').split(',').filter(Boolean),catalog=JSON.parse(fs.readFileSync(packDir+'/index.json'));
+const order={shoes:0,bottom:1,dress:2,top:3,outer:4};
 const items=ids.map(id=>{
  const meta=JSON.parse(fs.readFileSync(path.join(packDir,id,'meta.json'))),entry=catalog.find(x=>x.id===id);
  const item={...entry,...meta,id,shape:meta.shape||entry.shape,sizesT:entry.sizes,size:(process.env.SIZE||'')||entry.sizes?.[0]?.name,tex:{}};
@@ -27,7 +29,7 @@ const items=ids.map(id=>{
   const p=path.join(packDir,id,file);if(!fs.existsSync(p))continue;item.tex[name]=p;
   for(const suffix of ['','|corrected-v1','|flat','|flat|corrected-v1']){const t=new THREE.Texture();t.userData={offlinePath:p};PTEX[p+suffix]=t;}
  }return item;
-});
+}).sort((a,b)=>order[classify(a)?.slot]-order[classify(b)?.slot]);
 const started=performance.now();if(b.model==='makehuman')await loadMakeHuman();const d=bodyDims(b);d.armA=armSpread(items,d);
 const {g}=buildBody(b,new THREE.MeshStandardMaterial({color:0xeeeeee}),d),groups=[g],animation=[];
 fit.UNDER=[];fit.UNDERZ=[];fit.BOT_YW=0;
@@ -36,7 +38,10 @@ try{for(const item of items){
  if(!job)throw new Error('Missing cloth job '+item.id);
  const o={rec:process.env.ANIMATION==='1'?'settle':false},P=runCloth(job.C,makeCollider(d,job.under,job.margin),job.fab,job.yPin,o);
  if(!Array.from(P).every(Number.isFinite))throw new Error('Non-finite cloth '+item.id);
- if(o.frames){for(let k=0;k<o.nf;k++)job.finishPoints(o.frames.subarray(k*P.length,(k+1)*P.length));animation.push({id:item.id,frames:o.nf,finite:Array.from(o.frames).every(Number.isFinite)});}
+ if(o.frames){let maxSeamGap=0;for(let k=0;k<o.nf;k++){
+  const frame=o.frames.subarray(k*P.length,(k+1)*P.length);job.finishPoints(frame);
+  for(const [a,b] of job.C.seams)maxSeamGap=Math.max(maxSeamGap,Math.hypot(frame[a*3]-frame[b*3],frame[a*3+1]-frame[b*3+1],frame[a*3+2]-frame[b*3+2]));
+ }animation.push({id:item.id,frames:o.nf,finite:Array.from(o.frames).every(Number.isFinite),maxSeamGap});}
  const cloth=job.finish(P);if(o.frames){const last=o.frames.subarray((o.nf-1)*P.length),record=animation.at(-1);record.endpointMaxDifference=Math.max(...P.map((v,i)=>Math.abs(v-last[i])));if(record.endpointMaxDifference>1e-6)throw new Error('Settling endpoint mismatch '+item.id);}
  groups.push(cloth);commitLayer();
 }}finally{fit.UNDER=fit.UNDERZ=null;fit.PEND=[];fit.PENDZ=[];}
@@ -49,6 +54,6 @@ for(const g of groups){g.updateMatrixWorld(true);g.traverse(m=>{
  if(mat.side===THREE.BackSide)return;
  meshes.push({positions:p,index:geo.index?Array.from(geo.index.array):Array.from({length:P.count},(_,i)=>i),uv:geo.attributes.uv?Array.from(geo.attributes.uv.array):[],texture:mat.map?.userData?.offlinePath,color:mat.map?[255,255,255]:mat.color?.toArray().map(x=>Math.round(x*255))});
 });}
-const result={b,items:ids,meshes,measurements:d.mhMeasures||null,animation,qc:Object.fromEntries(ids.map(id=>[id,QC[id]])),elapsedMs:performance.now()-started};
+const result={b,items:items.map(i=>i.id),requestedItems:ids,meshes,measurements:d.mhMeasures||null,animation,qc:Object.fromEntries(ids.map(id=>[id,QC[id]])),elapsedMs:performance.now()-started};
 fs.writeFileSync(path.join(out,'scene.json'),JSON.stringify(result));
 console.log(JSON.stringify({b,items:ids,measurements:result.measurements,animation,qc:Object.fromEntries(ids.map(id=>[id,{score:QC[id]?.score,ok:QC[id]?.ok}])),elapsedMs:result.elapsedMs}));
