@@ -1,10 +1,12 @@
 // Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
 import * as THREE from 'three';
 import {armPose, armCapAxes, shoulderAxes, bodyDims, limb, loft, sx, sz, torsoR} from './body.js';
+import {makeHumanMesh} from './makehuman-body.js';
 
 // ---------- тело ----------
 export function buildBody(b, skinMat, d0) {
   const d = d0 || bodyDims(b), g = new THREE.Group(), H = d.H;
+  if(b.model==='makehuman')return makeHumanMesh(d,skinMat);
   const yProf = []; for (let yf = 0.465; yf <= 0.8521; yf += 0.0043) yProf.push([yf * H, torsoR(d, yf)]);
   // верх туловища закрыт пологим скатом к шее: открытый край кольца выступал из шара плеч волнистой «кокеткой»
   { const [y0, r0] = yProf[yProf.length - 1], rn = d.neck * 0.85 / Math.max(0.5, sx(d, 0.86)); /* верх ската — внутри шеи: иначе кольцо вокруг шеи видно над воротом */ [[0.003, 0.8], [0.0055, 0.55], [0.0075, 0.3]].forEach(([dy, k]) => yProf.push([y0 + dy * H, Math.max(rn, r0 * k)])); }

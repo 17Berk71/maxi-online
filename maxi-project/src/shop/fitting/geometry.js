@@ -22,6 +22,7 @@ export const lerp = (a, b, t) => a + (b - a) * t;
 export function interp(arr, t) { t = clamp(t, 0, 1) * (arr.length - 1); const i = Math.min(arr.length - 2, Math.floor(t)), f = t - i; return arr[i] + (arr[i + 1] - arr[i]) * f; }
 // сечение тела на высоте yf: полуширина a и полуглубина b (как у фигуры), с плечевым «шаром»
 export function bodyAB(d, yf) {
+  if(d.mhProfile){const k=Math.max(0,Math.min(127,Math.round(yf*127)));return {a:d.mhProfile.a[k],b:d.mhProfile.b[k]};}
   let r = yf < 0.53 ? Math.max(torsoR(d, Math.max(0.47, yf)), d.hips * (yf < 0.5 ? 0.99 : 0.97)) : torsoR(d, yf);
   let a = r * (sx(d, Math.max(0.6, yf)) * 0.98 + 0.02), b = r * (sz(d, yf) + (yf < 0.6 ? 0.04 : 0));
   const axes = shoulderAxes(d), dy = (yf - 0.8) * d.H / axes.y;

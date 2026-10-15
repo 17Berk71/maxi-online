@@ -8,6 +8,7 @@ import {LIN} from './common.js';
 import {TEX} from './fabric-simple.js';
 import {garmentMeshAsync} from './garment-async.js';
 import {buildBody} from './mannequin.js';
+import {loadMakeHuman} from './makehuman-body.js';
 import {paintBody} from './paint-body.js';
 import {PTEX} from './photo-texture.js';
 import {commitLayer} from './simple-garment.js';
@@ -29,9 +30,10 @@ let disposeObj;
     if (e) e.hidden = !on;
   }
   export function rebuild() {
-    if (!R) return; const b = PREFS.body, wn = worn(), key = JSON.stringify(b) + '|' + wn.map(garmentKey).join(',');
+    if (!R) return; const b = {...PREFS.body}, wn = worn(), key = JSON.stringify(b) + '|' + wn.map(garmentKey).join(',');
     if (key === built.key) return; built.key = key; const tok = ++built.tok;
-    built.chain = built.chain.then(() => buildOutfit(tok, b, wn)).catch(e => console.error(e));
+    built.error=null;
+    built.chain = built.chain.then(() => buildOutfit(tok, b, wn)).catch(e => { if(tok===built.tok){built.error=e;setBusy(false);}console.error(e); });
   }
   async function buildOutfit(tok, b, wn) {
     const alive = () => tok === built.tok && R;
@@ -39,6 +41,7 @@ let disposeObj;
     // у вещей из выгрузки сначала скачать пакеты примерки; после этого меняются состояние и размеры — образ соберётся заново со следующего кадра
     if (wn.some(i => i.pack && !i.tex)) { await Promise.all(wn.map(loadPack)); if (alive()) { built.key = ''; render(); } return; }
     // широкая вещь отводит руки: они лежат на ткани, а не проходят сквозь неё
+    if(b.model==='makehuman'){await loadMakeHuman();if(!alive())return;}
     const d0 = bodyDims(b); d0.armA = armSpread(wn, d0);
     const body = buildBody(b, R.skinMat, d0), next = new THREE.Group(); body.g.traverse(o => { if (o.isMesh) { o.castShadow = true; } }); next.add(body.g);
     const order = {shoes: 0, bottom: 1, dress: 2, top: 3, outer: 4}, bodyKey = JSON.stringify(b) + '|' + d0.armA.toFixed(3);

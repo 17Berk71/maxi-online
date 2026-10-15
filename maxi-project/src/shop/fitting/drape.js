@@ -18,6 +18,7 @@ import {shoulderRound} from './shoulder-round.js';
 import {relaxSleeves} from './sleeve-relax.js';
 import {fit} from './state.js';
 import {patternRecipe} from './families.js';
+import {meshShoulderHeight} from './makehuman-body.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
@@ -53,7 +54,8 @@ export function drapePrepare(item, d, under) {
     // скат плеча по фигуре: плечевая точка выкройки ложится на плечо (верх руки), а не висит над ним — иначе у плеча «погоны»
     { const axes = shoulderAxes(d), xs = M.S / 2, ax = armX(d), r = armRad(d, 0) + 0.004, SXb = axes.x, SYb = axes.y;
       const yArmTop = Math.abs(xs - ax) < r ? 0.8 * H + Math.sqrt(r * r - (xs - ax) ** 2) : xs < ax ? 0.8 * H + SYb * Math.sqrt(Math.max(0, 1 - (xs / SXb) ** 2)) : 0.8 * H;
-      M.SD = Math.max(0.04, Math.min(0.11, yTop - yArmTop - 0.006)); M.AD = Math.max(M.AD, M.SD + 0.16); }
+      const supportedY=meshShoulderHeight(d,xs)??yArmTop;
+      M.SD = Math.max(0.04, Math.min(0.11, yTop - supportedY - 0.006)); M.AD = Math.max(M.AD, M.SD + 0.16); }
     // что закрывает вещь на теле (для окраски тела под ней, см. paintBody): корпус от низа до шеи, рука — на длину рукава
     cover = {y0: tucked ? yTuck + 0.03 : yTop - M.L + 0.06 + (fab.margin || 0) * 2, y1: yTop - M.ND - 0.012, nx: M.NW / 2 - 0.01, torso: !open, arm: M.noSleeve ? 0 : ((M.S / 2 - armX(d)) + M.SL) / (0.335 * H)};
     // контур половины (x ≥ 0) и метки отрезков; зеркалим

@@ -5,9 +5,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 const script=fs.readFileSync(path.resolve(process.env.REVIEW_DIST || 'tools/lab/review-dist','frame.js'),'utf8');
-test('version/body replacement preserves rotation, zoom and camera height',async()=>{
+test('body replacement preserves rotation, zoom and camera height, including a drag during loading',async()=>{
  let camera=null, dragDuringLoad=false, handler;
- const fit={getView:()=>camera&&({...camera}),setAnim(){},addPack:async()=>{},wear(){},open(){camera={rot:.35,zoom:1,height:.55};},fitNote:()=>'',
+ const fit={getView:()=>camera&&({...camera}),setAnim(){},addPack:async()=>{},wear(){},open(){camera={rot:.35,zoom:1,height:.55};},fitNote:()=>'',qc:()=>null,
  ready:async()=>{if(dragDuringLoad)camera={rot:1.12,zoom:.73,height:.61};},
  setRot:r=>{camera={...(camera||{}),rot:r};},setZoom:(z,h)=>{camera={...(camera||{}),zoom:z,height:h};}};
  const parent={postMessage(){}};
@@ -15,7 +15,7 @@ test('version/body replacement preserves rotation, zoom and camera height',async
  vm.createContext(sandbox);vm.runInContext(script,sandbox);await vm.runInContext('chain',sandbox);
  assert.deepEqual(camera,{rot:0,zoom:.60,height:.5});
  camera={rot:.86,zoom:.68,height:.64};
- handler({source:parent,origin:sandbox.location.origin,data:{channel:'maxi-fitting-review',command:'configure',config:{version:'before'}}});
+ handler({source:parent,origin:sandbox.location.origin,data:{channel:'maxi-fitting-review',command:'configure',config:{body:{height:180}}}});
  await vm.runInContext('chain',sandbox);assert.deepEqual(camera,{rot:.86,zoom:.68,height:.64});
  dragDuringLoad=true;
  handler({source:parent,origin:sandbox.location.origin,data:{channel:'maxi-fitting-review',command:'configure',config:{body:{height:180}}}});
