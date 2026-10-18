@@ -5,6 +5,7 @@ import {buildBody} from '../../src/shop/fitting/mannequin.js';
 import {prepareMakeHuman,validateMakeHumanBody,loadMakeHuman} from '../../src/shop/fitting/makehuman-body.js';
 import {makeCollider,legR} from '../../src/shop/fitting/collider.js';
 import {makeMeshBodyCollider} from '../../src/shop/fitting/mesh-body-collision.js';
+import {makeUpperMeshCollider} from '../../src/shop/fitting/triangle-surface.js';
 import {pushArmCap} from '../../src/shop/fitting/arm-cap-collision.js';
 import {armJ,armRad} from '../../src/shop/fitting/geometry.js';
 
@@ -45,7 +46,7 @@ test('final mesh and collision fields are rebuilt for the selected arm spread',(
 });
 test('mesh collider runs with cloned numeric fields in the actual worker serialization scheme',()=>{
  const d=bodyDims({...bodies[0],model:'makehuman'}),clone=structuredClone(d);assert.equal(clone.mhGeometry,undefined);
- const src=[torsoR,sx,sz,armRad,armX,armCapAxes,shoulderAxes,armJ,legR,pushArmCap,makeMeshBodyCollider,makeCollider].map(f=>/^function[\s*(]/.test(f.toString())?f.toString():'const '+f.name+' = '+f.toString()+';').join('\n');
+ const src=[torsoR,sx,sz,armRad,armX,armCapAxes,shoulderAxes,armJ,legR,pushArmCap,makeUpperMeshCollider,makeMeshBodyCollider,makeCollider].map(f=>/^function[\s*(]/.test(f.toString())?f.toString():'const '+f.name+' = '+f.toString()+';').join('\n');
  const sandbox={d:clone,P:new Float32Array([0,.72*d.H,0])};vm.runInNewContext(src+'\nmakeCollider(d,null)(P,0,true);',sandbox);
  const P=new Float32Array([0,.72*d.H,0]);makeCollider(d,null)(P,0,true);assert.deepEqual([...sandbox.P],[...P]);
 });

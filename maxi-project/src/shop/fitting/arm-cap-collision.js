@@ -16,7 +16,7 @@ export function pushArmCap(P, i, arm, radius, height) {
 // Подразделённая поверхность тоже проверяется: хорда между безопасными
 // вершинами расчётной сетки может срезать маленький выпуклый купол руки.
 export function capSurfaceCollider(d) {
-  if(d.mhField){const push=makeMeshBodyCollider(d,null,0);return (P,i,noArm)=>push(P,i,noArm);}
+  if(d.mhField){const push=makeMeshBodyCollider(d,null,0);return (P,i,noArm,sideHint)=>push(P,i,noArm,sideHint);}
   const cap=armCapAxes(d),th=d.armA||.16,x=armX(d);
   const arms=[-1,1].map(side=>({x0:side*x,y0:.8*d.H,dx:side*Math.sin(th),dy:-Math.cos(th)}));
   return (P,i)=>{let hit=false;for(const arm of arms){

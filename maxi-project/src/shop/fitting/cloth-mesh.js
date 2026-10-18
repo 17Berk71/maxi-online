@@ -8,7 +8,7 @@ import {pleatGrid, pleatUpdate, pleatSmooth, liningBand, liningUpdate} from './p
 import {clothify, FT} from './cloth-material.js';
 import {LIN} from './common.js';
 import {fit} from './state.js';
-import {shareSeamValues} from './seam-groups.js';
+import {shareSeamValues,seamGroups} from './seam-groups.js';
 
 function clothAO(C, P, N, n) {
   const sx_ = new Float32Array(n * 3), cnt = new Uint16Array(n), el = new Float32Array(n);
@@ -68,6 +68,26 @@ function pleatRelief(geo, rl, edges, nbase) {
   // нормали: грани складок ловят свет, но не до бликов на рёбрах — смесь с гладкими
   geo.computeVertexNormals(); for (let k = 0; k < n * 3; k += 3) { const x = nor[k] * 0.6 + n0[k] * 0.4, y = nor[k + 1] * 0.6 + n0[k + 1] * 0.4, z = nor[k + 2] * 0.6 + n0[k + 2] * 0.4, l = Math.hypot(x, y, z) || 1; nor[k] = x / l; nor[k + 1] = y / l; nor[k + 2] = z / l; }
 }
+// A collision-safe base vertex does not guarantee a safe triangle between
+// vertices. Extra surface samples follow the same interpolation in playback.
+export function refineClothSurface(g) {
+  const cl=g.userData.cloth;if(!cl)return;
+  for(const mesh of g.children){const cm=mesh.userData.cm;if(!cm)continue;
+    const geometry=mesh.geometry,start=geometry.attributes.position.count,edges=[],mid=new Map(),idx=[];
+    const edge=(a,b)=>{const key=a<b?a+':'+b:b+':'+a;if(mid.has(key))return mid.get(key);const v=start+edges.length;edges.push([a,b]);mid.set(key,v);return v;};
+    const old=geometry.index.array;
+    for(let t=0;t<old.length;t+=3){const a=old[t],b=old[t+1],c=old[t+2],ab=edge(a,b),bc=edge(b,c),ca=edge(c,a);idx.push(a,ab,ca,ab,b,bc,ca,bc,c,ab,bc,ca);}
+    for(const [name,attribute] of Object.entries(geometry.attributes)){
+      const n=attribute.itemSize,values=new Float32Array((start+edges.length)*n);values.set(attribute.array);
+      edges.forEach(([a,b],k)=>{for(let j=0;j<n;j++)values[(start+k)*n+j]=(values[a*n+j]+values[b*n+j])/2;});
+      geometry.setAttribute(name,new THREE.BufferAttribute(values,n));
+    }
+    geometry.setIndex(idx);(cm.refinements||=[]).push({start,edges});
+    const part=cl.C.meshes[cm.mi],shared=cm.surfaceShared||Array.from({length:start},(_,k)=>k<part.verts.length?cl.sewnG.has(part.verts[k]):cm.edges[k-part.verts.length].every(v=>cl.sewnG.has(part.verts[v])));
+    for(const [a,b] of edges)shared.push(shared[a]&&shared[b]);cm.surfaceShared=shared;
+    if(cm.surfaceSide)for(const [a,b] of edges)cm.surfaceSide.push(cm.surfaceSide[a]*cm.surfaceSide[b]<0?0:Math.sign(cm.surfaceSide[a]+cm.surfaceSide[b]));
+  }
+}
 // кадр анимации: та же сетка (порядок вершин как в clothMeshes), новые точки ткани P — без пересборки
 export function clothUpdate(g, P) {
   const cl = g.userData.cloth; if (!cl) return; const C = cl.C, n = P.length / 3, N = cl.N || (cl.N = new Float32Array(n * 3));
@@ -83,6 +103,11 @@ export function clothUpdate(g, P) {
       pos[r * 3] = (pos[i * 3] + pos[j * 3]) / 2 + (nix + njx) / 2 * off; pos[r * 3 + 1] = (pos[i * 3 + 1] + pos[j * 3 + 1]) / 2 + (niy + njy) / 2 * off; pos[r * 3 + 2] = (pos[i * 3 + 2] + pos[j * 3 + 2]) / 2 + (niz + njz) / 2 * off;
       nor[r * 3] = hx / hl; nor[r * 3 + 1] = hy / hl; nor[r * 3 + 2] = hz / hl; if (col) col[r * 3] = col[r * 3 + 1] = col[r * 3 + 2] = (col[i * 3] + col[j * 3]) / 2; r++; }
     if (m.relief) pleatRelief(mesh.geometry, m.relief, cm.edges, m.verts.length);
+    for(const layer of cm.refinements||[])layer.edges.forEach(([a,b],k)=>{
+      const r=layer.start+k;
+      for(const name of ['position','normal','color','wrk']){const attr=mesh.geometry.attributes[name];if(!attr)continue;for(let j=0;j<attr.itemSize;j++)attr.array[r*attr.itemSize+j]=(attr.array[a*attr.itemSize+j]+attr.array[b*attr.itemSize+j])/2;}
+      const len=Math.hypot(nor[r*3],nor[r*3+1],nor[r*3+2])||1;for(let j=0;j<3;j++)nor[r*3+j]/=len;
+    });
     pa.needsUpdate = true; na.needsUpdate = true; if (ca) ca.needsUpdate = true; mesh.geometry.computeBoundingSphere(); });
   clothProject(g);
   const pgs = g.children.filter(o => o.userData.pg).map(o => o.userData.pg); if (pgs.length) { pleatSmooth(pgs, P); pgs.forEach(pg => pleatUpdate(pg, P, N, AO)); }
@@ -94,8 +119,9 @@ export function clothProject(g) {
   let changed=false;
   g.children.forEach(m=>{if(!m.userData.cm)return;const cm=m.userData.cm,pos=m.geometry.attributes.position,cl=g.userData.cloth,part=cl?.C.meshes[cm.mi];
     for(let i=0;i<pos.array.length;i+=3){const k=i/3,n=part?.verts.length;let shared=part&&k<n&&cl.sewnG.has(part.verts[k]);
-      if(part&&k>=n){const edge=cm.edges[k-n];shared=edge&&edge.every(v=>cl.sewnG.has(part.verts[v]));}
-      changed=push(pos.array,i,!cm.local&&!shared)||changed;
+      if(cm.surfaceShared)shared=cm.surfaceShared[k];
+      else if(part&&k>=n){const edge=cm.edges[k-n];shared=edge&&edge.every(v=>cl.sewnG.has(part.verts[v]));}
+      changed=push(pos.array,i,!cm.local&&!shared,cm.surfaceSide?.[k]||0)||changed;
     }
     pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
   // Collision finishing changes the displayed triangles after their normals
@@ -129,6 +155,9 @@ export function clothMeshes(C, P, H) {
   const AO = clothAO(C, P, N, n), WR = clothWrk(C, P, n);
   const cl0 = g.userData.cloth = {C, flips};
   const sewnG = new Set(C.seams.flatMap(([i, j]) => [i, j]).concat(C.ringSewn || [])); cl0.sewnG = sewnG;
+  const renderSide=new Int8Array(n);
+  if(C.orientedSleeves)C.meshes.forEach(m=>m.verts.forEach((v,k)=>{renderSide[v]=m.role==='front'?1:m.role==='back'?-1:m.contactSide?.[k]||0;}));
+  for(const group of seamGroups(C)){const signs=new Set(group.map(v=>renderSide[v]));if(signs.size>1)for(const v of group)renderSide[v]=0;}
   C.meshes.forEach((m, mi) => {
     if (m.relief && m.relief.rc) {   // складки формой (pleats.js): своя мелкая сетка
       if (!m.mat.vertexColors) { m.mat.vertexColors = true; m.mat.needsUpdate = true; }
@@ -156,6 +185,8 @@ export function clothMeshes(C, P, H) {
     const mesh = new THREE.Mesh(geo, m.mat); mesh.castShadow = true; mesh.receiveShadow = true; if (m.role) mesh.userData.role = m.role;
     mesh.userData.cm = {mi, local:!!m.local, edges: [...mid.entries()].sort((a_, b_) => a_[1] - b_[1]).map(([key]) => [Math.floor(key / 100000), key % 100000])}; g.add(mesh);
     mesh.userData.cm.straight = new Set(mesh.userData.cm.edges.map(([i, j], q) => straight.has(i < j ? i * 100000 + j : j * 100000 + i) ? q : -1).filter(q => q >= 0));
+    mesh.userData.cm.surfaceSide=m.verts.map(v=>renderSide[v]);
+    for(const [a,b] of mesh.userData.cm.edges){const s=mesh.userData.cm.surfaceSide;s.push(s[a]*s[b]<0?0:Math.sign(s[a]+s[b]));}
     if (m.relief) pleatRelief(geo, m.relief, mesh.userData.cm.edges, m.verts.length);
     // толщина на открытых краях (низ, манжеты, горловина): пришитые края — нет
     const nv = m.verts.length, ce = mesh.userData.cm.edges, sw = k => k < nv ? sewnG.has(m.verts[k]) : sewnG.has(m.verts[ce[k - nv][0]]) && sewnG.has(m.verts[ce[k - nv][1]]);

@@ -13,9 +13,11 @@ import {fit} from '../../src/shop/fitting/state.js';
 import {QC} from '../../src/shop/fitting/qc.js';
 import {loadMakeHuman} from '../../src/shop/fitting/makehuman-body.js';
 import {classify} from '../../src/shop/fitting/classify.js';
+import {clothMeshes} from '../../src/shop/fitting/cloth-mesh.js';
 const ROOT=path.resolve(path.dirname(new URL(import.meta.url).pathname),'../..');
 const packDir=path.join(ROOT,'tools/wardrobe/out'),out=process.env.OUT;
 if(!out)throw new Error('OUT must be a private output directory');fs.mkdirSync(out,{recursive:true});
+if(process.env.POINT_STAGE&&process.env.ANIMATION==='1')throw new Error('Point-stage snapshots require static export');
 // Only material construction uses these canvases. Their contents are not rendered:
 // the offline renderer samples the actual photo map and omits shader normal maps.
 globalThis.document={createElement:()=>({getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){}})})};
@@ -42,7 +44,9 @@ try{for(const item of items){
   const frame=o.frames.subarray(k*P.length,(k+1)*P.length);job.finishPoints(frame);
   for(const [a,b] of job.C.seams)maxSeamGap=Math.max(maxSeamGap,Math.hypot(frame[a*3]-frame[b*3],frame[a*3+1]-frame[b*3+1],frame[a*3+2]-frame[b*3+2]));
  }animation.push({id:item.id,frames:o.nf,finite:Array.from(o.frames).every(Number.isFinite),maxSeamGap});}
- const cloth=job.finish(P);if(o.frames){const last=o.frames.subarray((o.nf-1)*P.length),record=animation.at(-1);record.endpointMaxDifference=Math.max(...P.map((v,i)=>Math.abs(v-last[i])));if(record.endpointMaxDifference>1e-6)throw new Error('Settling endpoint mismatch '+item.id);}
+ let captured;
+ if(process.env.POINT_STAGE)job.finishPoints(P,(name,points)=>{if(name===process.env.POINT_STAGE)captured=points.slice();});
+ const cloth=captured?clothMeshes(job.C,captured,d.H):job.finish(P);if(o.frames){const last=o.frames.subarray((o.nf-1)*P.length),record=animation.at(-1);record.endpointMaxDifference=Math.max(...P.map((v,i)=>Math.abs(v-last[i])));if(record.endpointMaxDifference>1e-6)throw new Error('Settling endpoint mismatch '+item.id);}
  groups.push(cloth);commitLayer();
 }}finally{fit.UNDER=fit.UNDERZ=null;fit.PEND=[];fit.PENDZ=[];}
 const meshes=[];

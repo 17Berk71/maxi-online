@@ -83,7 +83,7 @@ export function addTube(C, S0, D, len, rad, segs, rings, mat, side, uvf, cap) {
   const e1 = new THREE.Vector3(-D.y, D.x, 0).normalize().multiplyScalar(side), e2 = new THREE.Vector3(0, 0, 1), up = new THREE.Vector3(0, 1, 0);
   const g = [], pos = [];
   for (let i = 0; i < rings; i++) { const s = len * i / (rings - 1), C0 = S0.clone().addScaledVector(D, s), r = rad(s), row = [], prow = [], t = cap ? Math.min(1, s / 0.09) : 1;
-    for (let j = 0; j < segs; j++) { const a = j / segs * Math.PI * 2;
+    for (let j = 0; j < segs; j++) { const a = cap?.angles?.[j] ?? j / segs * Math.PI * 2;
       const tube = C0.clone().addScaledVector(e1, Math.cos(a) * r).addScaledVector(e2, Math.sin(a) * r);
       const P = t < 1 ? cap.center.clone().addScaledVector(cap.up || up, Math.cos(a) * cap.ry).addScaledVector(e2, Math.sin(a) * cap.rz).lerp(tube, t * t * (3 - 2 * t)) : tube;
       row.push(C.add(P.x, P.y, P.z)); prow.push(P); }
@@ -93,12 +93,13 @@ export function addTube(C, S0, D, len, rad, segs, rings, mat, side, uvf, cap) {
     C.link(a, g[i][(j + 1) % segs], dist(i, j, i, j + 1), 3); C.link(a, g[i][(j + 2) % segs], dist(i, j, i, j + 2), 2);
     // у оката запас по высоте (как у настоящего рукава): иначе пройма на теле уже выкройки и верх рукава натянут «рожками»
     // запас — в основном снизу (к подмышке); сверху, у плечевой точки, малый: лишняя ткань там стоит «фонариком» над плечом
-    const aw = 0.3 + 0.7 * (1 - Math.cos(j / segs * Math.PI * 2)) / 2, ease = (v, k) => cap && i < 2 ? Math.max(v, (i === 0 ? 0.04 : 0.03) * k * aw) : v;
+    const aw = 0.3 + 0.7 * (1 - Math.cos(cap?.angles?.[j] ?? j / segs * Math.PI * 2)) / 2, ease = (v, k) => cap && i < 2 ? Math.max(v, (i === 0 ? 0.04 : 0.03) * k * aw) : v;
     if (i + 1 < rings) { C.link(a, g[i + 1][j], ease(dist(i, j, i + 1, j), 1), 0); C.link(a, g[i + 1][(j + 1) % segs], ease(dist(i, j, i + 1, j + 1), 1.15), 1); if (i + 2 < rings) C.link(a, g[i + 2][j], dist(i, j, i + 2, j), 2); } }
   const verts = [], uv = [], uvm = [], tris = [];
-  for (let i = 0; i < rings; i++) { const s = len * i / (rings - 1), circ = 2 * Math.PI * rad(s); for (let j = 0; j <= segs; j++) { verts.push(g[i][j % segs]); uv.push(uvf(j / segs, i / (rings - 1))); uvm.push([j / segs * circ, s]); } }
+  for (let i = 0; i < rings; i++) { const s = len * i / (rings - 1), circ = 2 * Math.PI * rad(s); for (let j = 0; j <= segs; j++) { const u=j===segs?1:cap?.angles?cap.angles[j]/(2*Math.PI):j/segs;verts.push(g[i][j % segs]); uv.push(uvf(u, i / (rings - 1))); uvm.push([u * circ, s]); } }
   const W = segs + 1;
   for (let i = 0; i < rings - 1; i++) for (let j = 0; j < segs; j++) { const a = i * W + j, b = a + 1, c = a + W, e = c + 1; if ((i + j) & 1) tris.push(a, c, e, a, e, b); else tris.push(a, c, b, b, c, e); }
-  C.meshes.push({verts, uv, uvm, tris, mat, local: true});
+  const contactSide=verts.map((_,k)=>{const j=k%(segs+1),a=j===segs?0:cap?.angles?.[j]??j/segs*Math.PI*2,s=Math.sin(a);return Math.abs(s)<.15?0:Math.sign(s);});
+  C.meshes.push({verts, uv, uvm, tris, mat, local: true,contactSide});
   return {top: g[0], bottom: g[rings - 1], rings: g};
 }

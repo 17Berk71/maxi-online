@@ -1,6 +1,7 @@
 // MakeHuman CC0 graphical data + our own limited measurement adapter.
 // No MakeHuman application code is included. See assets/makehuman/provenance.json.
 import * as THREE from 'three';
+import {buildUpperSurface} from './triangle-surface.js';
 let DATA,loading;
 export function loadMakeHuman() {
   return loading||(loading=import('./assets/makehuman/body-data.js').then(m=>{DATA=m.default;return DATA;}).catch(e=>{loading=null;throw e;}));
@@ -146,6 +147,7 @@ export function prepareMakeHuman(d) {
   let floor=Infinity;for(let i=1;i<P.length;i+=3)floor=Math.min(floor,P[i]);
   const knee=.285*H;for(let i=1;i<P.length;i+=3)if(P[i]<knee)P[i]=(P[i]-floor)/(knee-floor)*knee;
   d.mhField=bodyColumns(P,DATA.index,H);d.mhCore=bodyColumns(P,DATA.index,H,true);
+  d.mhUpper=buildUpperSurface(P,DATA.index,H);
   d.mhProfile={a:new Float32Array(128),b:new Float32Array(128)};
   for(let v=0;v<P.length/3;v++){
     let arm=0;for(const j of [0,1,2,6,7,8])arm+=DATA.skin[v*12+j];if(arm>.25)continue;
