@@ -28,10 +28,11 @@ export function finishShoulderContact(g,d) {
   const summary=({badTriangles,...report})=>report;
   const raw=g.children.filter(m=>m.userData.cm).map(mesh=>[mesh,mesh.geometry.attributes.position.array.slice()]);
   g.userData.neutralSeams=false;clothProject(g);const before=inspectShoulderContact(g,d);
+  if(!before.bad)return {before:summary(before),after:summary(before),neutralSeamsAccepted:false,toleranceMm:.5};
   const saved=[];g.traverse(mesh=>{if(mesh.isMesh)saved.push([mesh,mesh.geometry.clone()]);});
   for(const [mesh,P] of raw)mesh.geometry.attributes.position.array.set(P);
   g.userData.neutralSeams=true;clothProject(g);const candidate=inspectShoulderContact(g,d);
-  const accepted=candidate.maxDepth<=before.maxDepth+1e-7&&candidate.flaggedAreaM2<=before.flaggedAreaM2+1e-10;
+  const accepted=(candidate.maxDepth<before.maxDepth-1e-7||candidate.flaggedAreaM2<before.flaggedAreaM2-1e-10)&&candidate.maxDepth<=before.maxDepth+1e-7&&candidate.flaggedAreaM2<=before.flaggedAreaM2+1e-10;
   if(!accepted){g.userData.neutralSeams=false;for(const [mesh,geometry] of saved){mesh.geometry.dispose();mesh.geometry=geometry;}}
   else for(const [,geometry] of saved)geometry.dispose();
   return {before:summary(before),after:summary(accepted?candidate:before),neutralSeamsAccepted:accepted,toleranceMm:.5};

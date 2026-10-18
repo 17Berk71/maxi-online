@@ -23,7 +23,7 @@ export function init() {
     addPack, wear(ids, states, sizes) { W.worn = []; ids.forEach(id => putOn(id, true)); Object.entries(states || {}).forEach(([id, st]) => { const it = W.items.find(i => i.id === id); if (it) it.state = st; });
       W.items.forEach(it => { if (it.sizesT) it.size = (sizes && sizes[it.id]) || null; }); persist(); render(); },
     qc: id => QC[id] || null,
-    ready: () => { rebuild(); return built.chain.then(()=>{if(built.error)throw built.error;}); },
+    ready: async () => { for(;;){rebuild();const pending=built.chain;await pending;if(built.error)throw built.error;rebuild();if(built.chain===pending)return;} },
     fitNote: id => { const it = W.items.find(i => i.id === id); return it ? fitNote(it, PREFS.body) + ' | размер ' + ((sizeOf(it, PREFS.body) || {}).name || '-') : ''; },
     setState(id, st) { const it = W.items.find(i => i.id === id); if (it) { it.state = st; persist(); render(); } },
     open: openRoom, close: closeRoom, get isOpen() { return fit.open; },

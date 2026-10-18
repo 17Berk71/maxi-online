@@ -4,6 +4,7 @@ import {makeCollider} from './collider.js';
 import {drapePrepare} from './drape.js';
 import {garmentMesh} from './garment.js';
 import {QC} from './qc.js';
+import {bakeClothFrames} from './cloth-frames.js';
 import {runCloth} from './sim.js';
 import {solveInWorker} from './worker.js';
 import {fit} from './state.js';
@@ -22,5 +23,5 @@ export async function garmentMeshAsync(item, d, key, alive, opts) {
     A = P.anim || null; if (key) cachePut(key, P); }
   if (alive && !alive()) return null;
   if (A) { const n3 = P.length; for (let k = 0; k < A.nf; k++) job.finishPoints(A.F.subarray(k * n3, (k + 1) * n3)); }
-  const g = job.finish(Float32Array.from(P)); if (g && A) g.userData.anim = Object.assign(A, {C: job.C}); return g;
+  const g = job.finish(Float32Array.from(P)); if (g && A) {g.userData.anim = Object.assign(A, {C: job.C});if(!await bakeClothFrames(g,A,alive))return null;} return g;
 }

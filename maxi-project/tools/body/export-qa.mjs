@@ -14,6 +14,8 @@ import {QC} from '../../src/shop/fitting/qc.js';
 import {loadMakeHuman} from '../../src/shop/fitting/makehuman-body.js';
 import {classify} from '../../src/shop/fitting/classify.js';
 import {clothMeshes,clothUpdate} from '../../src/shop/fitting/cloth-mesh.js';
+import {inspectSurfaceIntersections} from '../lab/surface-intersections.mjs';
+import {inspectSurfaceSeams,inspectPatternBoundary} from '../../src/shop/fitting/surface-weld.js';
 import {inspectShoulderContact} from '../../src/shop/fitting/surface-contact.js';
 const ROOT=path.resolve(path.dirname(new URL(import.meta.url).pathname),'../..');
 const packDir=path.join(ROOT,'tools/wardrobe/out'),out=process.env.OUT;
@@ -52,12 +54,13 @@ try{for(const item of items){
   const saved=[];cloth.traverse(m=>{if(m.isMesh)saved.push([m,m.geometry.clone()]);});
   const checks=[];
   try{for(let k=0;k<o.nf;k++){
-   clothUpdate(cloth,o.frames.subarray(k*P.length,(k+1)*P.length));
-   const {badTriangles,...report}=inspectShoulderContact(cloth,d);checks.push({frame:k,...report});
+   const updateStart=performance.now();clothUpdate(cloth,o.frames.subarray(k*P.length,(k+1)*P.length));const updateMs=performance.now()-updateStart;
+   if(process.env.QA_PROGRESS&&k%10===0)console.error(item.id+' display frame '+k+'/'+o.nf+' update '+updateMs.toFixed(1)+' ms');
+   const {badTriangles,...report}=inspectShoulderContact(cloth,d);checks.push({frame:k,updateMs,...report,seams:inspectSurfaceSeams(cloth),...(process.env.EXACT_CONTACT_QA?{intersections:inspectSurfaceIntersections(cloth,d)}:{})});
   }}finally{for(const [m,geometry] of saved){m.geometry.dispose();m.geometry=geometry;}}
   animation.at(-1).surfaceContact=checks;
  }
- if(cloth.userData.contactQA)surfaceContact[item.id]=cloth.userData.contactQA;
+ if(cloth.userData.contactQA){surfaceContact[item.id]=cloth.userData.contactQA;if(process.env.EXACT_CONTACT_QA)surfaceContact[item.id].intersections=inspectSurfaceIntersections(cloth,d);surfaceContact[item.id].seams=inspectSurfaceSeams(cloth);const boundary=inspectPatternBoundary(cloth);surfaceContact[item.id].topology={boundaryLoops:boundary.loops.length,nonmanifold:boundary.nonmanifold,collapsed:boundary.collapsed,irregularBoundaryVertices:boundary.loops.reduce((n,l)=>n+l.degree,0)};}
  groups.push(cloth);commitLayer();
 }}finally{fit.UNDER=fit.UNDERZ=null;fit.PEND=[];fit.PENDZ=[];}
 const meshes=[];

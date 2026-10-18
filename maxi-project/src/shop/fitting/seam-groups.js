@@ -36,7 +36,18 @@ export function projectSeams(C, P, push) {
   for (const group of seamGroups(C)) {
     Q.fill(0); let noArm = true;
     for (const v of group) { for (let k = 0; k < 3; k++) Q[k] += P[v * 3 + k] / group.length; if (sleeve.has(v)) noArm = false; }
-    push(Q, 0, noArm);
+    push(Q, 0, noArm, C.contactSide?.[group[0]]||0);
     for (const v of group) for (let k = 0; k < 3; k++) P[v * 3 + k] = Q[k];
   }
+}
+
+// Unequal panel corner sampling can identify two corners of a tiny face as
+// the same sewn point. Such a face has zero area after sewing; its internal
+// spring also has no physical length and must not fight the seam constraint.
+export function pruneCollapsedSeams(C){
+ const root=Array.from({length:C.pin.length},(_,i)=>i);for(const group of seamGroups(C))for(const i of group)root[i]=group[0];
+ let triangles=0,links=0;
+ for(const m of C.meshes){const tris=[];for(let t=0;t<m.tris.length;t+=3){const face=m.tris.slice(t,t+3),ids=face.map(k=>root[m.verts[k]]);if(new Set(ids).size<3)triangles++;else tris.push(...face);}m.tris=tris;}
+ const edges=[];for(let e=0;e<C.E.length;e+=4){if(root[C.E[e]]===root[C.E[e+1]])links++;else edges.push(C.E[e],C.E[e+1],C.E[e+2],C.E[e+3]);}C.E=edges;
+ return {triangles,links};
 }
