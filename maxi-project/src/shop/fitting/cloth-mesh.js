@@ -121,7 +121,7 @@ export function clothProject(g) {
     for(let i=0;i<pos.array.length;i+=3){const k=i/3,n=part?.verts.length;let shared=part&&k<n&&cl.sewnG.has(part.verts[k]);
       if(cm.surfaceShared)shared=cm.surfaceShared[k];
       else if(part&&k>=n){const edge=cm.edges[k-n];shared=edge&&edge.every(v=>cl.sewnG.has(part.verts[v]));}
-      changed=push(pos.array,i,!cm.local&&!shared,cm.surfaceSide?.[k]||0)||changed;
+      changed=push(pos.array,i,!cm.local&&!shared,cm.oriented?(cm.surfaceSide?.[k]||(g.userData.neutralSeams?2:0)):0)||changed;
     }
     pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
   // Collision finishing changes the displayed triangles after their normals
@@ -183,7 +183,7 @@ export function clothMeshes(C, P, H) {
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('uvm', new THREE.Float32BufferAttribute(uvm, 2)); geo.setAttribute('wrk', new THREE.Float32BufferAttribute(wrk, 2)); geo.setIndex(idx);
     if (!m.mat.vertexColors) { m.mat.vertexColors = true; if (!m.mat.userData.ft) aoEmissive(m.mat); m.mat.needsUpdate = true; }
     const mesh = new THREE.Mesh(geo, m.mat); mesh.castShadow = true; mesh.receiveShadow = true; if (m.role) mesh.userData.role = m.role;
-    mesh.userData.cm = {mi, local:!!m.local, edges: [...mid.entries()].sort((a_, b_) => a_[1] - b_[1]).map(([key]) => [Math.floor(key / 100000), key % 100000])}; g.add(mesh);
+    mesh.userData.cm = {mi, local:!!m.local, oriented:!!C.orientedSleeves, edges: [...mid.entries()].sort((a_, b_) => a_[1] - b_[1]).map(([key]) => [Math.floor(key / 100000), key % 100000])}; g.add(mesh);
     mesh.userData.cm.straight = new Set(mesh.userData.cm.edges.map(([i, j], q) => straight.has(i < j ? i * 100000 + j : j * 100000 + i) ? q : -1).filter(q => q >= 0));
     mesh.userData.cm.surfaceSide=m.verts.map(v=>renderSide[v]);
     for(const [a,b] of mesh.userData.cm.edges){const s=mesh.userData.cm.surfaceSide;s.push(s[a]*s[b]<0?0:Math.sign(s[a]+s[b]));}

@@ -1,13 +1,18 @@
 // Static upper-body triangle surface. Only typed numeric data crosses the worker.
 // The lower body retains its existing collider in this iteration.
 export function buildUpperSurface(P, index, H) {
-  const normals=new Float32Array(P.length),ids=[],centres=new Float32Array(index.length);
+  const normals=new Float32Array(P.length),ids=[],centres=new Float32Array(index.length),midline=[];
   for(let t=0;t<index.length/3;t++){
     const a=index[t*3]*3,b=index[t*3+1]*3,c=index[t*3+2]*3;
     const ux=P[b]-P[a],uy=P[b+1]-P[a+1],uz=P[b+2]-P[a+2],vx=P[c]-P[a],vy=P[c+1]-P[a+1],vz=P[c+2]-P[a+2];
     const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
     for(const v of [a,b,c]){normals[v]+=nx;normals[v+1]+=ny;normals[v+2]+=nz;}
     if(Math.max(P[a+1],P[b+1],P[c+1])<H*.60)continue;
+    const cuts=[];
+    for(const [i,j] of [[a,b],[b,c],[c,a]])if((P[i+2]<=0&&P[j+2]>0)||(P[j+2]<=0&&P[i+2]>0)){
+      const t=-P[i+2]/(P[j+2]-P[i+2]);cuts.push([P[i]+t*(P[j]-P[i]),P[i+1]+t*(P[j+1]-P[i+1])]);
+    }
+    if(cuts.length===2&&Math.hypot(cuts[0][0]-cuts[1][0],cuts[0][1]-cuts[1][1])>1e-10){const l=Math.hypot(nx,ny)||1;midline.push(...cuts[0],...cuts[1],nx/l,ny/l);}
     ids.push(t);for(let k=0;k<3;k++)centres[t*3+k]=(P[a+k]+P[b+k]+P[c+k])/3;
   }
   for(let i=0;i<normals.length;i+=3){const n=Math.hypot(normals[i],normals[i+1],normals[i+2])||1;for(let k=0;k<3;k++)normals[i+k]/=n;}
@@ -21,12 +26,30 @@ export function buildUpperSurface(P, index, H) {
       const left=build(faces.slice(0,half)),right=build(faces.slice(half));nodes[offset+6]=left;nodes[offset+7]=right;
     }return node;
   };
-  build(ids);return {positions:P,normals,index:Uint32Array.from(ordered),nodes:Float32Array.from(nodes)};
+  build(ids);return {positions:P,normals,index:Uint32Array.from(ordered),nodes:Float32Array.from(nodes),midline:Float32Array.from(midline)};
 }
 
 // Self-contained for the existing toString-based Web Worker bundle.
 export function makeUpperMeshCollider(surface,margin) {
   const {positions:P,normals:N,index:I,nodes:B}=surface,stack=[];
+  // A previous closest point lies on this immutable posed surface. Its distance
+  // is a conservative upper bound, so it can prune the BVH without skipping
+  // a nearer contact. Cache keys are weak and never cross garment/pose instances.
+  const contacts=new WeakMap();
+  const neutralProject=(Q,q)=>{
+    const S=surface.midline;if(!S?.length)return false;
+    const x=Q[q],y=Q[q+1],oldZ=Q[q+2];let best=Infinity,cx=0,cy=0,nx=0,ny=0,hits=0;
+    for(let i=0;i<S.length;i+=6){
+      const ax=S[i],ay=S[i+1],bx=S[i+2],by=S[i+3],dx=bx-ax,dy=by-ay;
+      if((ay<=y&&by>y)||(by<=y&&ay>y))if(ax+(y-ay)/(by-ay)*dx>x)hits++;
+      const t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy))),px=ax+t*dx,py=ay+t*dy,dist=(x-px)**2+(y-py)**2;
+      if(dist<best){best=dist;cx=px;cy=py;nx=S[i+4];ny=S[i+5];}
+    }
+    Q[q+2]=0;const inside=(hits&1)!==0,len=Math.sqrt(best);
+    if(!inside&&len>=margin-1e-7)return Math.abs(oldZ)>1e-9;
+    if(len>1e-9){const sign=inside?-1:1;nx=(x-cx)*sign/len;ny=(y-cy)*sign/len;}
+    Q[q]=cx+nx*margin;Q[q+1]=cy+ny*margin;return true;
+  };
   let rayFront,rayBack;
   const bound=(node,x,y,z)=>{
     const o=node*10,dx=Math.max(B[o]-x,0,x-B[o+3]),dy=Math.max(B[o+1]-y,0,y-B[o+4]),dz=Math.max(B[o+2]-z,0,z-B[o+5]);
@@ -51,7 +74,8 @@ export function makeUpperMeshCollider(surface,margin) {
       }
     }return (hits&1)===1;
   };
-  const project=(Q,q,sideHint)=>{
+  const project=(Q,q,sideHint,cacheKey,cacheOffset)=>{
+    if(sideHint===2)return neutralProject(Q,q);
     const x=Q[q],y=Q[q+1],z=Q[q+2];let best=Infinity,bestFace=-1,bu=0,bv=0,bw=0,cx=0,cy=0,cz=0;
     if(sideHint){
       inside(x,y,-Infinity);const shell=sideHint>0?rayFront:rayBack;
@@ -59,6 +83,12 @@ export function makeUpperMeshCollider(surface,margin) {
         if((z-shell)*sideHint<margin-1e-7){Q[q+2]=shell+sideHint*margin;return true;}
         return false;
       }
+    }
+    let cached=contacts.get(cacheKey);
+    if(!cached){cached={points:new Float64Array(cacheKey.length),valid:new Uint8Array(Math.ceil(cacheKey.length/3))};contacts.set(cacheKey,cached);}
+    if(cached.valid[cacheOffset/3]){
+      const dx=x-cached.points[cacheOffset],dy=y-cached.points[cacheOffset+1],dz=z-cached.points[cacheOffset+2];
+      best=(dx*dx+dy*dy+dz*dz)*(1+1e-10)+1e-16;
     }
     stack.length=0;stack.push(0);
     while(stack.length){
@@ -94,6 +124,7 @@ export function makeUpperMeshCollider(surface,margin) {
       }
     }
     if(bestFace<0)return false;
+    cached.points[cacheOffset]=cx;cached.points[cacheOffset+1]=cy;cached.points[cacheOffset+2]=cz;cached.valid[cacheOffset/3]=1;
     const a=I[bestFace*3]*3,b=I[bestFace*3+1]*3,c=I[bestFace*3+2]*3;
     let nx=bu*N[a]+bv*N[b]+bw*N[c],ny=bu*N[a+1]+bv*N[b+1]+bw*N[c+1],nz=bu*N[a+2]+bv*N[b+2]+bw*N[c+2];
     const abx=P[b]-P[a],aby=P[b+1]-P[a+1],abz=P[b+2]-P[a+2],acx=P[c]-P[a],acy=P[c+1]-P[a+1],acz=P[c+2]-P[a+2];
@@ -106,5 +137,5 @@ export function makeUpperMeshCollider(surface,margin) {
     else{const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;}
     Q[q]=cx+margin*nx;Q[q+1]=cy+margin*ny;Q[q+2]=cz+margin*nz;return true;
   };
-  return (Q,q,sideHint=0)=>{let hit=false;for(let i=0;i<5;i++){if(!project(Q,q,sideHint))break;hit=true;}return hit;};
+  return (Q,q,sideHint=0,cacheKey=Q,cacheOffset=q)=>{let hit=false;for(let i=0;i<5;i++){if(!project(Q,q,sideHint,cacheKey,cacheOffset))break;hit=true;}return hit;};
 }
