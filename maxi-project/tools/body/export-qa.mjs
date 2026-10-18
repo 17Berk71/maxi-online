@@ -13,7 +13,8 @@ import {fit} from '../../src/shop/fitting/state.js';
 import {QC} from '../../src/shop/fitting/qc.js';
 import {loadMakeHuman} from '../../src/shop/fitting/makehuman-body.js';
 import {classify} from '../../src/shop/fitting/classify.js';
-import {clothMeshes} from '../../src/shop/fitting/cloth-mesh.js';
+import {clothMeshes,clothUpdate} from '../../src/shop/fitting/cloth-mesh.js';
+import {inspectShoulderContact} from '../../src/shop/fitting/surface-contact.js';
 const ROOT=path.resolve(path.dirname(new URL(import.meta.url).pathname),'../..');
 const packDir=path.join(ROOT,'tools/wardrobe/out'),out=process.env.OUT;
 if(!out)throw new Error('OUT must be a private output directory');fs.mkdirSync(out,{recursive:true});
@@ -33,7 +34,7 @@ const items=ids.map(id=>{
  }return item;
 }).sort((a,b)=>order[classify(a)?.slot]-order[classify(b)?.slot]);
 const started=performance.now();if(b.model==='makehuman')await loadMakeHuman();const d=bodyDims(b);d.armA=armSpread(items,d);
-const {g}=buildBody(b,new THREE.MeshStandardMaterial({color:0xeeeeee}),d),groups=[g],animation=[];
+const {g}=buildBody(b,new THREE.MeshStandardMaterial({color:0xeeeeee}),d),groups=[g],animation=[],surfaceContact={};
 fit.UNDER=[];fit.UNDERZ=[];fit.BOT_YW=0;
 try{for(const item of items){
  const under=fit.UNDER?{a:fit.UNDER.slice(),b:fit.UNDERZ.slice()}:null,job=drapePrepare(item,d,under);
@@ -47,6 +48,16 @@ try{for(const item of items){
  let captured;
  if(process.env.POINT_STAGE)job.finishPoints(P,(name,points)=>{if(name===process.env.POINT_STAGE)captured=points.slice();});
  const cloth=captured?clothMeshes(job.C,captured,d.H):job.finish(P);if(o.frames){const last=o.frames.subarray((o.nf-1)*P.length),record=animation.at(-1);record.endpointMaxDifference=Math.max(...P.map((v,i)=>Math.abs(v-last[i])));if(record.endpointMaxDifference>1e-6)throw new Error('Settling endpoint mismatch '+item.id);}
+ if(o.frames&&process.env.SURFACE_ANIMATION_QA==='1'&&cloth.userData.contactQA){
+  const saved=[];cloth.traverse(m=>{if(m.isMesh)saved.push([m,m.geometry.clone()]);});
+  const checks=[];
+  try{for(let k=0;k<o.nf;k++){
+   clothUpdate(cloth,o.frames.subarray(k*P.length,(k+1)*P.length));
+   const {badTriangles,...report}=inspectShoulderContact(cloth,d);checks.push({frame:k,...report});
+  }}finally{for(const [m,geometry] of saved){m.geometry.dispose();m.geometry=geometry;}}
+  animation.at(-1).surfaceContact=checks;
+ }
+ if(cloth.userData.contactQA)surfaceContact[item.id]=cloth.userData.contactQA;
  groups.push(cloth);commitLayer();
 }}finally{fit.UNDER=fit.UNDERZ=null;fit.PEND=[];fit.PENDZ=[];}
 const meshes=[];
@@ -56,8 +67,8 @@ for(const g of groups){g.updateMatrixWorld(true);g.traverse(m=>{
  const mat=Array.isArray(m.material)?m.material[0]:m.material;
  // Ignore backface-only duplicate shells in the offline geometry renderer.
  if(mat.side===THREE.BackSide)return;
- meshes.push({positions:p,index:geo.index?Array.from(geo.index.array):Array.from({length:P.count},(_,i)=>i),uv:geo.attributes.uv?Array.from(geo.attributes.uv.array):[],texture:mat.map?.userData?.offlinePath,color:mat.map?[255,255,255]:mat.color?.toArray().map(x=>Math.round(x*255))});
+ meshes.push({positions:p,index:geo.index?Array.from(geo.index.array):Array.from({length:P.count},(_,i)=>i),uv:geo.attributes.uv?Array.from(geo.attributes.uv.array):[],texture:mat.map?.userData?.offlinePath,color:mat.map?[255,255,255]:mat.color?.toArray().map(x=>Math.round(x*255)),...(process.env.CONTACT_DEBUG?{contactSide:m.userData.cm?.surfaceSide,role:m.userData.role||'sleeve'}:{})});
 });}
-const result={b,items:items.map(i=>i.id),requestedItems:ids,meshes,measurements:d.mhMeasures||null,animation,qc:Object.fromEntries(ids.map(id=>[id,QC[id]])),elapsedMs:performance.now()-started};
+const result={b,items:items.map(i=>i.id),requestedItems:ids,meshes,measurements:d.mhMeasures||null,animation,surfaceContact,qc:Object.fromEntries(ids.map(id=>[id,QC[id]])),elapsedMs:performance.now()-started};
 fs.writeFileSync(path.join(out,'scene.json'),JSON.stringify(result));
-console.log(JSON.stringify({b,items:ids,measurements:result.measurements,animation,qc:Object.fromEntries(ids.map(id=>[id,{score:QC[id]?.score,ok:QC[id]?.ok}])),elapsedMs:result.elapsedMs}));
+console.log(JSON.stringify({b,items:ids,measurements:result.measurements,animation,surfaceContact,qc:Object.fromEntries(ids.map(id=>[id,{score:QC[id]?.score,ok:QC[id]?.ok}])),elapsedMs:result.elapsedMs}));

@@ -21,6 +21,7 @@ import {patternRecipe} from './families.js';
 import {meshShoulderHeight} from './makehuman-body.js';
 import {projectSeams} from './seam-groups.js';
 import {armholeBoundary} from './armhole-boundary.js';
+import {finishShoulderContact} from './surface-contact.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
@@ -359,10 +360,15 @@ export function drapePrepare(item, d, under) {
   const g = clothMeshes(C, P, H);
   if(d.mhUpper&&k==='tee')refineClothSurface(g);
   g.userData.pattern={family:recipe.id,version:recipe.version,status:'prototype',review:!!recipe.review};
-  g.userData.surfacePush=capSurfaceCollider(d);clothProject(g);
+  g.userData.surfacePush=capSurfaceCollider(d);
+  if(d.mhUpper&&k==='tee')g.userData.contactQA=finishShoulderContact(g,d);else clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
-  try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB); g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }
+  try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB);
+    if(g.userData.contactQA){const report=g.userData.contactQA.after,ok=report.bad===0;
+      QC[item.id].checks.push({name:'поверхность у плеч',ok,val:report.bad+' из '+report.tested+' центров; глубина '+(report.maxDepth*1000).toFixed(2)+' мм',pen:ok?0:20,why:'поверхность одежды пересекает тело между вершинами'});
+      if(!ok){QC[item.id].score=Math.max(0,QC[item.id].score-20);QC[item.id].ok=false;}
+    }g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }
   return g; };
   seamBend(C);
   return {C, fab, yPin, d, under, margin: fab.margin || 0, sleeveChains:chains, finishPoints, finish, run: () => finish(runCloth(C, makeCollider(d, under, fab.margin), fab, yPin))};
