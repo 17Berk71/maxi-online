@@ -79,6 +79,13 @@ No original garment photograph or texture was changed by this integration.
 
 ## Next iteration
 
+Stage 12 adds triangle-based upper-body contact and matched tee cap topology;
+see [tee-shoulders-stage12.md](tee-shoulders-stage12.md) for current evidence and
+remaining defects. The earlier numeric-columns-only worker description is now
+superseded for the upper body: its BVH includes numeric collision positions,
+normals and triangle indices. Render objects are still not cloned. MakeHuman
+remains opt-in pending remaining visual and performance acceptance gates.
+
 ### Repeat verification — 2026-10-15
 
 The saved pilot was recovered and rechecked: all 28 unit tests and the Vite

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import {armX, shoulderAxes} from './body.js';
 import {fabricType, photoMat} from './cloth-material.js';
-import {clothMeshes, clothProject} from './cloth-mesh.js';
+import {clothMeshes, clothProject,refineClothSurface} from './cloth-mesh.js';
 import {capSurfaceCollider} from './arm-cap-collision.js';
 import {addHood, addStand} from './collars.js';
 import {DRAPE_ON, legR, makeCollider} from './collider.js';
@@ -20,6 +20,7 @@ import {fit} from './state.js';
 import {patternRecipe} from './families.js';
 import {meshShoulderHeight} from './makehuman-body.js';
 import {projectSeams} from './seam-groups.js';
+import {armholeBoundary} from './armhole-boundary.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
@@ -173,19 +174,33 @@ export function drapePrepare(item, d, under) {
       const rP = Math.max(r0 * 0.95, armRad(d, 0.1) + 0.022), rC = armRad(d, Math.min(1, M.SL / j.L)) + 0.012;
       const radS = item.puff ? s => { const u = s / M.SL; return u < 0.82 ? rP * (1 - 0.18 * u * u) : rP * 0.88 + (rC - rP * 0.88) * Math.min(1, (u - 0.82) / 0.12); }
         : s => s < sB ? r0 + (rB - r0) * (s / sB) * (s / sB) * (3 - 2 * s / sB) : rB + (r1 - rB) * Math.pow((s - sB) / Math.max(0.01, M.SL - sB), 0.8);
-      const tube = addTube(C, S0, D, M.SL, radS, 20, Math.max(6, Math.round(M.SL / 0.025)), mS, side, sUV, cap);
-      const ring = tube.top, segs = ring.length;
       const loop = (P_, front) => P_.pts.filter(p => p.edge && p.lab === 'arm' && Math.sign(p.x) === side).sort((a, b) => a.y - b.y).map(p => p.g);
-      const lf = fronts.flatMap(pf => pf.pts).filter(p => p.edge && p.lab === 'arm' && Math.sign(p.x) === side).sort((a, b) => a.y - b.y).map(p => p.g), lb = loop(pb, false);
+      let lf = fronts.flatMap(pf => pf.pts).filter(p => p.edge && p.lab === 'arm' && Math.sign(p.x) === side).sort((a, b) => a.y - b.y).map(p => p.g), lb = loop(pb, false);
       // плечевая точка (угол детали, метка «плечо») — тоже в шов оката: иначе угол не пришит к рукаву, торчит треугольником,
       // а над рукавом видна щель
       const corner = pts_ => { let best = null, bs = -1e9; for (const p of pts_) { if (!p.edge || Math.sign(p.x) !== side || (p.lab !== 'shoulder' && p.lab !== 'arm') || p.y > M.SD + cell * 1.5) continue; const sc = Math.abs(p.x) - 0.5 * p.y; if (sc > bs) { bs = sc; best = p; } } return best; };
       [[fronts.flatMap(pf => pf.pts), lf], [pb.pts, lb]].forEach(([pts_, L_]) => { const c = corner(pts_); if (c && !L_.includes(c.g)) L_.unshift(c.g); });
+      if(d.mhUpper&&k==='tee'){
+        lf=armholeBoundary(C,fronts[0],side,M.S/2,M.SD,M.W/2,M.AD)||lf;
+        lb=armholeBoundary(C,pb,side,M.S/2,M.SD,M.W/2,M.AD)||lb;
+      }
+      // Match the actual armhole boundary rather than rounding several panel
+      // vertices onto one of twenty tube samples. No gathering is intended on a tee.
+      const matchedCap=!!d.mhUpper&&k==='tee',count=matchedCap?lf.length+lb.length-2:20;
+      if(matchedCap)C.orientedSleeves=true;
+      if(matchedCap)cap.angles=Array.from({length:count},(_,j)=>j<=lf.length-1?Math.PI*j/(lf.length-1):Math.PI+Math.PI*(j-lf.length+1)/(lb.length-1));
+      const tube = addTube(C, S0, D, M.SL, radS, count, Math.max(6, Math.round(M.SL / 0.025)), mS, side, sUV, cap);
+      const ring = tube.top, segs = ring.length;
+      if(matchedCap){C.sector||=[];for(const row of tube.rings)row.forEach((v,j)=>{const z=Math.sin(cap.angles[j]);if(Math.abs(z)>.15)C.sector.push([v,Math.sign(z),0,0]);});}
       // спереди: угол 0 (плечо) → π (подмышка) через π/2 (перед); сзади: через 3π/2
-      lf.forEach((g_, t) => { const a = Math.PI * (lf.length > 1 ? t / (lf.length - 1) : 0.5); C.seams.push([g_, ring[Math.round(a / (2 * Math.PI) * segs) % segs]]); });
-      lb.forEach((g_, t) => { const a = 2 * Math.PI - Math.PI * (lb.length > 1 ? t / (lb.length - 1) : 0.5); C.seams.push([g_, ring[Math.round(a / (2 * Math.PI) * segs) % segs]]); });
-      if (lf.length > 1 && lb.length > 1) chains.push({ring, lf, lb, rings: tube.rings});
+      lf.forEach((g_, t) => { const a = Math.PI * (lf.length > 1 ? t / (lf.length - 1) : 0.5); C.seams.push([g_, ring[matchedCap?t:Math.round(a / (2 * Math.PI) * segs) % segs]]); });
+      lb.forEach((g_, t) => { const a = 2 * Math.PI - Math.PI * (lb.length > 1 ? t / (lb.length - 1) : 0.5); C.seams.push([g_, ring[matchedCap?(segs-t)%segs:Math.round(a / (2 * Math.PI) * segs) % segs]]); });
+      if (lf.length > 1 && lb.length > 1) chains.push({ring, lf, lb, rings: tube.rings,matchedCap});
     });
+    if(d.mhUpper&&k==='tee'){
+      C.sector||=[];for(const panel of fronts)for(const p of panel.pts)C.sector.push([p.g,1,0,0]);
+      for(const p of pb.pts)C.sector.push([p.g,-1,0,0]);
+    }
     if (hooded) addHood(C, d, M, fronts, pb, mS, hoodUp, cell, ownS ? null : sUV);
     else if (item.stand) addStand(C, d, yTop, fronts, pb, mF, aF);
     // отложной воротник (поло, рубашка) — объёмной деталью по горловине на показе (collar3d.js)
@@ -317,26 +332,32 @@ export function drapePrepare(item, d, under) {
     C.sector = []; [1, -1].forEach(sg => { const sp_ = spansOf(polyOf(sg)); ['f', 'b'].forEach(k => parts[k + sg].pts.forEach(p => { if (p.y <= R + cell) return; const iv = sp_(p.y); if (!iv) return;
       const inn = sg > 0 ? iv[0] : iv[1], out = sg > 0 ? iv[1] : iv[0], t = (p.x - inn) / ((out - inn) || 1e-4); C.sector.push([p.g, k === 'f' ? 1 : -1, t < 0.3 ? -sg : t > 0.7 ? sg : 0, sg * (d.legX + 0.01)]); })); });
   }
-  const finishPoints = P => {
+  const finishPoints = (P, observe) => {
+  observe?.('solver',P);
   // окат рукава после расчёта кладём точно на край проймы (между сшитыми точками кольцо рукава иначе отходит — видна щель)
   if (!item.puff) shoulderRound(C, P, chains, push);   // плечевая точка без острого угла (до укладки оката на пройму); у рукава-фонарика сборка на плече — задумана
-  chains.forEach(({ring, lf, lb, rings}) => { const segs = ring.length;
+  observe?.('round',P);
+  chains.forEach(({ring, lf, lb, rings,matchedCap}) => { const segs = ring.length,split=matchedCap?lf.length-1:segs/2;
     // концы проймы (у плеча и под мышкой) у переда и спинки — одна точка: сводим к середине
     [[lf[0], lb[0]], [lf[lf.length - 1], lb[lb.length - 1]]].forEach(([a, b]) => { for (let k = 0; k < 3; k++) { const m = (P[a * 3 + k] + P[b * 3 + k]) / 2; P[a * 3 + k] = m; P[b * 3 + k] = m; } });
     const along = (L, t) => { const f = t * (L.length - 1), i = Math.min(L.length - 2, Math.floor(f)), w = f - i, a = L[i] * 3, b = L[i + 1] * 3; return [0, 1, 2].map(k => P[a + k] * (1 - w) + P[b + k] * w); };
     // те же пары, что у швов: точка проймы k ↔ вершина кольца idx(k); между ними — по длине проймы (без сдвига вдоль шва)
-    const idxF = k => Math.round(k / (lf.length - 1) * segs / 2), idxB = k => Math.round((2 * Math.PI - Math.PI * k / (lb.length - 1)) / (2 * Math.PI) * segs);
+    const idxF = k => matchedCap?k:Math.round(k / (lf.length - 1) * segs / 2), idxB = k => matchedCap?segs-k:Math.round((2 * Math.PI - Math.PI * k / (lb.length - 1)) / (2 * Math.PI) * segs);
     const param = (j, n, idx) => { for (let k = 0; k < n - 1; k++) { const a = idx(k), b = idx(k + 1), lo = Math.min(a, b), hi = Math.max(a, b); if (j >= lo && j <= hi) return (k + (hi === lo ? 0 : (a < b ? (j - a) / (b - a) : (a - j) / (a - b)))) / (n - 1); } return null; };
-    for (let j = 0; j <= segs; j++) { const t = j <= segs / 2 ? param(j, lf.length, idxF) : param(j, lb.length, idxB); if (t == null) continue; const q = along(j <= segs / 2 ? lf : lb, t), r = ring[j % segs] * 3; P[r] = q[0]; P[r + 1] = q[1]; P[r + 2] = q[2]; }
+    for (let j = 0; j <= segs; j++) { const t = j <= split ? param(j, lf.length, idxF) : param(j, lb.length, idxB); if (t == null) continue; const q = along(j <= split ? lf : lb, t), r = ring[j % segs] * 3; P[r] = q[0]; P[r + 1] = q[1]; P[r + 2] = q[2]; }
     // верх рукава вдоль руки сглаживаем: запас оката иначе встаёт «погоном» над плечом
     const G = rings || []; for (let pass = 0; pass < 4; pass++) for (let i = 1; i < Math.min(4, G.length - 1); i++) for (let j = 0; j < segs; j++) { const a = G[i - 1][j] * 3, b = G[i][j] * 3, c = G[i + 1][j] * 3;
       for (let k = 0; k < 3; k++) P[b + k] += ((P[a + k] + P[c + k]) / 2 - P[b + k]) * 0.6; push(P, b); } });
   C.ringSewn = chains.flatMap(ch => ch.ring);   // всё верхнее кольцо рукава вшито в пройму (в швах — только часть точек)
+  observe?.('cap',P);
   if (item.shape?.sleeveFinish === 'relax-v1') relaxSleeves(C, P, chains, push);
+  observe?.('relax',P);
   if (d.mhField) projectSeams(C, P, push);
+  observe?.('seams',P);
   return P; };
   const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);
+  if(d.mhUpper&&k==='tee')refineClothSurface(g);
   g.userData.pattern={family:recipe.id,version:recipe.version,status:'prototype',review:!!recipe.review};
   g.userData.surfacePush=capSurfaceCollider(d);clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
@@ -344,6 +365,6 @@ export function drapePrepare(item, d, under) {
   try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB); g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }
   return g; };
   seamBend(C);
-  return {C, fab, yPin, d, under, margin: fab.margin || 0, finishPoints, finish, run: () => finish(runCloth(C, makeCollider(d, under, fab.margin), fab, yPin))};
+  return {C, fab, yPin, d, under, margin: fab.margin || 0, sleeveChains:chains, finishPoints, finish, run: () => finish(runCloth(C, makeCollider(d, under, fab.margin), fab, yPin))};
 }
 export function drapeTemplate(item, d, under) { const j = drapePrepare(item, d, under); return j ? j.run() : null; }

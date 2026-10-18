@@ -1,7 +1,10 @@
 // Worker-safe lookup over front/back columns rasterized from the visible body.
 // Four-neighbour support is conservative by at most one grid cell (~7 mm).
+import {makeUpperMeshCollider} from './triangle-surface.js';
 export function makeMeshBodyCollider(d,under,margin) {
   const full=d.mhField,core=d.mhCore,m=.007+(margin||0),H=d.H;
+  const upper=d.mhUpper?makeUpperMeshCollider(d.mhUpper,m):null;
+  const upperPoint=new Float64Array(3);
   let front,back;
   const sample=(f,x,y)=>{
     const fx=(x-f.xmin)/f.step,fy=(y-f.ymin)/f.step,ix=Math.floor(fx),iy=Math.floor(fy);
@@ -12,11 +15,14 @@ export function makeMeshBodyCollider(d,under,margin) {
       if(f.front[i]>=f.back[i]){front=Math.max(front,f.front[i]);back=Math.min(back,f.back[i]);}
     }return front>=back;
   };
-  const push=(P,i,noArm)=>{
+  const push=(P,i,noArm,sideHint=0)=>{
     let x=P[i],y=P[i+1],z=P[i+2],hit=false;
     if(y<.004){y=.004;hit=true;}
     const f=noArm&&y<d.mhArmY-.07?core:full;
-    if(sample(f,x,y)&&z<front+m&&z>back-m){
+    if(upper&&y>H*.63){
+      upperPoint[0]=x;upperPoint[1]=y;upperPoint[2]=z;hit=upper(upperPoint,0,Math.abs(x)>.10*H&&y<.81*H?sideHint:0)||hit;
+      x=upperPoint[0];y=upperPoint[1];z=upperPoint[2];
+    }else if(sample(f,x,y)&&z<front+m&&z>back-m){
       const up=front+m-z,down=z-(back-m);let distance=Math.min(up,down),axis=2,dir=up<down?1:-1;
       // Front/back columns also need a lateral escape: a sewn side seam near
       // z=0 must move to the flank, not split between front and back surfaces.
