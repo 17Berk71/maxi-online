@@ -6,6 +6,7 @@ import {drapePrepare} from '../../src/shop/fitting/drape.js';
 import {PTEX} from '../../src/shop/fitting/photo-texture.js';
 import {bodyDims} from '../../src/shop/fitting/body.js';
 import {loadMakeHuman} from '../../src/shop/fitting/makehuman-body.js';
+import {inspectPatternBoundary} from '../../src/shop/fitting/surface-weld.js';
 import {refineClothSurface,clothUpdate} from '../../src/shop/fitting/cloth-mesh.js';
 
 test('triangle contact on a sloped shoulder follows its outward normal without axis jumps',()=>{
@@ -62,6 +63,7 @@ test('tee armholes match cap topology without rounding several contour points on
         for(let k=1;k<chain.length;k++){const a=chain[k-1],b=chain[k];assert.ok(edgeSet.has(a<b?a+':'+b:b+':'+a));}
       }
     }
+    const topology=inspectPatternBoundary({userData:{cloth:{C:job.C}}});assert.equal(topology.loops.length,4,'only neck, hem and two cuffs may stay open');assert.equal(topology.nonmanifold,0);assert.equal(topology.collapsed,0);assert.ok(topology.loops.every(loop=>loop.degree===0));
     assert.equal(job.C.meshes.find(m=>m.role==='front').uv.length>0,true);
   }
   delete PTEX[url];

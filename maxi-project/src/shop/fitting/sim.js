@@ -10,6 +10,7 @@ export function motionAt(u) { const w = Math.sin(Math.PI * u), e = w * w;
   return {yaw: 0.5 * Math.sin(2 * Math.PI * u) * Math.pow(w, 0.6), arm: 0.3 * e, dy: -0.022 * Math.sin(3 * Math.PI * u) * e}; }
 // opt.rec — записать кадры (каждые 3 шага с момента, когда вещь сшита) и добавить фазу движения (MOT шагов) и успокоения
 export function runCloth(C, push, fab, yPin, opt) {
+  if(C.contactSide){const rawPush=push;push=(P,q,noArm)=>rawPush(P,q,noArm,C.contactSide[q/3]);push.setArm=rawPush.setArm;}
   const n = C.pin.length, P = new Float32Array(C.P), V = new Float32Array(n * 3), prev = new Float32Array(n * 3), E = C.E, S = C.seams, hit = new Uint8Array(n);
   const NA = C.noArm || (C.meshes ? armFlags(C) : null);
   const TH = C.tether && C.tether.length ? C.tether : null;
@@ -50,7 +51,7 @@ export function runCloth(C, push, fab, yPin, opt) {
       for (let e = 0; e < E.length; e += 4) {
         const i = E[e], j = E[e + 1], rest = E[e + 2], kind = E[e + 3], a3 = i * 3, b3 = j * 3;
         const dx = P[b3] - P[a3], dy = P[b3 + 1] - P[a3 + 1], dz = P[b3 + 2] - P[a3 + 2], len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6, diff = len - rest;
-        const k = kind === 2 ? (diff > 0 || fab.mem ? fab.bend : fab.bend * 0.4) : (diff > 0 ? fab.stretch : kind === 3 ? (fab.compW || 0.5) : fab.comp); if (!k) continue;
+        const k = kind === 4 ? .85 : kind === 2 ? (diff > 0 || fab.mem ? fab.bend : fab.bend * 0.4) : (diff > 0 ? fab.stretch : kind === 3 ? (fab.compW || 0.5) : fab.comp); if (!k) continue;
         const c = k * diff / len * 0.5, wa = C.pin[i] ? 0 : 1, wb = C.pin[j] ? 0 : 1;
         P[a3] += dx * c; P[a3 + 1] += dy * c * wa; P[a3 + 2] += dz * c; P[b3] -= dx * c; P[b3 + 1] -= dy * c * wb; P[b3 + 2] -= dz * c;
       }
@@ -60,7 +61,7 @@ export function runCloth(C, push, fab, yPin, opt) {
         if (l > r) { const k = (l - r) / l; P[i] -= dx * k; P[i + 1] -= dy * k; P[i + 2] -= dz * k; } }
       if (C.hold && s < sewEnd + 20) for (const i of C.hold) P[i * 3] = HX[i * 3];
       if (C.mid) for (const [a, b] of C.mid) { const m = (P[a * 3] + P[b * 3]) / 2; P[a * 3] -= m; if (b !== a) P[b * 3] -= m; }
-      if (C.sector && s > sewEnd * 0.6) for (const [i, fz, sx_, cx] of C.sector) { const q = i * 3;
+      if (C.sector && s > sewEnd * 0.6) for (const [i, fz, sx_, x0, slope=0, y0=0] of C.sector) { const q = i * 3, cx=x0+(y0-P[q+1])*slope;
         if (P[q + 2] * fz < -0.005) P[q + 2] += (-0.005 * fz - P[q + 2]) * 0.3;
         if (sx_ && (P[q] - cx) * sx_ < 0) P[q] += (cx - P[q]) * 0.3; }
       if (C.half && s > sewEnd * 0.6) for (const [i, sg] of C.half) if (P[i * 3] * sg < 0.004) P[i * 3] += (sg * 0.004 - P[i * 3]) * 0.3;

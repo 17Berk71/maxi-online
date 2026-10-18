@@ -74,6 +74,7 @@ export function makeUpperMeshCollider(surface,margin) {
       }
     }return (hits&1)===1;
   };
+  let clearance=NaN;
   const project=(Q,q,sideHint,cacheKey,cacheOffset)=>{
     if(sideHint===2)return neutralProject(Q,q);
     const x=Q[q],y=Q[q+1],z=Q[q+2];let best=Infinity,bestFace=-1,bu=0,bv=0,bw=0,cx=0,cy=0,cz=0;
@@ -132,10 +133,12 @@ export function makeUpperMeshCollider(surface,margin) {
     // Interior face projections have an unambiguous oriented half-space. Use
     // ray parity only at edges/vertices, where a smoothed normal is ambiguous.
     const len=Math.sqrt(best),sign=Math.min(bu,bv,bw)>1e-6?(faceSign<0?-1:1):(inside(x,y,z)?-1:1);
+    clearance=sign*len;
     if(sign>=0&&len>=margin-1e-7)return false;
     if(len>1e-9){const s=(sign<0?-1:1)/len;nx=(x-cx)*s;ny=(y-cy)*s;nz=(z-cz)*s;}
     else{const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;}
     Q[q]=cx+margin*nx;Q[q+1]=cy+margin*ny;Q[q+2]=cz+margin*nz;return true;
   };
-  return (Q,q,sideHint=0,cacheKey=Q,cacheOffset=q)=>{let hit=false;for(let i=0;i<5;i++){if(!project(Q,q,sideHint,cacheKey,cacheOffset))break;hit=true;}return hit;};
+  const push=(Q,q,sideHint=0,cacheKey=Q,cacheOffset=q)=>{let hit=false;for(let i=0;i<5;i++){clearance=NaN;const moved=project(Q,q,sideHint,cacheKey,cacheOffset);if(i===0)push.clearance=clearance;if(!moved)break;hit=true;}return hit;};
+  return push;
 }

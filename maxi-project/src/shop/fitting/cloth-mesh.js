@@ -8,6 +8,7 @@ import {pleatGrid, pleatUpdate, pleatSmooth, liningBand, liningUpdate} from './p
 import {clothify, FT} from './cloth-material.js';
 import {LIN} from './common.js';
 import {fit} from './state.js';
+import {shareSurfaceNormals} from './surface-weld.js';
 import {shareSeamValues,seamGroups} from './seam-groups.js';
 
 function clothAO(C, P, N, n) {
@@ -124,6 +125,7 @@ export function clothProject(g) {
       changed=push(pos.array,i,!cm.local&&!shared,cm.oriented?(cm.surfaceSide?.[k]||(g.userData.neutralSeams?2:0)):0)||changed;
     }
     pos.needsUpdate=true;m.geometry.computeBoundingSphere();});
+  if(g.userData.resolveSurface)changed=g.userData.resolveSurface()||changed;
   // Collision finishing changes the displayed triangles after their normals
   // were calculated. Rebuild lighting from that final surface, also in playback.
   if(changed&&g.userData.cloth){
@@ -140,6 +142,7 @@ export function clothProject(g) {
       normal.needsUpdate=true;
     }
   }
+  if(g.userData.cloth)shareSurfaceNormals(g);
   g.children.forEach(m=>{if(m.userData.edge)edgeUpdate(m);});
 }
 export function clothMeshes(C, P, H) {
@@ -158,6 +161,7 @@ export function clothMeshes(C, P, H) {
   const renderSide=new Int8Array(n);
   if(C.orientedSleeves)C.meshes.forEach(m=>m.verts.forEach((v,k)=>{renderSide[v]=m.role==='front'?1:m.role==='back'?-1:m.contactSide?.[k]||0;}));
   for(const group of seamGroups(C)){const signs=new Set(group.map(v=>renderSide[v]));if(signs.size>1)for(const v of group)renderSide[v]=0;}
+  if(C.contactSide)renderSide.set(C.contactSide);
   C.meshes.forEach((m, mi) => {
     if (m.relief && m.relief.rc) {   // складки формой (pleats.js): своя мелкая сетка
       if (!m.mat.vertexColors) { m.mat.vertexColors = true; m.mat.needsUpdate = true; }
