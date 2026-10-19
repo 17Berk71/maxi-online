@@ -8,9 +8,10 @@ import{bakeClothFrames,showClothFrame}from'../../src/shop/fitting/cloth-frames.j
 import{inspectShoulderContact}from'../../src/shop/fitting/surface-contact.js';
 function mesh(P,I=[0,1,2]){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(Array.from(P).flatMap((v,k)=>k%3===2?[]:[v]),2));geo.setIndex(I);geo.computeVertexNormals();const m=new THREE.Mesh(geo);m.userData.cm={mi:0,edges:[],surfaceSide:[1,1,1]};return m;}
 
-test('exact audit catches a body crossing even when the cloth triangle centre is outside',()=>{
+test('long-edge acceptance and independent exact audit catch a crossing whose triangle centre is outside',()=>{
  const body=new THREE.BoxGeometry(.2,.2,.2);body.translate(.25,1.3,0);const d={H:1.7,mhUpper:buildUpperSurface(body.attributes.position.array,body.index.array,1.7)},g=new THREE.Group();g.add(mesh([.1,1.25,0,.4,1.25,0,.8,1.5,0]));
- assert.equal(inspectShoulderContact(g,d).bad,0);assert.ok(inspectSurfaceIntersections(g,d).intersectingPairs>0);
+ const centre=new Float64Array([(.1+.4+.8)/3,(1.25+1.25+1.5)/3,0]),copy=centre.slice();makeUpperMeshCollider(d.mhUpper,0)(copy,0);assert.deepEqual(copy,centre);
+ assert.ok(inspectShoulderContact(g,d).bad>0);assert.ok(inspectSurfaceIntersections(g,d).intersectingPairs>0);
 });
 
 test('topological seam welding shares every subdivision normal without joining nearby unrelated cloth',()=>{
@@ -52,4 +53,13 @@ test('prepared playback retains exact corrected geometry and lighting, and resto
  clothUpdate(g,P);const final=m.geometry.attributes.position.array.slice(),uv=m.geometry.attributes.uv.array.slice();assert.equal(await bakeClothFrames(g,A),true);assert.deepEqual(m.geometry.attributes.position.array,final);
  for(const k of [2,0,1]){showClothFrame(g,k);assert.deepEqual(m.geometry.attributes.position.array,expected[k].P);assert.deepEqual(m.geometry.attributes.normal.array,expected[k].N);assert.deepEqual(m.geometry.attributes.uv.array,uv);}
  assert.ok(g.userData.bakedClothFrames.bytes>0);
+});
+
+test('dense edge contact resolves a narrow crossing between fixed face samples',()=>{
+ const body=new THREE.BoxGeometry(.025,.03,.06);body.translate(.18,1.25,0);
+ const d={H:1.7,mhUpper:buildUpperSurface(body.attributes.position.array,body.index.array,1.7)},g=new THREE.Group(),P=[.1,1.25,.02,.4,1.25,.02,.8,1.5,.02],m=mesh(P);g.add(m);
+ g.userData.cloth={C:{pin:[0,0,0],seams:[],meshes:[{verts:[0,1,2]}]}};
+ const push=makeUpperMeshCollider(d.mhUpper,.007);g.userData.surfacePush=(P,q,noArm,side)=>push(P,q,side);
+ assert.ok(inspectSurfaceIntersections(g,d).intersectingPairs>0);
+ makeSurfaceResolver(g,d)();assert.equal(inspectSurfaceIntersections(g,d).intersectingPairs,0);
 });

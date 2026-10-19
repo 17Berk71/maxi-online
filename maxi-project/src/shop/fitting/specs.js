@@ -49,7 +49,8 @@ export function topSpec(item, d) {
   // на вешалке вещь сужается (калибровка — футболка Zolla лёжа и на вешалке); у вязаных и плотных — меньше
   const hk = !sh.hang ? 1 : k === 'jacket' ? 0.86 : sh.merged ? 0.8 : 0.72;
   // рукава висят вдоль корпуса и закрывают боковые швы: корпус ≈ 85% общей ширины (у пиджака плечи жёсткие — 92%)
-  let Fs = sh.merged && sh.full ? new Array(16).fill(sh.full * (k === 'jacket' ? 0.92 : 0.85) / hk * L) : cleanTail(sh.tw || [0.62]).map(v => v / hk * L);
+  const profile = sh.tw?.length > 1 ? sh.tw : new Array(16).fill(sh.tw?.[0] ?? .62);
+  let Fs = sh.merged && sh.full ? new Array(16).fill(sh.full * (k === 'jacket' ? 0.92 : 0.85) / hk * L) : cleanTail(profile).map(v => v / hk * L);
   // платье/пальто на модели: руки вдоль корпуса — по ширине с рукавами силуэт прямой. Сам силуэт вещи (без рук) — в сетке фото:
   // ширина центральной полосы по строкам от подмышки до низа (приталенное, клёш)
   const gp = (k === 'dress' || k === 'coat') && sh.merged ? photoProfile(item) : null;

@@ -7,7 +7,7 @@ export function buildUpperSurface(P, index, H) {
     const ux=P[b]-P[a],uy=P[b+1]-P[a+1],uz=P[b+2]-P[a+2],vx=P[c]-P[a],vy=P[c+1]-P[a+1],vz=P[c+2]-P[a+2];
     const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
     for(const v of [a,b,c]){normals[v]+=nx;normals[v+1]+=ny;normals[v+2]+=nz;}
-    if(Math.max(P[a+1],P[b+1],P[c+1])<H*.60)continue;
+    if(Math.max(P[a+1],P[b+1],P[c+1])<H*.40)continue;
     const cuts=[];
     for(const [i,j] of [[a,b],[b,c],[c,a]])if((P[i+2]<=0&&P[j+2]>0)||(P[j+2]<=0&&P[i+2]>0)){
       const t=-P[i+2]/(P[j+2]-P[i+2]);cuts.push([P[i]+t*(P[j]-P[i]),P[i+1]+t*(P[j+1]-P[i+1])]);

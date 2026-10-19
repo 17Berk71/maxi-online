@@ -24,6 +24,7 @@ import {armholeBoundary} from './armhole-boundary.js';
 import {makeSurfaceResolver} from './surface-resolve.js';
 import {bindNeckline} from './neckline.js';
 import {finishShoulderContact} from './surface-contact.js';
+import {closeHoodJunctions} from './seam-junctions.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
@@ -45,7 +46,7 @@ export function drapePrepare(item, d, under) {
   const corrected = item.photoLight === 'corrected-v1';
   const ft = fabricType(item), flatT = !!item.pleats, mF = photoMat(item.tex.frontCut || item.tex.front, base, ft, flatT, corrected), mB = photoMat(item.tex.backCut || item.tex.back || item.tex.front, base, ft, flatT, corrected);
   [mF, mB].forEach(m => { m.side = THREE.DoubleSide; });
-  const zo = 0.21 * d.s, cell = (typeof window !== 'undefined' && window.__cell) || (d.mhUpper&&k==='tee'?0.012:0.022);
+  const zo = 0.21 * d.s, cell = (typeof window !== 'undefined' && window.__cell) || (d.mhUpper&&top?0.012:0.022);
   let yPin = 0, info = {}, cover = null;
   if (top) {
     const M = topMeasures(item, d), yTop = 0.858 * H + 0.012; info = M;
@@ -121,6 +122,9 @@ export function drapePrepare(item, d, under) {
       return {P: pts.map(([x, y]) => [sgn * (x + 0.004), y]), L: labs}; };
     // края по тому, какого соседа нет: сверху — плечо (или горловина у середины), сбоку выше подмышки — пройма, ниже — бок, снизу — низ
     const cls = nd => (p, m) => {
+      // A curved hem can sit well above the centre hem. Keep its contour
+      // label: stitching these staircase vertices pinches front and back together.
+      if (flare && p.lab === 'hem') return 'hem';
       if (m.down && p.y > M.L - cell * 1.5 && !(m.side && p.y > M.AD)) return 'hem';   // нижний угол бока — в шов, иначе у подола «крылышко»
       if (Math.abs(p.x) < M.NW / 2 + cell * 0.6 && p.y < nd + cell) return 'neck';
       if (m.side && p.y > M.SD - 0.01 && p.y < M.AD + cell * 0.5 && Math.abs(p.x) > M.S / 2 - cell) return 'arm';
@@ -132,7 +136,7 @@ export function drapePrepare(item, d, under) {
     const fronts = open ? [-1, 1].map(sg => { const Hf = mkHalf(M.ND, sg); return addPanel(C, Hf.P, Hf.L, cell, placeF, uvF, mF, 'front', null, clsF); })
       : [addPanel(C, F.P, F.L, cell, placeF, uvF, mF, 'front', null, cls(M.ND))];
     const pb = addPanel(C, B.P, B.L, cell, (x, y) => [x, yTop - y, -zo], uvT(aB, true, dr.back || dr.front, M.NDb), mB, 'back', null, cls(M.NDb));
-    if(d.mhUpper&&k==='tee'){C.neckline=fronts.concat([pb]).map(panel=>bindNeckline(C,panel));}
+    if(d.mhUpper&&top){C.neckline=fronts.concat([pb]).map(panel=>bindNeckline(C,panel));}
     // швы: плечи и бока — перед со спинкой (ближайшая точка края спинки с той же меткой)
     // угол плеча (плечевая точка) может попасть в метку «пройма» у одной детали и «плечо» у другой — шьём и его, иначе на плече дырка
     const lb_ = q => q.lab === 'arm' && q.y < M.SD + cell * 0.9 ? 'shoulder' : q.lab;
@@ -155,8 +159,10 @@ export function drapePrepare(item, d, under) {
     // нет отдельного фото рукава — ткань берём с бока корпуса на фото (узкая полоса): цвет и фактура как у корпуса
     // на фото с человеком «рукав» с бока корпуса — это рука, фон и край вещи (пятна и треугольник на рукаве): ткань рукава
     // берём с чистого места переда — между серединой (планка, пуговицы) и боком, ниже груди
-    const merged = item.shape && item.shape.merged, worn = item.shape && item.shape.worn, ownS = item.tex.sleeve && !merged && !worn, j = armJ(d), sTex = ownS ? item.tex.sleeve : item.tex.frontCut || item.tex.front, mS = photoMat(sTex, base, ft, false, corrected); mS.side = THREE.DoubleSide;
-    const sK = merged ? 0.3 : 0.62, sUV = ownS ? (u, v) => [u, v] : worn ? (u, v) => [aF.cx + (aF.hw || 0.3) * (0.32 + 0.1 * Math.abs(Math.sin(u * Math.PI))), 0.5 + 0.2 * v] : (u, v) => [aF.cx + (aF.hw || 0.3) * (sK + 0.1 * Math.abs(Math.sin(u * Math.PI))), 0.3 + 0.45 * v];   // рукава слились с корпусом на фото — ткань ближе к середине (с края там рука и блик)
+    const swatch = item.materialTexture, tiled = swatch?.sleeveDesign === 'reviewed-plain' && item.tex.fabric && swatch.widthM > 0 && swatch.heightM > 0;
+    const merged = item.shape && item.shape.merged, worn = item.shape && item.shape.worn, ownS = !tiled && item.tex.sleeve && !merged && !worn, j = armJ(d), sTex = tiled ? item.tex.fabric : ownS ? item.tex.sleeve : item.tex.frontCut || item.tex.front, mS = photoMat(sTex, base, ft, false, tiled || corrected); mS.side = THREE.DoubleSide;
+    if (tiled) { mS.map.wrapS = mS.map.wrapT = THREE.RepeatWrapping; mS.map.needsUpdate = true; }
+    const sK = merged ? 0.3 : 0.62, sUV = tiled ? (u, v) => [u * (Math.PI * (armRad(d, .3) + .015) * 2) / swatch.widthM, v * M.SL / swatch.heightM] : ownS ? (u, v) => [u, v] : worn ? (u, v) => [aF.cx + (aF.hw || 0.3) * (0.32 + 0.1 * Math.abs(Math.sin(u * Math.PI))), 0.5 + 0.2 * v] : (u, v) => [aF.cx + (aF.hw || 0.3) * (sK + 0.1 * Math.abs(Math.sin(u * Math.PI))), 0.3 + 0.45 * v];
     let armLen = 0; for (let i = 1; i < arm.length; i++) armLen += Math.hypot(arm[i][0] - arm[i - 1][0], arm[i][1] - arm[i - 1][1]);
     // окат = длине проймы по выкройке (перед + спинка); иначе шов растягивает верх рукава («рожки» на плечах)
     // ×1.1 — запас оката, как у настоящего рукава: пройма на теле растягивается, и без запаса верх рукава натянут (автопроверка «натяжение» 3–10% у рукавов)
@@ -164,7 +170,11 @@ export function drapePrepare(item, d, under) {
     (M.noSleeve ? [] : [-1, 1]).forEach(side => {   // платье без рукавов (сарафан) — пройма остаётся открытой
       const D = new THREE.Vector3(Math.sin(j.th) * side, -Math.cos(j.th), 0);
       // начало рукава — в середине проймы (между плечевой точкой и подмышкой), чтобы шов сошёлся без натяжки
-      const S0 = new THREE.Vector3(side * Math.max(j.x * 0.9, (M.S / 2 + M.W / 2) / 2), yTop - (M.SD + M.AD) / 2, 0);
+      // Sleeve length starts at the shoulder seam, not the armhole centre.
+      // Starting a long tube at the axilla added half an armhole to its length
+      // and drove cuffs into the thumb/hand despite correct shoulder contact.
+      const S0 = d.mhUpper && M.longSleeve ? new THREE.Vector3(side*j.x,j.y,0).addScaledVector(D,Math.max(0,M.S/2-j.x))
+        : new THREE.Vector3(side * Math.max(j.x * 0.9, (M.S / 2 + M.W / 2) / 2), yTop - (M.SD + M.AD) / 2, 0);
       // окат: эллипс в плоскости проймы — по высоте от плеча до подмышки, по глубине — чтобы длина совпала с проймой
       // окат лежит вдоль линии проймы — от плечевой точки вниз к подмышке (наклонно), а не стоит вертикально снаружи от плеча:
       // иначе верх рукава оставался на высоте плеча над опущенной рукой — плечо выходило квадратным («погоны»)
@@ -184,13 +194,19 @@ export function drapePrepare(item, d, under) {
       // а над рукавом видна щель
       const corner = pts_ => { let best = null, bs = -1e9; for (const p of pts_) { if (!p.edge || Math.sign(p.x) !== side || (p.lab !== 'shoulder' && p.lab !== 'arm') || p.y > M.SD + cell * 1.5) continue; const sc = Math.abs(p.x) - 0.5 * p.y; if (sc > bs) { bs = sc; best = p; } } return best; };
       [[fronts.flatMap(pf => pf.pts), lf], [pb.pts, lb]].forEach(([pts_, L_]) => { const c = corner(pts_); if (c && !L_.includes(c.g)) L_.unshift(c.g); });
-      if(d.mhUpper&&k==='tee'){
-        lf=armholeBoundary(C,fronts[0],side,M.S/2,M.SD,M.W/2,M.AD)||lf;
+      if(d.mhUpper&&top){
+        const frontPanel=fronts.find(panel=>panel.pts.some(p=>p.x*side>0));
+        lf=armholeBoundary(C,frontPanel,side,M.S/2,M.SD,M.W/2,M.AD)||lf;
         lb=armholeBoundary(C,pb,side,M.S/2,M.SD,M.W/2,M.AD)||lb;
+        // The old label-based shoulder stitching can extend one grid edge
+        // into the armhole. That joins front to back *and* both sleeve halves,
+        // producing a four-face edge and a pinched sleeve cap.
+        const insideHole = new Set([...lf.slice(1, -1), ...lb.slice(1, -1)]);
+        C.seams = C.seams.filter(([a, b]) => !insideHole.has(a) && !insideHole.has(b));
       }
       // Match the actual armhole boundary rather than rounding several panel
       // vertices onto one of twenty tube samples. No gathering is intended on a tee.
-      const matchedCap=!!d.mhUpper&&k==='tee',count=matchedCap?lf.length+lb.length-2:20;
+      const matchedCap=!!d.mhUpper&&top,count=matchedCap?lf.length+lb.length-2:20;
       if(matchedCap)C.orientedSleeves=true;
       if(matchedCap)cap.angles=Array.from({length:count},(_,j)=>j<=lf.length-1?Math.PI*j/(lf.length-1):Math.PI+Math.PI*(j-lf.length+1)/(lb.length-1));
       const tube = addTube(C, S0, D, M.SL, radS, count, Math.max(6, Math.round(M.SL / (matchedCap?.015:.025))), mS, side, sUV, cap);
@@ -201,7 +217,7 @@ export function drapePrepare(item, d, under) {
       lb.forEach((g_, t) => { const a = 2 * Math.PI - Math.PI * (lb.length > 1 ? t / (lb.length - 1) : 0.5); C.seams.push([g_, ring[matchedCap?(segs-t)%segs:Math.round(a / (2 * Math.PI) * segs) % segs]]); });
       if (lf.length > 1 && lb.length > 1) chains.push({ring, lf, lb, rings: tube.rings,matchedCap});
     });
-    if(d.mhUpper&&k==='tee'){
+    if(d.mhUpper&&top){
       C.sector||=[];for(const panel of fronts)for(const p of panel.pts)C.sector.push([p.g,1,0,0]);
       for(const p of pb.pts)C.sector.push([p.g,-1,0,0]);
     }
@@ -338,6 +354,7 @@ export function drapePrepare(item, d, under) {
   }
   if(C.orientedSleeves){
     C.seamCleanup=pruneCollapsedSeams(C);
+    C.hoodJunctionTriangles=closeHoodJunctions(C);
     C.contactSide=new Int8Array(C.pin.length);
     for(const m of C.meshes)m.verts.forEach((v,k)=>{C.contactSide[v]=m.role==='front'?1:m.role==='back'?-1:m.contactSide?.[k]||0;});
     for(const group of seamGroups(C)){const signs=new Set(group.map(v=>C.contactSide[v]).filter(Boolean)),side=signs.size===1?[...signs][0]:0;for(const v of group)C.contactSide[v]=side;}
@@ -367,15 +384,15 @@ export function drapePrepare(item, d, under) {
   return P; };
   const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);
-  g.userData.pattern={family:recipe.id,version:recipe.version,status:'prototype',review:!!recipe.review};
+  g.userData.pattern={family:recipe.id,version:recipe.version,status:'prototype',review:!!recipe.review,expectedOpenings:top?((info.noSleeve?2:4)-(open?1:0)):recipe.topology==='skirt'?2:3};
   g.userData.surfacePush=capSurfaceCollider(d);
-  if(d.mhUpper&&k==='tee')g.userData.resolveSurface=makeSurfaceResolver(g,d);
-  if(d.mhUpper&&k==='tee')g.userData.contactQA=finishShoulderContact(g,d);else clothProject(g);
+  if(d.mhUpper&&top)g.userData.resolveSurface=makeSurfaceResolver(g,d,{neck:k==='jacket'||k==='coat'||!!item.stand});
+  if(d.mhUpper&&top)g.userData.contactQA=finishShoulderContact(g,d);else clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
   try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB);
     if(g.userData.contactQA){const report=g.userData.contactQA.after,ok=report.bad===0;
-      QC[item.id].checks.push({name:'поверхность у плеч',ok,val:report.bad+' из '+report.tested+' центров; глубина '+(report.maxDepth*1000).toFixed(2)+' мм',pen:ok?0:20,why:'поверхность одежды пересекает тело между вершинами'});
+      QC[item.id].checks.push({name:'поверхность у плеч',ok,val:report.bad+' из '+report.tested+' треугольников; глубина '+(report.maxDepth*1000).toFixed(2)+' мм',pen:ok?0:20,why:'поверхность одежды пересекает тело между вершинами'});
       if(!ok){QC[item.id].score=Math.max(0,QC[item.id].score-20);QC[item.id].ok=false;}
     }g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }
   return g; };

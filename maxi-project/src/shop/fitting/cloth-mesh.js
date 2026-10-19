@@ -96,7 +96,7 @@ export function clothUpdate(g, P) {
   g.children.forEach(mesh => { const cm = mesh.userData.cm; if (!cm) return; const m = C.meshes[cm.mi], pa = mesh.geometry.attributes.position, na = mesh.geometry.attributes.normal, ca = mesh.geometry.attributes.color, wa = mesh.geometry.attributes.wrk;
     if (wa) { const w = wa.array; m.verts.forEach((v, k) => { w[k * 2] = WR[v * 2]; w[k * 2 + 1] = WR[v * 2 + 1]; }); let r = m.verts.length; for (const [i, j] of cm.edges) { w[r * 2] = (w[i * 2] + w[j * 2]) / 2; w[r * 2 + 1] = (w[i * 2 + 1] + w[j * 2 + 1]) / 2; r++; } wa.needsUpdate = true; }
     const pos = pa.array, nor = na.array, col = ca ? ca.array : null;
-    m.verts.forEach((v, k) => { pos[k * 3] = P[v * 3]; pos[k * 3 + 1] = P[v * 3 + 1]; pos[k * 3 + 2] = P[v * 3 + 2]; nor[k * 3] = N[v * 3]; nor[k * 3 + 1] = N[v * 3 + 1]; nor[k * 3 + 2] = N[v * 3 + 2]; if (col) col[k * 3] = col[k * 3 + 1] = col[k * 3 + 2] = AO[v]; });
+    m.verts.forEach((v, k) => { pos[k * 3] = P[v * 3]; pos[k * 3 + 1] = P[v * 3 + 1]; pos[k * 3 + 2] = P[v * 3 + 2] - (m.backLayerDepth && P[v*3+2] < 0 && !cl.sewnG.has(v) ? m.backLayerDepth : 0); nor[k * 3] = N[v * 3]; nor[k * 3 + 1] = N[v * 3 + 1]; nor[k * 3 + 2] = N[v * 3 + 2]; if (col) col[k * 3] = col[k * 3 + 1] = col[k * 3 + 2] = AO[v]; });
     let r = m.verts.length; for (const [i, j] of cm.edges) {
       const dx = pos[j * 3] - pos[i * 3], dy = pos[j * 3 + 1] - pos[i * 3 + 1], dz = pos[j * 3 + 2] - pos[i * 3 + 2], nix = nor[i * 3], niy = nor[i * 3 + 1], niz = nor[i * 3 + 2], njx = nor[j * 3], njy = nor[j * 3 + 1], njz = nor[j * 3 + 2];
       const v_ = 2 * ((dx * (nix + njx) + dy * (niy + njy) + dz * (niz + njz)) / Math.max(1e-9, dx * dx + dy * dy + dz * dz)), hx = nix + njx - v_ * dx, hy = niy + njy - v_ * dy, hz = niz + njz - v_ * dz, hl = Math.hypot(hx, hy, hz) || 1;
@@ -158,6 +158,10 @@ export function clothMeshes(C, P, H) {
   const AO = clothAO(C, P, N, n), WR = clothWrk(C, P, n);
   const cl0 = g.userData.cloth = {C, flips};
   const sewnG = new Set(C.seams.flatMap(([i, j]) => [i, j]).concat(C.ringSewn || [])); cl0.sewnG = sewnG;
+  // Junction fillers can directly reuse a particle owned by another panel,
+  // without adding a redundant zero-length seam. Keep these copies shared too.
+  const owner = new Map();
+  for (const part of C.meshes) for (const v of part.verts) { if (owner.has(v) && owner.get(v) !== part) sewnG.add(v); else owner.set(v, part); }
   const renderSide=new Int8Array(n);
   if(C.orientedSleeves)C.meshes.forEach(m=>m.verts.forEach((v,k)=>{renderSide[v]=m.role==='front'?1:m.role==='back'?-1:m.contactSide?.[k]||0;}));
   for(const group of seamGroups(C)){const signs=new Set(group.map(v=>renderSide[v]));if(signs.size>1)for(const v of group)renderSide[v]=0;}
@@ -171,7 +175,7 @@ export function clothMeshes(C, P, H) {
     // прогибы разные (свои нормали, своя густота точек) — между ними щель, в ней видна тёмная изнанка
     const ecnt = new Map(); for (let t = 0; t < m.tris.length; t += 3) for (const [x, y] of [[0, 1], [1, 2], [2, 0]]) { const a = m.tris[t + x], b = m.tris[t + y], key = a < b ? a * 100000 + b : b * 100000 + a; ecnt.set(key, (ecnt.get(key) || 0) + 1); }
     const straight = new Set(); ecnt.forEach((c, key) => { if (c === 1 && sewnG.has(m.verts[Math.floor(key / 100000)]) && sewnG.has(m.verts[key % 100000])) straight.add(key); });
-    m.verts.forEach((v, k) => { pos.push(P[v * 3], P[v * 3 + 1], P[v * 3 + 2]); nor.push(N[v * 3], N[v * 3 + 1], N[v * 3 + 2]); uv.push(m.uv[k][0], 1 - m.uv[k][1]); col.push(AO[v], AO[v], AO[v]);
+    m.verts.forEach((v, k) => { pos.push(P[v * 3], P[v * 3 + 1], P[v * 3 + 2] - (m.backLayerDepth && P[v*3+2] < 0 && !sewnG.has(v) ? m.backLayerDepth : 0)); nor.push(N[v * 3], N[v * 3 + 1], N[v * 3 + 2]); uv.push(m.uv[k][0], 1 - m.uv[k][1]); col.push(AO[v], AO[v], AO[v]);
       const um = m.uvm ? m.uvm[k] : [0, 0]; uvm.push(um[0], um[1]); wrk.push(WR[v * 2], WR[v * 2 + 1]); });
     // середина ребра — по кривой (PN-треугольники): точка сдвинута по нормалям концов, а не лежит на прямой
     const edge = (i, j) => { const key = i < j ? i * 100000 + j : j * 100000 + i; let r = mid.get(key); if (r != null) return r;

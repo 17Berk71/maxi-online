@@ -34,10 +34,13 @@ export function addHood(C, d, M, fronts, pb, mat, up, cell, uvS) {
     const place = (u, v) => { if (up) { // на голове: как шлем — низ у шеи, верх по макушке, лицевой край у боков лица, затылок сзади
         const e = (-55 + 140 * Math.min(1, v / Hh)) * Math.PI / 180, a = (48 + 132 * Math.min(1, u / Ub)) * Math.PI / 180, ce = Math.cos(e);
         return [side * Math.sin(a) * ce * Rh * 0.92, hc + Math.sin(e) * Rh, Math.cos(a) * ce * Rh]; }
-      const p0 = Math.min(1, v / 0.12) * 0.8, ph = p0 + (Math.PI - p0) * Math.min(1, u / Lb), c = Math.cos(ph), sn = Math.sin(ph), out = Math.min(v, 0.12) * 0.35 + (u > Lb ? u - Lb : 0);
+      const p0 = Math.min(1, v / 0.10) * Math.PI * .65, ph = p0 + (Math.PI - p0) * Math.min(1, u / Lb), c = Math.cos(ph), sn = Math.sin(ph), out = Math.min(v, 0.12) * 0.35 + (u > Lb ? u - Lb : 0);
       const rx = M.NW / 2 + 0.008 + out, rz = (c > 0 ? d.neck + 0.035 : d.neck + 0.012) + out;
-      return [side * sn * rx, yTop - (M.ND * (1 + c) / 2 + M.NDb * (1 - c) / 2) - 0.004 + v, c * rz]; };
+      return [side * sn * rx, yTop - (M.ND * (1 + c) / 2 + M.NDb * (1 - c) / 2) - 0.004 - v * .78, c * rz]; };
     const hp = addPanel(C, poly, labs, cell * 0.9, place, (u, v) => uvS ? uvS(u / Ub, v / Hh) : [0.5 + side * u / (Ub * 2.2), v / Hh], mat, 'hood');
+    // Approximate fleece thickness: the two folded hood panels lie over the
+    // back, rather than sharing its zero-thickness display surface.
+    C.meshes.at(-1).backLayerDepth = up ? 0 : (side < 0 ? .003 : .006);
     // низ капюшона → горловина по доле длины
     const bot = hp.pts.filter(p => p.edge && p.lab === 'neck').sort((a, b) => a.x - b.x);
     bot.forEach((p, i) => { const t = bot.length > 1 ? i / (bot.length - 1) : 0; C.seams.push([p.g, chain[Math.round(t * (chain.length - 1))]]); });

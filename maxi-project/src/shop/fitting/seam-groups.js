@@ -2,7 +2,8 @@
 // Treat its connected component once; pairwise sums depend on seam order.
 const cache = new WeakMap();
 export function seamGroups(C) {
-  if (cache.has(C)) return cache.get(C);
+  const cached = cache.get(C);
+  if (cached?.seams === C.seams && cached.count === C.seams.length) return cached.groups;
   const parent = new Map(), find = i => {
     if (!parent.has(i)) parent.set(i, i);
     let r = i;
@@ -13,7 +14,7 @@ export function seamGroups(C) {
   for (const [a, b] of C.seams) parent.set(find(a), find(b));
   const groups = new Map();
   for (const i of parent.keys()) { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(i); }
-  const result = [...groups.values()]; cache.set(C, result); return result;
+  const result = [...groups.values()]; cache.set(C, {seams:C.seams,count:C.seams.length,groups:result}); return result;
 }
 
 // Sum each original area-weighted normal exactly once, then share it across
@@ -46,8 +47,10 @@ export function projectSeams(C, P, push) {
 // spring also has no physical length and must not fight the seam constraint.
 export function pruneCollapsedSeams(C){
  const root=Array.from({length:C.pin.length},(_,i)=>i);for(const group of seamGroups(C))for(const i of group)root[i]=group[0];
+ const faces=new Map();
+ for(const m of C.meshes)for(let t=0;t<m.tris.length;t+=3){const ids=m.tris.slice(t,t+3).map(k=>root[m.verts[k]]),key=ids.sort((a,b)=>a-b).join(':');if(!faces.has(key))faces.set(key,new Set());faces.get(key).add(m);}
  let triangles=0,links=0;
- for(const m of C.meshes){const tris=[];for(let t=0;t<m.tris.length;t+=3){const face=m.tris.slice(t,t+3),ids=face.map(k=>root[m.verts[k]]);if(new Set(ids).size<3)triangles++;else tris.push(...face);}m.tris=tris;}
+ for(const m of C.meshes){const tris=[];for(let t=0;t<m.tris.length;t+=3){const face=m.tris.slice(t,t+3),ids=face.map(k=>root[m.verts[k]]),key=[...ids].sort((a,b)=>a-b).join(':');if(new Set(ids).size<3||faces.get(key).size>1)triangles++;else tris.push(...face);}m.tris=tris;}
  const edges=[];for(let e=0;e<C.E.length;e+=4){if(root[C.E[e]]===root[C.E[e+1]])links++;else edges.push(C.E[e],C.E[e+1],C.E[e+2],C.E[e+3]);}C.E=edges;
  return {triangles,links};
 }

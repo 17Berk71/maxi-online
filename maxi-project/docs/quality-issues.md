@@ -78,3 +78,11 @@
 - Женская футболка QC 100. Мужская QC 86: критерий натяжения остаётся отмеченным; обхват изделия 108 см при груди тела 110 см. Мерки вещи и пороги проверки не ослаблены.
 - Восстановлен настоящий локальный Chromium/WebGL. Проверены три ракурса, подготовленные кадры анимации и её отключение; ошибок страницы нет. Исправлен ранний возврат `FIT.ready()` до окончания загрузки пакета и построения одежды.
 - Для проигрывания сохраняются уже исправленные кадры, около 31–33 МиБ на активную футболку. Первичная подготовка остаётся медленной; Samsung A54 не проверен. Стенд не обновлялся. Подробности: [tee-quality-stage14.md](tee-quality-stage14.md).
+
+# Stage 15: cross-family construction repair
+
+Long-sleeve armholes now use matched boundaries, full forearm triangle contact,
+and a shoulder-based sleeve origin. Open jacket fronts no longer fall through
+the torso. Private plain-sleeve photo swatches and corrected import metadata
+replace stretched torso strips. See `garment-quality-stage15.md` for checks and
+the remaining tailored-pattern, textile and performance limits.
