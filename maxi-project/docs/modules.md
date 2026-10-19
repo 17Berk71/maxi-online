@@ -159,25 +159,29 @@
 
 ## shop/fitting — примерочная
 
-- `shop/fitting/arm-cap-collision.js` (1.7 КБ) — —
+- `shop/fitting/arm-cap-collision.js` (1.8 КБ) — —
   - отдаёт: `pushArmCap`, `capSurfaceCollider`
-- `shop/fitting/asset-key.js` (0.6 КБ) — Asset content/version affects geometry, UVs and light preprocessing as well as colour. A pack with the same garment id can be replaced while the fitting room is open.
+- `shop/fitting/armhole-boundary.js` (1.9 КБ) — Follow the actual triangulated panel boundary, including diagonal staircase vertices which the old label-only selection skipped at the axilla.
+  - отдаёт: `armholeBoundary`
+- `shop/fitting/asset-key.js` (0.7 КБ) — Asset content/version affects geometry, UVs and light preprocessing as well as colour. A pack with the same garment id can be replaced while the fitting room is open.
   - отдаёт: `garmentAssetKey`, `garmentKey`
-- `shop/fitting/body.js` (5.9 КБ) — Фигура по меркам: размеры тела, профиль туловища по высоте, суставы рук.
+- `shop/fitting/body.js` (6.1 КБ) — Фигура по меркам: размеры тела, профиль туловища по высоте, суставы рук.
   - отдаёт: `sizeHint`, `bodyDims`, `torsoR`, `sx`, `sz`, `loft`, `limb`, `armX`, `armPose`, `shoulderAxes`, `armCapAxes`
 - `shop/fitting/cache.js` (1.7 КБ) — Кэш рассчитанной ткани: в памяти и в IndexedDB браузера.
   - отдаёт: `cacheGet`, `cachePut`
 - `shop/fitting/classify.js` (2.5 КБ) — Что это за вещь: слот (верх, низ, платье, обувь…) и форма (футболка, джинсы, юбка…).
   - отдаёт: `classify`, `isWearable`
+- `shop/fitting/cloth-frames.js` (2.0 КБ) — —
+  - отдаёт: `bakeClothFrames`, `showClothFrame`
 - `shop/fitting/cloth-material.js` (13.4 КБ) — Ткань как материал: вид ткани, переплетение, ворс, мелкие заломы (шейдер), материал по фото.
   - отдаёт: `FT`, `fabricType`, `clothify`, `photoMat`
-- `shop/fitting/cloth-mesh.js` (17.8 КБ) — Сетка ткани для показа: нормали, затенение складок, сжатие (заломы), рельеф плиссе, кадры.
-  - отдаёт: `clothUpdate`, `clothProject`, `clothMeshes`
+- `shop/fitting/cloth-mesh.js` (22.7 КБ) — Сетка ткани для показа: нормали, затенение складок, сжатие (заломы), рельеф плиссе, кадры.
+  - отдаёт: `refineClothSurface`, `clothUpdate`, `clothProject`, `clothMeshes`
 - `shop/fitting/collar3d.js` (8.8 КБ) — Отложной воротник (поло, рубашка) объёмом: на фото он лежал плоско и был нарисован на ткани. Здесь — отдельная деталь по линии горловины: стойка вверх вдоль шеи, сгиб и отлёт вниз, на плечи; спереди концы воротника уголками, у середины — разрез планки. Цвет и рисунок — с фото (место воротника у горловины). Деталь не считается в расчёте ткани: держится за точки горловины и в кадрах анимации едет вместе с ними.
   - отдаёт: `buildCollar`, `collarUpdate`
-- `shop/fitting/collars.js` (5.7 КБ) — Воротник-стойка и капюшон.
+- `shop/fitting/collars.js` (5.9 КБ) — Воротник-стойка и капюшон.
   - отдаёт: `addStand`, `addHood`
-- `shop/fitting/collider.js` (8.9 КБ) — Тело для расчёта ткани (столкновения): туловище, плечи, руки, ноги, нижние слои.
+- `shop/fitting/collider.js` (9.1 КБ) — Тело для расчёта ткани (столкновения): туловище, плечи, руки, ноги, нижние слои.
   - отдаёт: `DRAPE_ON`, `setDrape`, `legR`, `makeCollider`
 - `shop/fitting/common.js` (0.5 КБ) — Общее для примерочной: ключи хранилища, LIN, названия слотов.
   - отдаёт: `WKEY`, `LIN`, `SLOT_T`
@@ -185,11 +189,11 @@
   - отдаёт: `constructionCm`
 - `shop/fitting/decor.js` (7.0 КБ) — Декор вещи отдельными объёмными деталями (пуговицы): не нарисован на ткани, а пришит к ней. Положение, размер и цвет — с фото переда (tools/wardrobe/drape_cut.py → drape.front.a.buttons: u, v — доли кадра выреза, r — доля ширины). На ткани пуговица держится за треугольник детали «перед» (весовые доли трёх точек ткани): в кадрах анимации она двигается и поворачивается вместе с тканью.
   - отдаёт: `buildDecor`, `decorUpdate`
-- `shop/fitting/digitization.js` (4.4 КБ) — —
+- `shop/fitting/digitization.js` (5.0 КБ) — —
   - отдаёт: `DIGITIZATION_VERSION`, `measurement`, `legacyContract`, `validateDigitization`
 - `shop/fitting/drape-old.js` (12.2 КБ) — Первый прототип расчёта ткани по силуэту фото (drapeGarment).
   - отдаёт: `drapeGarment`
-- `shop/fitting/drape.js` (48.0 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
+- `shop/fitting/drape.js` (52.5 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
   - отдаёт: `drapePrepare`, `drapeTemplate`
 - `shop/fitting/edges.js` (5.3 КБ) — Толщина ткани на открытых краях (низ, манжеты, горловина, борта): у сетки ткани один слой — край выглядел бумажным. Вдоль каждого края детали, не пришитого к другой детали, — узкий скруглённый бортик: от лица ткани через закруглённый срез к изнанке на толщину ткани. Строится по сетке показа и в кадрах анимации едет вместе с ней.
   - отдаёт: `edgeThickness`, `buildEdge`, `edgeUpdate`
@@ -197,43 +201,53 @@
   - отдаёт: `TEX`, `fabricMat`
 - `shop/fitting/families.js` (2.3 КБ) — Versioned construction recipes. Shared solvers remain prototypes, not manufacturer patterns.
   - отдаёт: `PATTERN_FAMILIES`, `inferFamily`, `patternRecipe`
-- `shop/fitting/garment-async.js` (1.8 КБ) — Одна вещь: выкройка → расчёт (кэш, фон или здесь) → сетка.
+- `shop/fitting/garment-async.js` (1.9 КБ) — Одна вещь: выкройка → расчёт (кэш, фон или здесь) → сетка.
   - отдаёт: `garmentMeshAsync`
 - `shop/fitting/garment.js` (5.6 КБ) — Одна вещь на фигуре (синхронно): ткань по выкройке или простая форма.
   - отдаёт: `garmentMesh`
-- `shop/fitting/geometry.js` (9.0 КБ) — Геометрия для посадки: сечения тела, эллипсы по периметру, кольца, трубы, изнанка.
+- `shop/fitting/geometry.js` (9.1 КБ) — Геометрия для посадки: сечения тела, эллипсы по периметру, кольца, трубы, изнанка.
   - отдаёт: `uFront`, `ellP`, `solve`, `clamp`, `smooth`, `lerp`, `interp`, `bodyAB`, `armJ`, `armRad`, `armInner`, `fitAB`, `layerAB`, `noteAB`, `ringMesh`, `tubeMesh`, `addShell`
-- `shop/fitting/mannequin.js` (4.2 КБ) — Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
+- `shop/fitting/makehuman-body.js` (10.8 КБ) — MakeHuman CC0 graphical data + our own limited measurement adapter. No MakeHuman application code is included. See assets/makehuman/provenance.json.
+  - отдаёт: `loadMakeHuman`, `validateMakeHumanBody`, `sectionGirth`, `bodyColumns`, `meshShoulderHeight`, `prepareMakeHuman`, `makeHumanMesh`
+- `shop/fitting/mannequin.js` (4.3 КБ) — Манекен: туловище, шея, голова, ноги, руки в плечевых суставах.
   - отдаёт: `buildBody`
-- `shop/fitting/measures.js` (2.5 КБ) — Мерки верха для выкройки: ширина, длина, плечи, пройма, рукав.
+- `shop/fitting/measures.js` (2.6 КБ) — Мерки верха для выкройки: ширина, длина, плечи, пройма, рукав.
   - отдаёт: `topMeasures`
+- `shop/fitting/mesh-body-collision.js` (2.7 КБ) — Worker-safe lookup over front/back columns rasterized from the visible body. Four-neighbour support is conservative by at most one grid cell (~7 mm).
+  - отдаёт: `makeMeshBodyCollider`
+- `shop/fitting/neckline.js` (0.6 КБ) — A tee's bound neck edge bends more stiffly than its single-layer body fabric. Preserve its flat-pattern rest chords; no body-sized target is imposed.
+  - отдаёт: `bindNeckline`
 - `shop/fitting/paint-body.js` (2.7 КБ) — Тело под вещью окрашено в тёмный тон вещи (в просветах не белое).
   - отдаёт: `paintBody`
-- `shop/fitting/pattern.js` (13.7 КБ) — Выкройка: пресеты ткани, детали по контуру (addPanel), трубы-рукава (addTube).
+- `shop/fitting/pattern.js` (13.9 КБ) — Выкройка: пресеты ткани, детали по контуру (addPanel), трубы-рукава (addTube).
   - отдаёт: `FABRIC`, `segDist`, `mirrorPoly`, `makeCloth`, `addPanel`, `addTube`
 - `shop/fitting/photo-garment.js` (16.0 КБ) — Вещь из фото как поверхность (прежний способ, без расчёта ткани).
   - отдаёт: `photoGarment`
-- `shop/fitting/photo-texture.js` (7.8 КБ) — Текстуры с фото вещи: загрузка и снятие своей светотени снимка (delight).
+- `shop/fitting/photo-texture.js` (8.2 КБ) — Текстуры с фото вещи: загрузка и снятие своей светотени снимка (delight).
   - отдаёт: `PTEX`, `photoTex`
 - `shop/fitting/pleats.js` (17.4 КБ) — Складки юбки настоящей формой, а не рисунком. Ткань в расчёте — гладкая трапеция (сетка 2.2 см складку не держит), а на показе каждая клетка детали делится мельче (S×S, по кривой поверхности PN-треугольников — без граней), точки ткани перед этим чуть сглажены (без ряби и «смятости»), и по мелкой сетке заложены складки: ровная грань, резкий сгиб с тенью, у пояса прострочены (плоско), к подолу раскрываются глубже. Спереди и сзади середина без складок, складки смотрят от середины к бокам. В кадрах анимации мелкая сетка пересчитывается по новым точкам ткани.
   - отдаёт: `pleatGrid`, `pleatSmooth`, `pleatUpdate`, `liningBand`, `liningUpdate`
 - `shop/fitting/qc.js` (9.0 КБ) — Автопроверка посадки: натяжение, швы, ткань в теле, место, дырки, силуэт, мерки.
   - отдаёт: `QC`, `qcCloth`
 - `shop/fitting/room-api.js` (2.3 КБ) — Что примерочная даёт остальному сайту и проверкам (FIT).
-- `shop/fitting/room-body-controls.js` (3.1 КБ) — Ползунки фигуры (и в примерочной, и в настройках сайта).
+- `shop/fitting/room-body-controls.js` (3.9 КБ) — Ползунки фигуры (и в примерочной, и в настройках сайта).
 - `shop/fitting/room-open.js` (1.2 КБ) — Открыть и закрыть окно примерочной, кнопки.
-- `shop/fitting/room-outfit.js` (6.0 КБ) — —
-- `shop/fitting/room-packs.js` (3.2 КБ) — Пакеты примерки: вещь из выгрузки магазина или фабрики (выкройка, вырезанное фото, мерки).
+- `shop/fitting/room-outfit.js` (6.2 КБ) — —
+- `shop/fitting/room-packs.js` (3.3 КБ) — Пакеты примерки: вещь из выгрузки магазина или фабрики (выкройка, вырезанное фото, мерки).
 - `shop/fitting/room-panel.js` (9.0 КБ) — Панель примерочной: список вещей, размеры, образы.
   - отдаёт: `h`
-- `shop/fitting/room-playback.js` (4.4 КБ) — Кадр кабины и проигрывание анимации надевания; виды камеры.
+- `shop/fitting/room-playback.js` (4.2 КБ) — Кадр кабины и проигрывание анимации надевания; виды камеры.
 - `shop/fitting/room-scene.js` (6.4 КБ) — Сцена кабины: рендерер, свет, фон-циклорама, шторки, камера, вращение и приближение фигуры.
   - отдаёт: `R`, `el`, `SKIN`, `built`
-- `shop/fitting/room-wardrobe.js` (2.7 КБ) — Гардероб примерочной: вещи, надетое, образы; добавить, надеть, снять.
+- `shop/fitting/room-wardrobe.js` (2.8 КБ) — Гардероб примерочной: вещи, надетое, образы; добавить, надеть, снять.
   - отдаёт: `W`, `subs`, `persist`, `has`, `worn`
+- `shop/fitting/seam-groups.js` (3.1 КБ) — A seam can join more than two vertices (front/back/sleeve, unequal sampling). Treat its connected component once; pairwise sums depend on seam order.
+  - отдаёт: `seamGroups`, `shareSeamValues`, `projectSeams`, `pruneCollapsedSeams`
+- `shop/fitting/seam-junctions.js` (2.0 КБ) — —
+  - отдаёт: `closeHoodJunctions`
 - `shop/fitting/shoulder-round.js` (3.9 КБ) — Плечевая точка после расчёта: там сходятся угол переда, угол спинки и верх оката рукава — ткань вставала острым углом («полка» плеча и почти отвесный рукав). Скругляем угол внутрь: точки ткани в радиусе R от плечевой точки (корпус и рукав вместе; сшитые пары — как одна точка) несколько раз подтягиваются к среднему соседей (сильнее у центра, к краю круга — на нет) и выталкиваются из тела. Вызывать до укладки оката на пройму (drape.js finish): кольцо рукава ляжет уже на скруглённую пройму.
   - отдаёт: `shoulderRound`
-- `shop/fitting/sim.js` (10.8 КБ) — Расчёт ткани (PBD): тяжесть, связи, швы, столкновения, движение для анимации, кадры.
+- `shop/fitting/sim.js` (11.0 КБ) — Расчёт ткани (PBD): тяжесть, связи, швы, столкновения, движение для анимации, кадры.
   - отдаёт: `motionAt`, `runCloth`
 - `shop/fitting/simple-garment.js` (5.5 КБ) — Простые формы вещей (вариант «Б») и слои: вещь не уже той, что под ней.
   - отдаёт: `EASE`, `ui`, `uget`, `commitLayer`, `torsoPiece`, `flarePiece`, `sleeves`, `legPieces`, `frontLine`, `frontZ`
@@ -241,15 +255,25 @@
   - отдаёт: `recommendSize`, `sizeOf`, `itemCm`, `fitNote`
 - `shop/fitting/sleeve-relax.js` (1.3 КБ) — После укладки оката сглаживание не должно оставлять растянутые связи. Окат закреплён на пройме; исходные длины выкройки не меняются.
   - отдаёт: `relaxSleeves`
-- `shop/fitting/specs.js` (16.6 КБ) — Мерки вещи по фото: длина и ширина, профиль силуэта, юбка, отведение рук.
+- `shop/fitting/specs.js` (16.7 КБ) — Мерки вещи по фото: длина и ширина, профиль силуэта, юбка, отведение рук.
   - отдаёт: `TOPK`, `trueHem`, `rowSpans`, `topSpec`, `bottomSpec`, `skirtProf`, `armSpread`
 - `shop/fitting/state.js` (1.0 КБ) — Общее изменяемое состояние примерочной: только то, что меняют разные модули. Читать и писать — fit.имя.   UNDER, UNDERZ — ширина и глубина уже надетых вещей по высоте (вещь не уже той, что под ней)   PEND, PENDZ   — слой вещи, которая сейчас строится (записывается после неё, commitLayer)   BOT_YW        — высота пояса надетых брюк/юбки (для заправленного верха)   looks         — сохранённые образы   open          — окно примерочной открыто   shopNow       — магазин, из которого открыли примерочную   raf           — номер кадра анимации окна (requestAnimationFrame)   tab           — открытая вкладка панели ('items' | 'body' | 'looks')
   - отдаёт: `fit`
 - `shop/fitting/storage.js` (0.3 КБ) — Гардероб в браузере: загрузка и сохранение.
   - отдаёт: `load`, `save`
+- `shop/fitting/surface-contact.js` (3.4 КБ) — —
+  - отдаёт: `inspectShoulderContact`, `finishShoulderContact`
+- `shop/fitting/surface-resolve.js` (4.4 КБ) — —
+  - отдаёт: `makeSurfaceResolver`
+- `shop/fitting/surface-weld.js` (3.5 КБ) — —
+  - отдаёт: `surfaceWelds`, `inspectSurfaceSeams`, `inspectPatternBoundary`, `shareSurfaceNormals`
+- `shop/fitting/texture-padding.js` (1.0 КБ) — Extend only transparent background RGB from the nearest opaque texel. The clothing mesh defines the cut edge; transparent photo background is not fabric. Opaque source pixels (including prints and calibrated colour) stay byte-identical.
+  - отдаёт: `padTransparentTexels`
+- `shop/fitting/triangle-surface.js` (8.6 КБ) — Static upper-body triangle surface. Only typed numeric data crosses the worker. The lower body retains its existing collider in this iteration.
+  - отдаёт: `buildUpperSurface`, `makeUpperMeshCollider`
 - `shop/fitting/ui.js` (0.9 КБ) — Окно примерочной: сцена, гардероб, образы, размеры, анимация надевания, кнопки.
   - отдаёт: `ctx`, `createFitting`
-- `shop/fitting/worker.js` (6.0 КБ) — Расчёт ткани в фоновом потоке (Web Worker) и версия расчёта CLOTH_VER.
+- `shop/fitting/worker.js` (6.2 КБ) — Расчёт ткани в фоновом потоке (Web Worker) и версия расчёта CLOTH_VER.
   - отдаёт: `CLOTH_VER`, `ANIM`, `calmNow`, `seamBend`, `armFlags`, `solveInWorker`
 
 ## ui — панели и карты интерфейса

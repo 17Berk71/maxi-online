@@ -7,8 +7,8 @@ let PACKS;
   // поля вещи из пакета примерки (фабрика tools/wardrobe или конвейер выгрузок tools/feeds/fitpack.py)
   function packFields(mt, dir) {
     const revision = mt.assetRevision ? '?v=' + encodeURIComponent(mt.assetRevision) : '';
-    return {digitization: mt.digitization || null, assetRevision: mt.assetRevision || null, photoLight: mt.photoLight || null, kind: mt.kind, fit: mt.fit, shape: mt.shape, sizesT: mt.sizes || null, states: mt.states, zip: mt.zip, collar: mt.collar, hood: !!mt.hood, pleats: !!mt.pleats, lining: mt.lining || null, puff: !!mt.puff, stand: !!mt.stand, drape: mt.drape || null,
-      tex: {front: dir + 'front.webp' + revision, back: dir + 'back.webp' + revision, sleeve: mt.sleeve ? dir + 'sleeve.webp' + revision : null, frontCut: dir + 'front_cut.webp' + revision, backCut: dir + 'back_cut.webp' + revision}};
+    return {digitization: mt.digitization || null, materialTexture: mt.materialTexture || null, assetRevision: mt.assetRevision || null, photoLight: mt.photoLight || null, kind: mt.kind, fit: mt.fit, shape: mt.shape, sizesT: mt.sizes || null, states: mt.states, zip: mt.zip, collar: mt.collar, hood: !!mt.hood, pleats: !!mt.pleats, lining: mt.lining || null, puff: !!mt.puff, stand: !!mt.stand, drape: mt.drape || null,
+      tex: {front: dir + 'front.webp' + revision, back: dir + 'back.webp' + revision, sleeve: mt.sleeve ? dir + 'sleeve.webp' + revision : null, fabric: mt.materialTexture ? dir + mt.materialTexture.file + revision : null, frontCut: dir + 'front_cut.webp' + revision, backCut: dir + 'back_cut.webp' + revision}};
   }
   export async function loadPack(it) {
     if (!it.pack || it.tex) return;

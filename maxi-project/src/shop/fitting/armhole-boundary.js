@@ -1,6 +1,7 @@
 // Follow the actual triangulated panel boundary, including diagonal staircase
 // vertices which the old label-only selection skipped at the axilla.
 export function armholeBoundary(C, panel, side, shoulderX, shoulderY, axillaX, axillaY) {
+  if (!panel?.pts.length) return null;
   const mesh=C.meshes.find(m=>m.verts[0]===panel.pts[0]?.g);
   if(!mesh)return null;
   const edges=new Map(),key=(a,b)=>a<b?a+':'+b:b+':'+a;
