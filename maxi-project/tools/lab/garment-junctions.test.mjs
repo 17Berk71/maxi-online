@@ -70,7 +70,9 @@ test('pack import retains light preprocessing and material scale, and scale chan
  globalThis.document={getElementById:()=>({}),querySelectorAll:()=>[]};globalThis.addEventListener=()=>{};
  createFitting({thumb:p=>p.pic||'',siteOf:()=>''});
  const p={id:'top',feed:true,kind:'sweater',name:'Свитер',assetRevision:'v2',photoLight:'corrected-v1',materialTexture:{file:'fabric.webp',widthM:.15,heightM:.18,sleeveDesign:'reviewed-plain'}};
- const item=toItem(p,{name:'Shop'});assert.deepEqual(item.materialTexture,p.materialTexture);assert.equal(item.photoLight,p.photoLight);assert.equal(item.assetRevision,p.assetRevision);
+ p.qualityEvidence={constructionReviewed:true};
+ const item=toItem(p,{name:'Shop'});assert.deepEqual(item.qualityEvidence,p.qualityEvidence);
+ assert.notEqual(garmentAssetKey(item),garmentAssetKey({...item,qualityEvidence:null}));assert.deepEqual(item.materialTexture,p.materialTexture);assert.equal(item.photoLight,p.photoLight);assert.equal(item.assetRevision,p.assetRevision);
  assert.notEqual(garmentAssetKey(item),garmentAssetKey({...item,materialTexture:{...item.materialTexture,widthM:.2}}));
 });
 

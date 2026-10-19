@@ -25,6 +25,8 @@ import {makeSurfaceResolver} from './surface-resolve.js';
 import {bindNeckline} from './neckline.js';
 import {finishShoulderContact} from './surface-contact.js';
 import {closeHoodJunctions} from './seam-junctions.js';
+import {auditGarment} from './quality-metrics.js';
+import {failedQualityAudit,runtimeQuality} from './quality-policy.js';
 
 // подготовка расчёта ткани: выкройка, швы, начальное положение. Сам расчёт (runCloth) — отдельно: в фоновом потоке
 // (garmentMeshAsync) или сразу (drapeTemplate). finish(P) — по готовым точкам собирает сетку, слой, автопроверку
@@ -215,7 +217,7 @@ export function drapePrepare(item, d, under) {
       // спереди: угол 0 (плечо) → π (подмышка) через π/2 (перед); сзади: через 3π/2
       lf.forEach((g_, t) => { const a = Math.PI * (lf.length > 1 ? t / (lf.length - 1) : 0.5); C.seams.push([g_, ring[matchedCap?t:Math.round(a / (2 * Math.PI) * segs) % segs]]); });
       lb.forEach((g_, t) => { const a = 2 * Math.PI - Math.PI * (lb.length > 1 ? t / (lb.length - 1) : 0.5); C.seams.push([g_, ring[matchedCap?(segs-t)%segs:Math.round(a / (2 * Math.PI) * segs) % segs]]); });
-      if (lf.length > 1 && lb.length > 1) chains.push({ring, lf, lb, rings: tube.rings,matchedCap});
+      if (lf.length > 1 && lb.length > 1) chains.push({ring, lf, lb, rings: tube.rings,matchedCap,side,expectedCuff:S0.clone().addScaledVector(D,M.SL).toArray()});
     });
     if(d.mhUpper&&top){
       C.sector||=[];for(const panel of fronts)for(const p of panel.pts)C.sector.push([p.g,1,0,0]);
@@ -390,11 +392,16 @@ export function drapePrepare(item, d, under) {
   if(d.mhUpper&&top)g.userData.contactQA=finishShoulderContact(g,d);else clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
+  g.userData.qualityContext={item,dr,info,top,chains,P};
+  g.userData.auditQuality=frame=>{try{const A=g.userData.anim,n=A?A.F.length/A.nf:0;return auditGarment(g,d,{...g.userData.qualityContext,P:frame!=null&&A?A.F.subarray(frame*n,(frame+1)*n):P});}catch{return failedQualityAudit();}};
   try { QC[item.id] = qcCloth(C, P, d, item, dr, info, top, aF, aB);
     if(g.userData.contactQA){const report=g.userData.contactQA.after,ok=report.bad===0;
       QC[item.id].checks.push({name:'поверхность у плеч',ok,val:report.bad+' из '+report.tested+' треугольников; глубина '+(report.maxDepth*1000).toFixed(2)+' мм',pen:ok?0:20,why:'поверхность одежды пересекает тело между вершинами'});
       if(!ok){QC[item.id].score=Math.max(0,QC[item.id].score-20);QC[item.id].ok=false;}
-    }g.userData.qc = QC[item.id]; } catch (e) { QC[item.id] = null; }
+    }
+    const quality=runtimeQuality(g.userData.auditQuality());QC[item.id].quality=quality;QC[item.id].ok=QC[item.id].ok&&quality.accepted;
+    for(const c of quality.checks.filter(c=>c.status!=='pass'))QC[item.id].checks.push({name:c.code,ok:false,val:c.status,pen:c.status==='fail'?25:0,why:c.why});
+    g.userData.qc = QC[item.id]; } catch { const quality=failedQualityAudit();QC[item.id]={score:0,ok:false,quality,checks:[{name:'audit-error',ok:false,val:'fail',pen:25,why:quality.failures[0].why}]};g.userData.qc=QC[item.id]; }
   return g; };
   seamBend(C);
   return {C, fab, yPin, d, under, margin: fab.margin || 0, sleeveChains:chains, finishPoints, finish, run: () => finish(runCloth(C, makeCollider(d, under, fab.margin), fab, yPin))};

@@ -1,5 +1,6 @@
 // Автопроверка посадки: натяжение, швы, ткань в теле, место, дырки, силуэт, мерки.
 import {makeCollider} from './collider.js';
+import {sourceAreaCoverage} from './quality-source-area.js';
 
 // ---------- автопроверка надетой вещи ----------
 // после расчёта: натяжение ткани, швы, ткань внутри тела, вещь на месте, дырки (прозрачные места фото на ткани),
@@ -15,7 +16,7 @@ export function qcCloth(C, P, d, item, dr, info, top, aF, aB) {
   // 2. швы: доля сшитых пар, разошедшихся больше чем на 1 см
   let gap = 0; for (const [i, j] of C.seams) if (Math.hypot(P[j * 3] - P[i * 3], P[j * 3 + 1] - P[i * 3 + 1], P[j * 3 + 2] - P[i * 3 + 2]) > 0.01) gap++;
   const sg = gap / Math.max(1, C.seams.length); add('швы', sg < 0.03, (sg * 100).toFixed(1) + '% разошлось', Math.min(25, sg * 250), 'шов не сошёлся — видна щель');
-  // 3. ткань внутри тела (глубже 1 мм под поверхностью)
+  // 3. Legacy solver-point clearance (>8 mm); exact displayed triangles are audited separately.
   const body = makeCollider(d, null), Q = new Float32Array(3); let inside = 0; const n = C.pin.length;
   for (let i = 0; i < n; i++) { Q[0] = P[i * 3]; Q[1] = P[i * 3 + 1]; Q[2] = P[i * 3 + 2]; body(Q, 0); if (Math.hypot(Q[0] - P[i * 3], Q[1] - P[i * 3 + 1], Q[2] - P[i * 3 + 2]) > 0.008) inside++; }
   const ins = inside / Math.max(1, n); add('сквозь тело', ins < 0.02, (ins * 100).toFixed(1) + '% точек', Math.min(20, ins * 300), 'тело проходит сквозь ткань');
@@ -24,12 +25,10 @@ export function qcCloth(C, P, d, item, dr, info, top, aF, aB) {
   const yMax = Math.max(...ys), yMin = Math.min(...ys);
   if (top) { const want = 0.858 * H + 0.012 - (info.L0 || info.L); add('на месте', yMax > 0.815 * H && Math.abs(yMin - want) < 0.07 + (item.state === 'tucked' ? 0.05 : 0), 'верх ' + (yMax / H).toFixed(2) + 'H, низ ' + ((yMin - want) * 100).toFixed(0) + ' см от задуманного', 25, 'вещь сползла или длина не та'); }
   else add('на месте', yMax > 0.55 * H, 'пояс ' + (yMax / H).toFixed(2) + 'H', 25, 'брюки сползли');
-  // 5. дырки: доля треугольников переда/спинки, чья середина на фото — вне вещи (прозрачно)
-  let tri = 0, hole = 0;
-  torso.forEach(m => { const g = m.role === 'front' ? dr.front : (dr.back || dr.front); if (!g) return;
-    for (let t = 0; t < m.tris.length; t += 3) { const a = m.uv[m.tris[t]], b = m.uv[m.tris[t + 1]], c = m.uv[m.tris[t + 2]], u = (a[0] + b[0] + c[0]) / 3, v = (a[1] + b[1] + c[1]) / 3;
-      const r = Math.min(g.gh - 1, Math.max(0, Math.floor(v * g.gh))), col = Math.min(g.gw - 1, Math.max(0, Math.floor(u * g.gw))); tri++; if (g.grid[r][col] !== '1') hole++; } });
-  const hf = hole / Math.max(1, tri); add('дырки', hf < 0.04, (hf * 100).toFixed(1) + '% площади', Math.min(20, hf * 200), 'на ткань попал фон фото — будут прозрачные места');
+  // 5. Source cutout coverage: weighted surface area, not a triangle count.
+  const coverage=sourceAreaCoverage(C,P,dr),hf=coverage.missingFraction;
+  add('покрытие фото',hf<.005,(hf*100).toFixed(2)+'% площади без источника',Math.min(20,hf*400),'Часть поверхности попала за вырез исходной фотографии');
+  out[out.length-1].metrics=coverage;
   // 6. силуэт спереди против фото: ширина по высоте (от проймы/шага вниз), каждая в долях своей верхней строки
   const g0 = dr.front;
   if (g0) {
