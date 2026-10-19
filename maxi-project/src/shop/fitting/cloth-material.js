@@ -130,5 +130,6 @@ export function photoMat(url, color, ft, flat, corrected = false) {
   const m = new THREE.MeshPhysicalMaterial({map: t, color: new THREE.Color(c, c, c), emissive: 0xffffff, emissiveMap: t, emissiveIntensity: X.emis != null ? X.emis : 0.08, roughness: ft.rough, metalness: 0, side: THREE.DoubleSide,
     sheen: new THREE.Color(sh, sh, sh), envMapIntensity: X.env != null ? X.env : 0.3, reflectivity: X.refl != null ? X.refl : 0.15});
   if (X.tm === 0) m.toneMapped = false;
+  m.userData.photoSource=url;
   return clothify(m, ft);
 }

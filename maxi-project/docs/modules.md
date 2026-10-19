@@ -173,7 +173,7 @@
   - отдаёт: `classify`, `isWearable`
 - `shop/fitting/cloth-frames.js` (2.0 КБ) — —
   - отдаёт: `bakeClothFrames`, `showClothFrame`
-- `shop/fitting/cloth-material.js` (13.4 КБ) — Ткань как материал: вид ткани, переплетение, ворс, мелкие заломы (шейдер), материал по фото.
+- `shop/fitting/cloth-material.js` (13.5 КБ) — Ткань как материал: вид ткани, переплетение, ворс, мелкие заломы (шейдер), материал по фото.
   - отдаёт: `FT`, `fabricType`, `clothify`, `photoMat`
 - `shop/fitting/cloth-mesh.js` (22.7 КБ) — Сетка ткани для показа: нормали, затенение складок, сжатие (заломы), рельеф плиссе, кадры.
   - отдаёт: `refineClothSurface`, `clothUpdate`, `clothProject`, `clothMeshes`
@@ -193,7 +193,7 @@
   - отдаёт: `DIGITIZATION_VERSION`, `measurement`, `legacyContract`, `validateDigitization`
 - `shop/fitting/drape-old.js` (12.2 КБ) — Первый прототип расчёта ткани по силуэту фото (drapeGarment).
   - отдаёт: `drapeGarment`
-- `shop/fitting/drape.js` (52.5 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
+- `shop/fitting/drape.js` (53.4 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
   - отдаёт: `drapePrepare`, `drapeTemplate`
 - `shop/fitting/edges.js` (5.3 КБ) — Толщина ткани на открытых краях (низ, манжеты, горловина, борта): у сетки ткани один слой — край выглядел бумажным. Вдоль каждого края детали, не пришитого к другой детали, — узкий скруглённый бортик: от лица ткани через закруглённый срез к изнанке на толщину ткани. Строится по сетке показа и в кадрах анимации едет вместе с ней.
   - отдаёт: `edgeThickness`, `buildEdge`, `edgeUpdate`
@@ -227,8 +227,18 @@
   - отдаёт: `PTEX`, `photoTex`
 - `shop/fitting/pleats.js` (17.4 КБ) — Складки юбки настоящей формой, а не рисунком. Ткань в расчёте — гладкая трапеция (сетка 2.2 см складку не держит), а на показе каждая клетка детали делится мельче (S×S, по кривой поверхности PN-треугольников — без граней), точки ткани перед этим чуть сглажены (без ряби и «смятости»), и по мелкой сетке заложены складки: ровная грань, резкий сгиб с тенью, у пояса прострочены (плоско), к подолу раскрываются глубже. Спереди и сзади середина без складок, складки смотрят от середины к бокам. В кадрах анимации мелкая сетка пересчитывается по новым точкам ткани.
   - отдаёт: `pleatGrid`, `pleatSmooth`, `pleatUpdate`, `liningBand`, `liningUpdate`
-- `shop/fitting/qc.js` (9.0 КБ) — Автопроверка посадки: натяжение, швы, ткань в теле, место, дырки, силуэт, мерки.
+- `shop/fitting/qc.js` (8.6 КБ) — Автопроверка посадки: натяжение, швы, ткань в теле, место, дырки, силуэт, мерки.
   - отдаёт: `QC`, `qcCloth`
+- `shop/fitting/quality-masks.js` (2.5 КБ) — Deterministic area/connected-patch measurements on silhouette masks. No RGB threshold: a black garment, white fabric and the background stay distinct.
+  - отдаёт: `coverageMetrics`, `compareProfiles`
+- `shop/fitting/quality-metrics.js` (9.5 КБ) — —
+  - отдаёт: `inspectStrain`, `inspectSleeves`, `inspectSilhouettes`, `auditGarment`
+- `shop/fitting/quality-policy.js` (5.7 КБ) — Engineering screening limits, not measured textile mechanics or fit accuracy.
+  - отдаёт: `QUALITY_POLICY`, `qualityDecision`, `failedQualityAudit`, `runtimeQuality`, `geometryAcceptance`, `caseAcceptance`
+- `shop/fitting/quality-source-area.js` (1.4 КБ) — Surface area weighted by seven barycentric samples. The cutout grid is a coarse source-coverage diagnostic; offscreen pixel passes are the visible test.
+  - отдаёт: `sourceAreaCoverage`
+- `shop/fitting/quality-view.js` (3.7 КБ) — Offscreen source-coverage passes. These measure visible projected area, not triangle counts, and keep opaque colour filling from hiding missing source.
+  - отдаёт: `inspectViewCoverage`
 - `shop/fitting/room-api.js` (2.3 КБ) — Что примерочная даёт остальному сайту и проверкам (FIT).
 - `shop/fitting/room-body-controls.js` (3.9 КБ) — Ползунки фигуры (и в примерочной, и в настройках сайта).
 - `shop/fitting/room-open.js` (1.2 КБ) — Открыть и закрыть окно примерочной, кнопки.
@@ -236,10 +246,10 @@
 - `shop/fitting/room-packs.js` (3.3 КБ) — Пакеты примерки: вещь из выгрузки магазина или фабрики (выкройка, вырезанное фото, мерки).
 - `shop/fitting/room-panel.js` (9.0 КБ) — Панель примерочной: список вещей, размеры, образы.
   - отдаёт: `h`
-- `shop/fitting/room-playback.js` (4.2 КБ) — Кадр кабины и проигрывание анимации надевания; виды камеры.
+- `shop/fitting/room-playback.js` (4.3 КБ) — Кадр кабины и проигрывание анимации надевания; виды камеры.
 - `shop/fitting/room-scene.js` (6.4 КБ) — Сцена кабины: рендерер, свет, фон-циклорама, шторки, камера, вращение и приближение фигуры.
   - отдаёт: `R`, `el`, `SKIN`, `built`
-- `shop/fitting/room-wardrobe.js` (2.8 КБ) — Гардероб примерочной: вещи, надетое, образы; добавить, надеть, снять.
+- `shop/fitting/room-wardrobe.js` (2.9 КБ) — Гардероб примерочной: вещи, надетое, образы; добавить, надеть, снять.
   - отдаёт: `W`, `subs`, `persist`, `has`, `worn`
 - `shop/fitting/seam-groups.js` (3.1 КБ) — A seam can join more than two vertices (front/back/sleeve, unequal sampling). Treat its connected component once; pairwise sums depend on seam order.
   - отдаёт: `seamGroups`, `shareSeamValues`, `projectSeams`, `pruneCollapsedSeams`

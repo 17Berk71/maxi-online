@@ -14,7 +14,10 @@
     "map": "bash tools/pipeline/run.sh",
     "map2": "bash tools/pipeline/run_f2.sh",
     "feeds": "python3 tools/feeds/import_feed.py",
-    "feeds:demo": "python3 tools/feeds/make_demo.py && python3 tools/feeds/import_feed.py tools/feeds/demo/demo_feed.yml --demo --source \"тестовая выгрузка\""
+    "feeds:demo": "python3 tools/feeds/make_demo.py && python3 tools/feeds/import_feed.py tools/feeds/demo/demo_feed.yml --demo --source \"тестовая выгрузка\"",
+    "quality:test": "node --test tools/lab/quality-audit.test.mjs tools/lab/quality-gate.test.mjs",
+    "quality:render": "node tools/lab/quality-render-check.mjs",
+    "quality:check": "node tools/lab/quality-check.mjs"
   },
   "dependencies": {
     "@fontsource/manrope": "^5.1.0",

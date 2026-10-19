@@ -11,7 +11,7 @@ import {ANIM, calmNow} from './worker.js';
 
   // строка автопроверки под вещью: только если вещь показана неточно (балл ниже 70) — что именно не так
   export function qcLine(e) { const q = QC[e.dataset.qc]; const bad = q && !q.ok; e.hidden = !bad; if (!bad) { e.textContent = ''; return; }
-    const worst = q.checks.filter(c => !c.ok).sort((a, c) => c.pen - a.pen)[0]; e.textContent = 'Показано приблизительно (автопроверка ' + q.score + '/100): ' + (worst ? worst.why : ''); }
+    const worst = q.checks.filter(c => !c.ok).sort((a, c) => c.pen - a.pen)[0]; const status=q.quality?.status; e.textContent=(status==='rejected'?'Обнаружены дефекты: ':status==='review'?'Качество требует проверки: ':'Показано приблизительно: ')+(worst?worst.why:''); }
   export function frame() {
     if (!fit.open) return; fit.raf = requestAnimationFrame(frame);
     const c = el('fitC'), w = c.clientWidth, h = c.clientHeight; if (!w || !h) return;
