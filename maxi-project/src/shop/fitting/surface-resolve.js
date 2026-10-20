@@ -9,7 +9,7 @@ export function makeSurfaceResolver(g,d,options={}){
  const faces=[];
  for(const part of parts){const P=part.mesh.geometry.attributes.position.array,I=part.mesh.geometry.index.array;
   for(let t=0;t<I.length;t+=3){const a=I[t],b=I[t+1],c=I[t+2],y=(P[a*3+1]+P[b*3+1]+P[c*3+1])/3,x=(P[a*3]+P[b*3]+P[c*3])/3;
-   if(y<.43*d.H||y>(options.neck?.89:.85)*d.H||(Math.abs(x)<.075*d.H&&(!options.neck||y<.78*d.H)))continue;
+   if(!options.fullBody&&(y<.43*d.H||y>(options.neck?.89:.85)*d.H||(Math.abs(x)<.075*d.H&&(!options.neck||y<.78*d.H))))continue;
    const vs=[a,b,c],samples=SAMPLES.slice();
    // A stretched edge can cross an arm while its midpoint and face centre
    // remain outside. Resolve the same dense edge coverage used by acceptance.

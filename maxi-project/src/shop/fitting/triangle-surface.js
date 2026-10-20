@@ -1,13 +1,13 @@
-// Static upper-body triangle surface. Only typed numeric data crosses the worker.
-// The lower body retains its existing collider in this iteration.
-export function buildUpperSurface(P, index, H) {
+// Static posed-body triangle surface. Only typed numeric data crosses the worker.
+// minimumHeight=0 includes lower legs and feet; older callers retain the upper cut.
+export function buildUpperSurface(P, index, H, minimumHeight = .40) {
   const normals=new Float32Array(P.length),ids=[],centres=new Float32Array(index.length),midline=[];
   for(let t=0;t<index.length/3;t++){
     const a=index[t*3]*3,b=index[t*3+1]*3,c=index[t*3+2]*3;
     const ux=P[b]-P[a],uy=P[b+1]-P[a+1],uz=P[b+2]-P[a+2],vx=P[c]-P[a],vy=P[c+1]-P[a+1],vz=P[c+2]-P[a+2];
     const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
     for(const v of [a,b,c]){normals[v]+=nx;normals[v+1]+=ny;normals[v+2]+=nz;}
-    if(Math.max(P[a+1],P[b+1],P[c+1])<H*.40)continue;
+    if(Math.max(P[a+1],P[b+1],P[c+1])<H*minimumHeight)continue;
     const cuts=[];
     for(const [i,j] of [[a,b],[b,c],[c,a]])if((P[i+2]<=0&&P[j+2]>0)||(P[j+2]<=0&&P[i+2]>0)){
       const t=-P[i+2]/(P[j+2]-P[i+2]);cuts.push([P[i]+t*(P[j]-P[i]),P[i+1]+t*(P[j+1]-P[i+1])]);
@@ -26,7 +26,7 @@ export function buildUpperSurface(P, index, H) {
       const left=build(faces.slice(0,half)),right=build(faces.slice(half));nodes[offset+6]=left;nodes[offset+7]=right;
     }return node;
   };
-  build(ids);return {positions:P,normals,index:Uint32Array.from(ordered),nodes:Float32Array.from(nodes),midline:Float32Array.from(midline)};
+  build(ids);return {positions:P,normals,index:Uint32Array.from(ordered),nodes:Float32Array.from(nodes),midline:Float32Array.from(midline),fullBody:minimumHeight===0};
 }
 
 // Self-contained for the existing toString-based Web Worker bundle.
@@ -78,7 +78,7 @@ export function makeUpperMeshCollider(surface,margin) {
   const project=(Q,q,sideHint,cacheKey,cacheOffset)=>{
     if(sideHint===2)return neutralProject(Q,q);
     const x=Q[q],y=Q[q+1],z=Q[q+2];let best=Infinity,bestFace=-1,bu=0,bv=0,bw=0,cx=0,cy=0,cz=0;
-    if(sideHint){
+    if(sideHint&&z*sideHint<=0&&inside(x,y,z)){
       inside(x,y,-Infinity);const shell=sideHint>0?rayFront:rayBack;
       if(Number.isFinite(shell)){
         if((z-shell)*sideHint<margin-1e-7){Q[q+2]=shell+sideHint*margin;return true;}

@@ -1,5 +1,6 @@
 // Выкройка: пресеты ткани, детали по контуру (addPanel), трубы-рукава (addTube).
 import * as THREE from 'three';
+import {addConformingPanel} from './panel-mesh.js';
 
 // ---------- библиотека выкроек (шаблоны) + симуляция ----------
 // Вещь собирается из деталей кроя по меркам: фото задаёт форму и рисунок, таблица размеров (или оценка) — масштаб.
@@ -31,6 +32,7 @@ export function makeCloth() {
 }
 // плоская деталь по многоугольнику (метры, y вниз от верха): сетка cell, края помечены ближайшим отрезком контура (метки labels[i])
 export function addPanel(C, poly, labels, cell, place, uvf, mat, role, restScale, classify, ox) {
+  if (C.conformingPanels) return addConformingPanel(C,poly,labels,cell,place,uvf,mat,role,restScale);
   let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; poly.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
   // ox: сетка привязана к этой линии (столбцы на ox ± cell/2) — у зеркальных деталей точки шва по середине совпадают
   if (ox != null) x0 = ox - Math.ceil((ox - x0) / cell) * cell;
@@ -88,12 +90,19 @@ export function addTube(C, S0, D, len, rad, segs, rings, mat, side, uvf, cap) {
       const P = t < 1 ? cap.center.clone().addScaledVector(cap.up || up, Math.cos(a) * cap.ry).addScaledVector(e2, Math.sin(a) * cap.rz).lerp(tube, t * t * (3 - 2 * t)) : tube;
       row.push(C.add(P.x, P.y, P.z)); prow.push(P); }
     g.push(row); pos.push(prow); }
-  const dist = (i1, j1, i2, j2) => pos[i1][j1 % segs].distanceTo(pos[i2][j2 % segs]);
+  // A seated cap is a placement guess, not a flat sewing pattern. Its 3D
+  // distances must not become the sleeve's physical rest metric.
+  const angleAt = j => Math.floor(j / segs) * Math.PI * 2 + (cap?.angles?.[j % segs] ?? (j % segs) / segs * Math.PI * 2);
+  const materialDistance = (i1,j1,i2,j2) => {
+    const s1=len*i1/(rings-1),s2=len*i2/(rings-1),r1=rad(s1),r2=rad(s2);
+    return Math.hypot((angleAt(j2)-angleAt(j1))*(r1+r2)/2,s2-s1,r2-r1);
+  };
+  const dist = (i1, j1, i2, j2) => cap?.flatMetric ? materialDistance(i1,j1,i2,j2) : pos[i1][j1 % segs].distanceTo(pos[i2][j2 % segs]);
   for (let i = 0; i < rings; i++) for (let j = 0; j < segs; j++) { const a = g[i][j];
     C.link(a, g[i][(j + 1) % segs], dist(i, j, i, j + 1), 3); C.link(a, g[i][(j + 2) % segs], dist(i, j, i, j + 2), 2);
     // у оката запас по высоте (как у настоящего рукава): иначе пройма на теле уже выкройки и верх рукава натянут «рожками»
     // запас — в основном снизу (к подмышке); сверху, у плечевой точки, малый: лишняя ткань там стоит «фонариком» над плечом
-    const aw = 0.3 + 0.7 * (1 - Math.cos(cap?.angles?.[j] ?? j / segs * Math.PI * 2)) / 2, ease = (v, k) => cap && i < 2 ? Math.max(v, (i === 0 ? 0.04 : 0.03) * k * aw) : v;
+    const aw = 0.3 + 0.7 * (1 - Math.cos(cap?.angles?.[j] ?? j / segs * Math.PI * 2)) / 2, ease = (v, k) => cap && !cap.flatMetric && i < 2 ? Math.max(v, (i === 0 ? 0.04 : 0.03) * k * aw) : v;
     if (i + 1 < rings) { C.link(a, g[i + 1][j], ease(dist(i, j, i + 1, j), 1), 0); C.link(a, g[i + 1][(j + 1) % segs], ease(dist(i, j, i + 1, j + 1), 1.15), 1); if (i + 2 < rings) C.link(a, g[i + 2][j], dist(i, j, i + 2, j), 2); } }
   const verts = [], uv = [], uvm = [], tris = [];
   for (let i = 0; i < rings; i++) { const s = len * i / (rings - 1), circ = 2 * Math.PI * rad(s); for (let j = 0; j <= segs; j++) { const u=j===segs?1:cap?.angles?cap.angles[j]/(2*Math.PI):j/segs;verts.push(g[i][j % segs]); uv.push(uvf(u, i / (rings - 1))); uvm.push([u * circ, s]); } }

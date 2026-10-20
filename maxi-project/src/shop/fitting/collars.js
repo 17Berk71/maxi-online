@@ -2,11 +2,26 @@
 import * as THREE from 'three';
 import {ellP} from './geometry.js';
 import {addPanel, addTube} from './pattern.js';
+import {labelledBoundary} from './panel-mesh.js';
 
 // капюшон: две боковины, сшитые по затылку и макушке, низ вшит в горловину (перед и спинка); лицевой край свободный
 // up — на голове; иначе лежит на спине (боковины сложены, макушка внизу)
 // воротник-стойка: невысокая лента вокруг шеи, низ вшит в горловину (перед и спинка), ткань — с верха переда на фото
 export function addStand(C, d, yTop, fronts, pb, mat, a) {
+  if(C.conformingPanels&&fronts.length===1){
+    const f=labelledBoundary(fronts[0],'neck'),b=labelledBoundary(pb,'neck');if(!f||!b)throw Error('Unresolved neckline for stand');
+    const neck=f.concat(b.slice(1,-1).reverse()),n=neck.length,h=.034*d.s,material=new Map();
+    for(const m of C.meshes)m.verts.forEach((v,k)=>material.set(v,m.uvm[k]));
+    const rest=neck.map((v,i)=>{const p=material.get(v),q=material.get(neck[(i+1)%n]);return Math.hypot(p[0]-q[0],p[1]-q[1]);}),circ=rest.reduce((x,y)=>x+y,0),arc=[0];
+    for(const length of rest)arc.push(arc.at(-1)+length);
+    const rows=[neck];for(let r=1;r<3;r++)rows.push(neck.map(v=>C.add(C.P[v*3]*(1-r*.015),C.P[v*3+1]+h*r/2,C.P[v*3+2]*(1-r*.015))));
+    const verts=[],uv=[],uvm=[],tris=[];for(let r=0;r<3;r++)for(let j=0;j<=n;j++){verts.push(rows[r][j%n]);uv.push([a.cx+(arc[j]/circ-.5)*.12,.01+r*.015]);uvm.push([arc[j],h*r/2]);}
+    for(let r=0;r<3;r++)for(let j=0;j<n;j++){const k=(j+1)%n;C.link(rows[r][j],rows[r][k],rest[j],3);
+      if(r<2){C.link(rows[r][j],rows[r+1][j],h/2,0);C.link(rows[r][j],rows[r+1][k],Math.hypot(rest[j],h/2),1);const a=r*(n+1)+j;tris.push(a,a+n+1,a+1,a+1,a+n+1,a+n+2);}
+    }
+    C.meshes.push({verts,uv,uvm,tris,mat,role:'stand',local:true});return;
+  }
+
   const neck = fronts.concat([pb]).flatMap(P_ => P_.pts.filter(p => p.edge && p.lab === 'neck').map(p => p.g)); if (neck.length < 6) return;
   const segs = 24, h = 0.034 * d.s, r = d.neck + 0.011, yb = yTop - 0.008;
   const tube = addTube(C, new THREE.Vector3(0, yb, 0), new THREE.Vector3(0, 1, 0), h, s => r - s * 0.08, segs, 3, mat, 1, (u, v) => [a.cx + (u - 0.5) * 0.12, 0.01 + v * 0.03]);

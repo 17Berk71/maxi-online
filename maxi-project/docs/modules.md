@@ -175,11 +175,13 @@
   - отдаёт: `bakeClothFrames`, `showClothFrame`
 - `shop/fitting/cloth-material.js` (13.5 КБ) — Ткань как материал: вид ткани, переплетение, ворс, мелкие заломы (шейдер), материал по фото.
   - отдаёт: `FT`, `fabricType`, `clothify`, `photoMat`
-- `shop/fitting/cloth-mesh.js` (22.7 КБ) — Сетка ткани для показа: нормали, затенение складок, сжатие (заломы), рельеф плиссе, кадры.
-  - отдаёт: `refineClothSurface`, `clothUpdate`, `clothProject`, `clothMeshes`
+- `shop/fitting/cloth-mesh.js` (22.9 КБ) — Сетка ткани для показа: нормали, затенение складок, сжатие (заломы), рельеф плиссе, кадры.
+  - отдаёт: `blendContactSide`, `refineClothSurface`, `clothUpdate`, `clothProject`, `clothMeshes`
+- `shop/fitting/cloth-relax.js` (1.9 КБ) — Project extension on the sewn graph, keeping flat-pattern rest lengths.
+  - отдаёт: `relaxSewnCloth`
 - `shop/fitting/collar3d.js` (8.8 КБ) — Отложной воротник (поло, рубашка) объёмом: на фото он лежал плоско и был нарисован на ткани. Здесь — отдельная деталь по линии горловины: стойка вверх вдоль шеи, сгиб и отлёт вниз, на плечи; спереди концы воротника уголками, у середины — разрез планки. Цвет и рисунок — с фото (место воротника у горловины). Деталь не считается в расчёте ткани: держится за точки горловины и в кадрах анимации едет вместе с ними.
   - отдаёт: `buildCollar`, `collarUpdate`
-- `shop/fitting/collars.js` (5.9 КБ) — Воротник-стойка и капюшон.
+- `shop/fitting/collars.js` (7.2 КБ) — Воротник-стойка и капюшон.
   - отдаёт: `addStand`, `addHood`
 - `shop/fitting/collider.js` (9.1 КБ) — Тело для расчёта ткани (столкновения): туловище, плечи, руки, ноги, нижние слои.
   - отдаёт: `DRAPE_ON`, `setDrape`, `legR`, `makeCollider`
@@ -193,7 +195,7 @@
   - отдаёт: `DIGITIZATION_VERSION`, `measurement`, `legacyContract`, `validateDigitization`
 - `shop/fitting/drape-old.js` (12.2 КБ) — Первый прототип расчёта ткани по силуэту фото (drapeGarment).
   - отдаёт: `drapeGarment`
-- `shop/fitting/drape.js` (53.4 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
+- `shop/fitting/drape.js` (55.2 КБ) — Выкройка вещи целиком: верх, юбка, брюки; швы, начальное положение, сборка сетки после расчёта.
   - отдаёт: `drapePrepare`, `drapeTemplate`
 - `shop/fitting/edges.js` (5.3 КБ) — Толщина ткани на открытых краях (низ, манжеты, горловина, борта): у сетки ткани один слой — край выглядел бумажным. Вдоль каждого края детали, не пришитого к другой детали, — узкий скруглённый бортик: от лица ткани через закруглённый срез к изнанке на толщину ткани. Строится по сетке показа и в кадрах анимации едет вместе с ней.
   - отдаёт: `edgeThickness`, `buildEdge`, `edgeUpdate`
@@ -219,7 +221,9 @@
   - отдаёт: `bindNeckline`
 - `shop/fitting/paint-body.js` (2.7 КБ) — Тело под вещью окрашено в тёмный тон вещи (в просветах не белое).
   - отдаёт: `paintBody`
-- `shop/fitting/pattern.js` (13.9 КБ) — Выкройка: пресеты ткани, детали по контуру (addPanel), трубы-рукава (addTube).
+- `shop/fitting/panel-mesh.js` (7.6 КБ) — Constrained material-space triangulation. Boundary corners and sewing segments survive refinement; 3D placement cannot change physical rest lengths.
+  - отдаёт: `triangulatePanel`, `addConformingPanel`, `labelledBoundary`
+- `shop/fitting/pattern.js` (14.6 КБ) — Выкройка: пресеты ткани, детали по контуру (addPanel), трубы-рукава (addTube).
   - отдаёт: `FABRIC`, `segDist`, `mirrorPoly`, `makeCloth`, `addPanel`, `addTube`
 - `shop/fitting/photo-garment.js` (16.0 КБ) — Вещь из фото как поверхность (прежний способ, без расчёта ткани).
   - отдаёт: `photoGarment`
@@ -231,8 +235,8 @@
   - отдаёт: `QC`, `qcCloth`
 - `shop/fitting/quality-masks.js` (2.5 КБ) — Deterministic area/connected-patch measurements on silhouette masks. No RGB threshold: a black garment, white fabric and the background stay distinct.
   - отдаёт: `coverageMetrics`, `compareProfiles`
-- `shop/fitting/quality-metrics.js` (9.5 КБ) — —
-  - отдаёт: `inspectStrain`, `inspectSleeves`, `inspectSilhouettes`, `auditGarment`
+- `shop/fitting/quality-metrics.js` (10.8 КБ) — —
+  - отдаёт: `inspectStrain`, `perimeterCentre`, `displayedPositions`, `backSourceStatus`, `inspectSleeves`, `inspectSilhouettes`, `auditGarment`
 - `shop/fitting/quality-policy.js` (5.7 КБ) — Engineering screening limits, not measured textile mechanics or fit accuracy.
   - отдаёт: `QUALITY_POLICY`, `qualityDecision`, `failedQualityAudit`, `runtimeQuality`, `geometryAcceptance`, `caseAcceptance`
 - `shop/fitting/quality-source-area.js` (1.4 КБ) — Surface area weighted by seven barycentric samples. The cutout grid is a coarse source-coverage diagnostic; offscreen pixel passes are the visible test.
@@ -265,7 +269,7 @@
   - отдаёт: `recommendSize`, `sizeOf`, `itemCm`, `fitNote`
 - `shop/fitting/sleeve-relax.js` (1.3 КБ) — После укладки оката сглаживание не должно оставлять растянутые связи. Окат закреплён на пройме; исходные длины выкройки не меняются.
   - отдаёт: `relaxSleeves`
-- `shop/fitting/specs.js` (16.7 КБ) — Мерки вещи по фото: длина и ширина, профиль силуэта, юбка, отведение рук.
+- `shop/fitting/specs.js` (16.8 КБ) — Мерки вещи по фото: длина и ширина, профиль силуэта, юбка, отведение рук.
   - отдаёт: `TOPK`, `trueHem`, `rowSpans`, `topSpec`, `bottomSpec`, `skirtProf`, `armSpread`
 - `shop/fitting/state.js` (1.0 КБ) — Общее изменяемое состояние примерочной: только то, что меняют разные модули. Читать и писать — fit.имя.   UNDER, UNDERZ — ширина и глубина уже надетых вещей по высоте (вещь не уже той, что под ней)   PEND, PENDZ   — слой вещи, которая сейчас строится (записывается после неё, commitLayer)   BOT_YW        — высота пояса надетых брюк/юбки (для заправленного верха)   looks         — сохранённые образы   open          — окно примерочной открыто   shopNow       — магазин, из которого открыли примерочную   raf           — номер кадра анимации окна (requestAnimationFrame)   tab           — открытая вкладка панели ('items' | 'body' | 'looks')
   - отдаёт: `fit`
@@ -279,7 +283,7 @@
   - отдаёт: `surfaceWelds`, `inspectSurfaceSeams`, `inspectPatternBoundary`, `shareSurfaceNormals`
 - `shop/fitting/texture-padding.js` (1.0 КБ) — Extend only transparent background RGB from the nearest opaque texel. The clothing mesh defines the cut edge; transparent photo background is not fabric. Opaque source pixels (including prints and calibrated colour) stay byte-identical.
   - отдаёт: `padTransparentTexels`
-- `shop/fitting/triangle-surface.js` (8.6 КБ) — Static upper-body triangle surface. Only typed numeric data crosses the worker. The lower body retains its existing collider in this iteration.
+- `shop/fitting/triangle-surface.js` (8.7 КБ) — Static upper-body triangle surface. Only typed numeric data crosses the worker. The lower body retains its existing collider in this iteration.
   - отдаёт: `buildUpperSurface`, `makeUpperMeshCollider`
 - `shop/fitting/ui.js` (0.9 КБ) — Окно примерочной: сцена, гардероб, образы, размеры, анимация надевания, кнопки.
   - отдаёт: `ctx`, `createFitting`

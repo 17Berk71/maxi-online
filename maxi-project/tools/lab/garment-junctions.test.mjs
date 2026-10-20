@@ -14,6 +14,7 @@ import {toItem} from '../../src/shop/fitting/room-wardrobe.js';
 import {garmentAssetKey} from '../../src/shop/fitting/asset-key.js';
 import {fit} from '../../src/shop/fitting/state.js';
 import {armJ} from '../../src/shop/fitting/geometry.js';
+import {perimeterCentre} from '../../src/shop/fitting/quality-metrics.js';
 import {topMeasures} from '../../src/shop/fitting/measures.js';
 import {clothMeshes,clothUpdate} from '../../src/shop/fitting/cloth-mesh.js';
 import {inspectSurfaceSeams} from '../../src/shop/fitting/surface-weld.js';
@@ -51,9 +52,9 @@ test('inferred long cuffs finish at the wrist; explicit sleeve lengths remain ga
  await loadMakeHuman();const b={sex:'m',height:176,weight:74,chest:96,waist:78,hips:98,model:'makehuman'},d=bodyDims(b);
  buildBody(b,new THREE.MeshStandardMaterial(),d);fit.UNDER=[];fit.UNDERZ=[];
  const item={id:'sweater',kind:'sweater',tex:{},shape:{cm:{chest:50,len:65,shoulder:42}}},j=drapePrepare(item,d),arm=armJ(d);
- for(const chain of j.sleeveChains){const row=chain.rings.at(-1),x=row.reduce((s,v)=>s+j.C.P[v*3],0)/row.length,y=row.reduce((s,v)=>s+j.C.P[v*3+1],0)/row.length;
-  assert.ok(Math.abs(Math.abs(x)-(arm.x+Math.sin(arm.th)*.335*d.H*.98))<1e-6);
-  assert.ok(Math.abs(y-(arm.y-Math.cos(arm.th)*.335*d.H*.98))<1e-6);
+ for(const chain of j.sleeveChains){const row=chain.rings.at(-1),[x,y]=perimeterCentre(row.map(v=>j.C.P.slice(v*3,v*3+3)));
+  assert.ok(Math.abs(Math.abs(x)-(arm.x+Math.sin(arm.th)*.335*d.H*.98))<.001);
+  assert.ok(Math.abs(y-(arm.y-Math.cos(arm.th)*.335*d.H*.98))<.001);
  }
  assert.equal(topMeasures({...item,shape:{cm:{...item.shape.cm,sleeve:70}}},d).SL,.7);
 });
@@ -91,4 +92,21 @@ test('curved dress hem stays one regular opening instead of sewing its higher co
  const item={id:'dress-hem',kind:'dress',puff:true,tex:{},shape:{cm:{chest:48,len:100,shoulder:37,sleeve:25},tw:[.6,.6,.55,.5,.4,.4,.5,.6,.7,.8,.9,1,1.1,1.2,1.3,1.4]}};
  const j=drapePrepare(item,d),q=inspectPatternBoundary({userData:{cloth:{C:j.C}}});
  assert.equal(q.loops.length,4);assert.equal(q.nonmanifold,0);assert.ok(q.loops.every(l=>l.degree===0));
+});
+
+test('a stand reuses the entire neckline and leaves no unmatched shoulder-corner hole',async()=>{
+ await loadMakeHuman();const b={sex:'f',height:173,weight:56,chest:82,waist:62,hips:92,model:'makehuman'},d=bodyDims(b);
+ buildBody(b,new THREE.MeshStandardMaterial(),d);fit.UNDER=[];fit.UNDERZ=[];
+ const item={id:'dress-stand',kind:'dress',stand:true,puff:true,tex:{},shape:{cm:{chest:48,len:100,shoulder:37,sleeve:25}}},j=drapePrepare(item,d),q=inspectPatternBoundary({userData:{cloth:{C:j.C}}});
+ assert.equal(q.loops.length,4);assert.equal(q.nonmanifold,0);assert.ok(q.loops.every(l=>l.degree===0));
+ const stand=j.C.meshes.find(m=>m.role==='stand');assert.ok(stand);assert.ok(stand.verts.some(v=>j.C.meshes.some(m=>m.role==='front'&&m.verts.includes(v))));
+});
+
+test('trouser rise joins only rise segments and preserves three regular openings',async()=>{
+ await loadMakeHuman();const b={sex:'m',height:176,weight:74,chest:96,waist:78,hips:98,model:'makehuman'},d=bodyDims(b);
+ buildBody(b,new THREE.MeshStandardMaterial(),d);fit.UNDER=[];fit.UNDERZ=[];
+ for(const kind of ['jeans','pants','shorts']){
+  const item={id:kind,kind,tex:{},shape:{cm:{waist:42,hip:54,outseam:kind==='shorts'?48:105,inseam:kind==='shorts'?20:78},leg:[.7,.6,.5]}},j=drapePrepare(item,d),q=inspectPatternBoundary({userData:{cloth:{C:j.C}}});
+  assert.equal(q.loops.length,3,kind);assert.equal(q.nonmanifold,0,kind);assert.equal(q.collapsed,0,kind);assert.ok(q.loops.every(l=>l.degree===0),kind);
+ }
 });

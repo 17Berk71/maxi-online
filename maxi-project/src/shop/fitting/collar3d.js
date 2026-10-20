@@ -35,22 +35,22 @@ export function buildCollar(g, C, P, N, mat) {
   const mesh = new THREE.Mesh(geo, m); mesh.castShadow = true; mesh.receiveShadow = true;
   mesh.userData.collar = {order, K, hs: cl.hs || 0.028, fw: cl.fw || 0.042}; collarUpdate(mesh, P, N); g.add(mesh);
 }
-// где на фото взять цвет воротника: у горловины — заметно другой цвет, чем у ткани корпуса (белый воротник поло);
-// если такого нет (воротник из той же ткани) или фото ещё не загружено — точка ткани корпуса
-function collarUV(tex, a) {
-  const body = [a.cx + a.hw * 0.3, 0.4], im = tex && tex.image; if (!im || !im.width) return body;
-  const W = 64, H = Math.max(8, Math.round(64 * im.height / im.width)), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d'); let D; try { g.drawImage(im, 0, 0, W, H); D = g.getImageData(0, 0, W, H).data; } catch (e) { return body; }
-  const px = (u, v) => { const i = (Math.min(H - 1, Math.floor(v * H)) * W + Math.min(W - 1, Math.floor(u * W))) * 4; return [D[i], D[i + 1], D[i + 2], D[i + 3]]; };
-  const ref = []; for (let v = 0.3; v < 0.6; v += 0.03) for (let u = -0.5; u <= 0.5; u += 0.1) ref.push(px(a.cx + u * a.hw, v));
-  const med = q => ref.map(c => c[q]).sort((x, y) => x - y)[ref.length >> 1], B = [med(0), med(1), med(2)];
-  const cand = []; let all = 0;
-  for (let v = 0.005; v < 0.1; v += 0.006) for (let u = -0.45; u <= 0.45; u += 0.04) { const uu = a.cx + u * a.hw, c = px(uu, v); if (c[3] < 200) continue; all++;
-    if (Math.hypot(c[0] - B[0], c[1] - B[1], c[2] - B[2]) > 70 && c[0] + c[1] + c[2] > (B[0] + B[1] + B[2]) * 0.85) cand.push([uu, v, c]); }   // тени и щели у горловины темнее — не воротник
-  if (!all || cand.length < all * 0.12) return body;
-  const m = [0, 1, 2].map(q => cand.map(c => c[2][q]).sort((x, y) => x - y)[cand.length >> 1]);
-  let best = cand[0], bd = 1e9; for (const c of cand) { const dd = Math.hypot(c[2][0] - m[0], c[2][1] - m[1], c[2][2] - m[2]); if (dd < bd) { bd = dd; best = c; } }
-  return [best[0], best[1]];
+// A contrasting collar requires the observed a.collar.rgb metadata. Bright
+// hangers, skin and background near the neckline are not colour evidence.
+export function sampleBodyColour(D,W,H,a={}){
+  const clamp=v=>Math.max(.02,Math.min(.98,v)),cx=Number.isFinite(a.cx)?a.cx:.5,hw=Number.isFinite(a.hw)?a.hw:.3,body=[clamp(cx+hw*.3),.4],samples=[];
+  for(let v=.3;v<.68;v+=.035)for(let u=-.5;u<=.5;u+=.1){const x=clamp(cx+u*hw),i=(Math.min(H-1,Math.floor(v*H))*W+Math.min(W-1,Math.floor(x*W)))*4;
+    if(D[i+3]>=240)samples.push({uv:[x,v],rgb:[D[i],D[i+1],D[i+2]]});
+  }
+  if(!samples.length)return body;
+  const median=[0,1,2].map(k=>samples.map(p=>p.rgb[k]).sort((x,y)=>x-y)[samples.length>>1]);
+  let best=samples[0],distance=Infinity;for(const p of samples){const delta=Math.hypot(...p.rgb.map((v,k)=>v-median[k]));if(delta<distance){distance=delta;best=p;}}
+  return best.uv;
+}
+function collarUV(tex,a){
+  const fallback=sampleBodyColour([],1,1,a),im=tex&&tex.image;if(!im||!im.width)return fallback;
+  const W=64,H=Math.max(8,Math.round(W*im.height/im.width)),cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const g=cv.getContext('2d');try{g.drawImage(im,0,0,W,H);return sampleBodyColour(g.getImageData(0,0,W,H).data,W,H,a);}catch{return fallback;}
 }
 // по точкам горловины P и нормалям ткани N (кадр анимации или итог): стойка — вверх вдоль шеи, отлёт — по поверхности
 // ткани вниз от горловины (на грудь, плечи, спину) с зазором на толщину, а не горизонтально в воздух

@@ -19,7 +19,7 @@ export function makeMeshBodyCollider(d,under,margin) {
     let x=P[i],y=P[i+1],z=P[i+2],hit=false;
     if(y<.004){y=.004;hit=true;}
     const f=noArm&&y<d.mhArmY-.07?core:full;
-    if(upper&&y>H*.43){
+    if(upper&&(d.mhUpper.fullBody||y>H*.43)){
       upperPoint[0]=x;upperPoint[1]=y;upperPoint[2]=z;hit=upper(upperPoint,0,sideHint===2?2:Math.abs(x)>.08*H&&y<.81*H?sideHint:0,P,i)||hit;
       x=upperPoint[0];y=upperPoint[1];z=upperPoint[2];
     }else if(sample(f,x,y)&&z<front+m&&z>back-m){

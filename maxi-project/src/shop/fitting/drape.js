@@ -15,6 +15,7 @@ import {itemCm} from './sizes.js';
 import {bottomSpec, rowSpans, skirtProf, trueHem} from './specs.js';
 import {seamBend} from './worker.js';
 import {shoulderRound} from './shoulder-round.js';
+import {relaxSewnCloth} from './cloth-relax.js';
 import {relaxSleeves} from './sleeve-relax.js';
 import {fit} from './state.js';
 import {patternRecipe} from './families.js';
@@ -42,6 +43,7 @@ export function drapePrepare(item, d, under) {
   // заправленный верх: ниже пояса брюк не отталкивается от них — край уходит внутрь, пояс брюк виден поверх
   if (tucked && under && fit.BOT_YW) { const lim = Math.round(fit.BOT_YW / d.H * 100) + 1; under = {a: under.a.map((v, i) => i <= lim ? 0 : v), b: under.b.map((v, i) => i <= lim ? 0 : v)}; }
   const H = d.H, C = makeCloth(), fab = FABRIC[recipe.fabric||k], rawPush = makeCollider(d, under, fab.margin), push=(P,q,noArm,side)=>rawPush(P,q,noArm,side??C.contactSide?.[q/3]??0), base = item.color || '#888', chains = [];
+  C.conformingPanels = !!d.mhUpper && !item.pleats && !item.lining;
   const dr = item.drape || {}, aF = (dr.front && dr.front.a) || {cx: 0.5}, aB = (dr.back && dr.back.a) || aF;
   // декор с фото переда (пуговицы) — объёмными деталями на детали «перед» (decor.js)
   C.decor = (aF.buttons || []).map(b => Object.assign({role: 'front'}, b));
@@ -134,21 +136,28 @@ export function drapePrepare(item, d, under) {
       if (m.side && p.y >= M.AD) return 'side';
       return null; };
     const clsF = (p, m) => (open && m.side && Math.abs(p.x) < 0.004 + cell * 1.2) ? 'cf' : cls(M.ND)(p, m);
-    const placeF = (x, y) => [x, yTop - y, zo], uvF = uvT(aF, false, dr.front, M.ND);
+    const placePanel=(poly,sign,labels)=>(x,y)=>{
+      if(!C.conformingPanels)return [x,yTop-y,sign*zo];
+      const hemStart=Math.min(...poly.filter((_,i)=>labels[i]==='hem'||labels[(i+labels.length-1)%labels.length]==='hem').map(p=>p[1])),sampleY=Math.min(y,hemStart-1e-9);
+      let half=0;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length];if((a[1]>sampleY)===(b[1]>sampleY))continue;half=Math.max(half,Math.abs(a[0]+(b[0]-a[0])*(sampleY-a[1])/(b[1]-a[1])));}
+      half=Math.max(half,Math.abs(x),.01);const angle=x/half*Math.PI/2,ab=bodyAB(d,Math.max(.43,(yTop-y)/H));
+      return [Math.sin(angle)*Math.max(ab.a+.012,half*.69),yTop-y,sign*Math.cos(angle)*Math.max(ab.b+.012,half*.38)];
+    };
+    const placeF = placePanel(F.P,1,F.L), uvF = uvT(aF, false, dr.front, M.ND);
     const fronts = open ? [-1, 1].map(sg => { const Hf = mkHalf(M.ND, sg); return addPanel(C, Hf.P, Hf.L, cell, placeF, uvF, mF, 'front', null, clsF); })
       : [addPanel(C, F.P, F.L, cell, placeF, uvF, mF, 'front', null, cls(M.ND))];
-    const pb = addPanel(C, B.P, B.L, cell, (x, y) => [x, yTop - y, -zo], uvT(aB, true, dr.back || dr.front, M.NDb), mB, 'back', null, cls(M.NDb));
+    const pb = addPanel(C, B.P, B.L, cell, placePanel(B.P,-1,B.L), uvT(aB, true, dr.back || dr.front, M.NDb), mB, 'back', null, cls(M.NDb));
     if(d.mhUpper&&top){C.neckline=fronts.concat([pb]).map(panel=>bindNeckline(C,panel));}
     // швы: плечи и бока — перед со спинкой (ближайшая точка края спинки с той же меткой)
     // угол плеча (плечевая точка) может попасть в метку «пройма» у одной детали и «плечо» у другой — шьём и его, иначе на плече дырка
-    const lb_ = q => q.lab === 'arm' && q.y < M.SD + cell * 0.9 ? 'shoulder' : q.lab;
-    const bEdge = pb.pts.filter(p => p.edge && (lb_(p) === 'shoulder' || p.lab === 'side'));
-    fronts.forEach(pf => pf.pts.forEach(p => { if (!p.edge || (lb_(p) !== 'shoulder' && p.lab !== 'side')) return; let best = cell * 0.8, q = null;
+    const lb_ = q => C.conformingPanels?(q.labs.has('shoulder')?'shoulder':q.labs.has('side')?'side':q.lab):(q.lab === 'arm' && q.y < M.SD + cell * 0.9 ? 'shoulder' : q.lab);
+    const bEdge = pb.pts.filter(p => p.edge && (lb_(p) === 'shoulder' || lb_(p) === 'side'));
+    fronts.forEach(pf => pf.pts.forEach(p => { if (!p.edge || (lb_(p) !== 'shoulder' && lb_(p) !== 'side')) return; let best = C.conformingPanels?1e-8:cell*.8, q = null;
       for (const b of bEdge) { if (lb_(b) !== lb_(p)) continue; const dd = Math.abs(b.x - p.x) + Math.abs(b.y - p.y); if (dd < best) { best = dd; q = b; } } if (q) C.seams.push([p.g, q.g]); }));
     // точки края, оставшиеся без пары (ступенька сетки на наклонном плече, разная глубина горловины переда и спинки), — к ближайшей
     // точке другой детали: иначе между пришитыми точками шов расходится ромбиками (тёмные «треугольники» на плечах)
-    { const sewn = new Set(C.seams.flatMap(([i, j]) => [i, j])), fEdge = fronts.flatMap(pf => pf.pts).filter(p => p.edge && (lb_(p) === 'shoulder' || p.lab === 'side'));
-      const tie = (A_, B_) => A_.forEach(p => { if (sewn.has(p.g)) return; let best = cell * 1.6, q = null; for (const b of B_) { if (lb_(b) !== lb_(p)) continue; const dd = Math.hypot(b.x - p.x, b.y - p.y); if (dd < best) { best = dd; q = b; } } if (q) { C.seams.push([p.g, q.g]); sewn.add(p.g); } });
+    { const sewn = new Set(C.seams.flatMap(([i, j]) => [i, j])), fEdge = fronts.flatMap(pf => pf.pts).filter(p => p.edge && (lb_(p) === 'shoulder' || lb_(p) === 'side'));
+      const tie = (A_, B_) => A_.forEach(p => { if (sewn.has(p.g)) return; let best = C.conformingPanels?1e-8:cell*1.6, q = null; for (const b of B_) { if (lb_(b) !== lb_(p)) continue; const dd = Math.hypot(b.x - p.x, b.y - p.y); if (dd < best) { best = dd; q = b; } } if (q) { C.seams.push([p.g, q.g]); sewn.add(p.g); } });
       tie(fEdge, bEdge); tie(bEdge, fEdge); }
     // расстёгнутые полочки: пока шьём, край у середины стоит на месте (как сметан) — иначе мягкую на сжатие ткань стягивает к боковому шву
     // застёгнутая вещь симметрична: середина переда и спинки (молния, планка, принт) остаётся ровно посередине, не виляет
@@ -175,7 +184,7 @@ export function drapePrepare(item, d, under) {
       // Sleeve length starts at the shoulder seam, not the armhole centre.
       // Starting a long tube at the axilla added half an armhole to its length
       // and drove cuffs into the thumb/hand despite correct shoulder contact.
-      const S0 = d.mhUpper && M.longSleeve ? new THREE.Vector3(side*j.x,j.y,0).addScaledVector(D,Math.max(0,M.S/2-j.x))
+      const S0 = d.mhUpper ? new THREE.Vector3(side*j.x,j.y,0).addScaledVector(D,Math.max(0,M.S/2-j.x))
         : new THREE.Vector3(side * Math.max(j.x * 0.9, (M.S / 2 + M.W / 2) / 2), yTop - (M.SD + M.AD) / 2, 0);
       // окат: эллипс в плоскости проймы — по высоте от плеча до подмышки, по глубине — чтобы длина совпала с проймой
       // окат лежит вдоль линии проймы — от плечевой точки вниз к подмышке (наклонно), а не стоит вертикально снаружи от плеча:
@@ -209,8 +218,13 @@ export function drapePrepare(item, d, under) {
       // Match the actual armhole boundary rather than rounding several panel
       // vertices onto one of twenty tube samples. No gathering is intended on a tee.
       const matchedCap=!!d.mhUpper&&top,count=matchedCap?lf.length+lb.length-2:20;
-      if(matchedCap)C.orientedSleeves=true;
-      if(matchedCap)cap.angles=Array.from({length:count},(_,j)=>j<=lf.length-1?Math.PI*j/(lf.length-1):Math.PI+Math.PI*(j-lf.length+1)/(lb.length-1));
+      if(matchedCap){C.orientedSleeves=true;cap.flatMetric=true;}
+      if(matchedCap){
+        const material=new Map();for(const m of C.meshes)m.verts.forEach((v,k)=>material.set(v,m.uvm[k]));
+        const arc=L=>{const a=[0];for(let i=1;i<L.length;i++){const p=material.get(L[i-1]),q=material.get(L[i]);a.push(a.at(-1)+Math.hypot(q[0]-p[0],q[1]-p[1]));}return a.map(v=>v/a.at(-1));};
+        const af=arc(lf),ab=arc(lb);cap.angles=new Array(count);
+        af.forEach((v,i)=>{cap.angles[i]=Math.PI*v;});ab.forEach((v,i)=>{if(i&&i<ab.length-1)cap.angles[count-i]=Math.PI*(2-v);});
+      }
       const tube = addTube(C, S0, D, M.SL, radS, count, Math.max(6, Math.round(M.SL / (matchedCap?.015:.025))), mS, side, sUV, cap);
       const ring = tube.top, segs = ring.length;
       if(matchedCap){C.sector||=[];for(const row of tube.rings)row.forEach((v,k)=>{const z=Math.sin(cap.angles[k]),x=Math.cos(cap.angles[k]);C.sector.push([v,Math.abs(z)>.15?Math.sign(z):0,Math.abs(x)>.8?Math.sign(x)*side:0,j.x*side,Math.tan(j.th)*side,j.y]);});}
@@ -337,12 +351,16 @@ export function drapePrepare(item, d, under) {
       parts['f' + sg] = addPanel(C, poly, L, cell, pl(zo * 0.95), uvP(aF, false, dr.front, sg, poly), mF, 'front', null, null, 0);
       parts['b' + sg] = addPanel(C, poly, L, cell, pl(-zo * 0.95), uvP(aB, true, dr.back, sg, poly), mB, 'back', seat, null, 0); });
     // швы: бок и шаговый — перед со спинкой своей стороны (одинаковая выкройка — одинаковые ячейки); сидение — левая с правой (зеркально)
-    [1, -1].forEach(sg => { const pf = parts['f' + sg], pb = parts['b' + sg]; pf.pts.forEach(p => { if (!p.edge || (p.lab !== 'side' && p.lab !== 'inner')) return; const q = pb.at(p.r, p.c); if (q && q.edge && q.lab === p.lab) C.seams.push([p.g, q.g]); }); });
+    [1,-1].forEach(sg=>{const pf=parts['f'+sg],pb=parts['b'+sg];
+      if(C.conformingPanels){const key=p=>[p.x,p.y].map(v=>Math.round(v*1e9)).join(':'),back=new Map(pb.pts.filter(p=>p.edge).map(p=>[key(p),p]));
+        for(const p of pf.pts)if(p.edge&&(p.labs.has('side')||p.labs.has('inner'))){const q=back.get(key(p));if(!q)throw Error('Unmatched trouser seam');C.seams.push([p.g,q.g]);}
+      }else pf.pts.forEach(p=>{if(!p.edge||(p.lab!=='side'&&p.lab!=='inner'))return;const q=pb.at(p.r,p.c);if(q&&q.edge&&q.lab===p.lab)C.seams.push([p.g,q.g]);});
+    });
     // (у самого шага сходятся четыре детали — туда же берём начало шаговых швов, иначе в развилке остаётся дырка)
-    const crotchJoin = p => p.edge && (p.lab === 'rise' || (p.lab === 'inner' && p.y < R + cell * 4));
+    const crotchJoin = p => p.edge && (C.conformingPanels?p.labs.has('rise'):(p.lab === 'rise' || (p.lab === 'inner' && p.y < R + cell * 4)));
     ['f', 'b'].forEach(k => { const A = parts[k + '1'], B = parts[k + '-1'], eb = B.pts.filter(crotchJoin);
       // (шов сидения и ширинки: у середины столбцы на ±cell/2 — пара по зеркалу; ниже по кривой шага — ближайшая точка)
-      A.pts.forEach(p => { if (!crotchJoin(p)) return; let best = cell * 1.3, q = null; for (const o of eb) { const dd = Math.abs(o.x + p.x) + Math.abs(o.y - p.y); if (dd < best) { best = dd; q = o; } } if (q) C.seams.push([p.g, q.g]); }); });
+      A.pts.forEach(p => { if (!crotchJoin(p)) return; let best = C.conformingPanels?1e-8:cell*1.3, q = null; for (const o of eb) { const dd = Math.abs(o.x + p.x) + Math.abs(o.y - p.y); if (dd < best) { best = dd; q = o; } } if (q) C.seams.push([p.g, q.g]); }); });
     // штанины не проходят друг сквозь друга: ниже шага каждая держится своей стороны от середины
     // (только верх штанины, где язычки: ниже ноги манекена сами разводят штанины, а у пола лишняя длина должна ложиться свободно —
     // иначе её выталкивает наружу и низ штанины стаскивает с ноги)
@@ -354,12 +372,12 @@ export function drapePrepare(item, d, under) {
     C.sector = []; [1, -1].forEach(sg => { const sp_ = spansOf(polyOf(sg)); ['f', 'b'].forEach(k => parts[k + sg].pts.forEach(p => { if (p.y <= R + cell) return; const iv = sp_(p.y); if (!iv) return;
       const inn = sg > 0 ? iv[0] : iv[1], out = sg > 0 ? iv[1] : iv[0], t = (p.x - inn) / ((out - inn) || 1e-4); C.sector.push([p.g, k === 'f' ? 1 : -1, t < 0.3 ? -sg : t > 0.7 ? sg : 0, sg * (d.legX + 0.01)]); })); });
   }
+  if(C.conformingPanels)C.seamCleanup=pruneCollapsedSeams(C);
   if(C.orientedSleeves){
-    C.seamCleanup=pruneCollapsedSeams(C);
     C.hoodJunctionTriangles=closeHoodJunctions(C);
     C.contactSide=new Int8Array(C.pin.length);
     for(const m of C.meshes)m.verts.forEach((v,k)=>{C.contactSide[v]=m.role==='front'?1:m.role==='back'?-1:m.contactSide?.[k]||0;});
-    for(const group of seamGroups(C)){const signs=new Set(group.map(v=>C.contactSide[v]).filter(Boolean)),side=signs.size===1?[...signs][0]:0;for(const v of group)C.contactSide[v]=side;}
+    for(const group of seamGroups(C)){const signs=new Set(group.map(v=>C.contactSide[v]).filter(Boolean)),side=signs.size===1?[...signs][0]:signs.size>1?2:0;for(const v of group)C.contactSide[v]=side;}
   }
   const finishPoints = (P, observe) => {
   observe?.('solver',P);
@@ -382,13 +400,14 @@ export function drapePrepare(item, d, under) {
   if (item.shape?.sleeveFinish === 'relax-v1') relaxSleeves(C, P, chains, push);
   observe?.('relax',P);
   if (d.mhField) projectSeams(C, P, push);
+  if(C.conformingPanels&&top)relaxSewnCloth(C,P,push);
   observe?.('seams',P);
   return P; };
   const finish = P => { finishPoints(P);
   const g = clothMeshes(C, P, H);
   g.userData.pattern={family:recipe.id,version:recipe.version,status:'prototype',review:!!recipe.review,expectedOpenings:top?((info.noSleeve?2:4)-(open?1:0)):recipe.topology==='skirt'?2:3};
   g.userData.surfacePush=capSurfaceCollider(d);
-  if(d.mhUpper&&top)g.userData.resolveSurface=makeSurfaceResolver(g,d,{neck:k==='jacket'||k==='coat'||!!item.stand});
+  if(d.mhUpper)g.userData.resolveSurface=makeSurfaceResolver(g,d,{fullBody:!top,neck:k==='jacket'||k==='coat'||!!item.stand});
   if(d.mhUpper&&top)g.userData.contactQA=finishShoulderContact(g,d);else clothProject(g);
   g.userData.measures = info; if (cover) g.userData.cover = Object.assign(cover, {color: base});
   if (typeof window !== 'undefined' && window.__keep) window.__last = {C, P};
