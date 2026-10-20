@@ -33,6 +33,21 @@ still need their own audited representation and are not certified by these
 changes. Optional QA diagnostics contain private geometry and belong only in
 the private output directory.
 
+Collar colour sampling now uses opaque body-fabric pixels; a contrasting
+collar requires the existing observed RGB metadata. This prevents a hanger or
+background highlight at the neckline from choosing the collar colour. The
+current source passes all 91 JavaScript tests, source lint and the build.
+Real WebGL coverage/state-restoration checks also pass. The full mall browser
+flow reaches and exercises fitting, then fails at the existing cinema entry
+timeout (`tools/test/check.mjs:135`); it is not a passed full application check.
+
+Two isolated sleeve-cap experiments (matching the cap's flat circumference
+directly, and a shaped material cap with ruled initial placement) increased
+sleeve extension, so neither is in this branch. A wider arm-pose diagnostic
+reduces some extension but does not remove the failures and is not adopted as
+a geometry fix. Source construction, texture segmentation, duplicated views,
+pleated surfaces and unresolved local strain remain separate blockers.
+
 This remains experimental. Reconstructed physical patterns and material
 properties are estimates. Full outfit, animation, size and source-fidelity
 acceptance are unresolved. Do not merge or deploy this draft based on unit
