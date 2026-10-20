@@ -15,6 +15,7 @@ import {itemCm} from './sizes.js';
 import {bottomSpec, rowSpans, skirtProf, trueHem} from './specs.js';
 import {seamBend} from './worker.js';
 import {shoulderRound} from './shoulder-round.js';
+import {relaxSewnCloth} from './cloth-relax.js';
 import {relaxSleeves} from './sleeve-relax.js';
 import {fit} from './state.js';
 import {patternRecipe} from './families.js';
@@ -42,6 +43,7 @@ export function drapePrepare(item, d, under) {
   // заправленный верх: ниже пояса брюк не отталкивается от них — край уходит внутрь, пояс брюк виден поверх
   if (tucked && under && fit.BOT_YW) { const lim = Math.round(fit.BOT_YW / d.H * 100) + 1; under = {a: under.a.map((v, i) => i <= lim ? 0 : v), b: under.b.map((v, i) => i <= lim ? 0 : v)}; }
   const H = d.H, C = makeCloth(), fab = FABRIC[recipe.fabric||k], rawPush = makeCollider(d, under, fab.margin), push=(P,q,noArm,side)=>rawPush(P,q,noArm,side??C.contactSide?.[q/3]??0), base = item.color || '#888', chains = [];
+  C.conformingPanels = !!d.mhUpper && top;
   const dr = item.drape || {}, aF = (dr.front && dr.front.a) || {cx: 0.5}, aB = (dr.back && dr.back.a) || aF;
   // декор с фото переда (пуговицы) — объёмными деталями на детали «перед» (decor.js)
   C.decor = (aF.buttons || []).map(b => Object.assign({role: 'front'}, b));
@@ -134,10 +136,16 @@ export function drapePrepare(item, d, under) {
       if (m.side && p.y >= M.AD) return 'side';
       return null; };
     const clsF = (p, m) => (open && m.side && Math.abs(p.x) < 0.004 + cell * 1.2) ? 'cf' : cls(M.ND)(p, m);
-    const placeF = (x, y) => [x, yTop - y, zo], uvF = uvT(aF, false, dr.front, M.ND);
+    const placePanel=(poly,sign)=>(x,y)=>{
+      if(!C.conformingPanels)return [x,yTop-y,sign*zo];
+      let half=0;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length];if((a[1]>y)===(b[1]>y))continue;half=Math.max(half,Math.abs(a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1])));}
+      half=Math.max(half,Math.abs(x),.01);const angle=x/half*Math.PI/2,ab=bodyAB(d,Math.max(.43,(yTop-y)/H));
+      return [Math.sin(angle)*Math.max(ab.a+.012,half*.69),yTop-y,sign*Math.cos(angle)*Math.max(ab.b+.012,half*.38)];
+    };
+    const placeF = placePanel(F.P,1), uvF = uvT(aF, false, dr.front, M.ND);
     const fronts = open ? [-1, 1].map(sg => { const Hf = mkHalf(M.ND, sg); return addPanel(C, Hf.P, Hf.L, cell, placeF, uvF, mF, 'front', null, clsF); })
       : [addPanel(C, F.P, F.L, cell, placeF, uvF, mF, 'front', null, cls(M.ND))];
-    const pb = addPanel(C, B.P, B.L, cell, (x, y) => [x, yTop - y, -zo], uvT(aB, true, dr.back || dr.front, M.NDb), mB, 'back', null, cls(M.NDb));
+    const pb = addPanel(C, B.P, B.L, cell, placePanel(B.P,-1), uvT(aB, true, dr.back || dr.front, M.NDb), mB, 'back', null, cls(M.NDb));
     if(d.mhUpper&&top){C.neckline=fronts.concat([pb]).map(panel=>bindNeckline(C,panel));}
     // швы: плечи и бока — перед со спинкой (ближайшая точка края спинки с той же меткой)
     // угол плеча (плечевая точка) может попасть в метку «пройма» у одной детали и «плечо» у другой — шьём и его, иначе на плече дырка
@@ -175,7 +183,7 @@ export function drapePrepare(item, d, under) {
       // Sleeve length starts at the shoulder seam, not the armhole centre.
       // Starting a long tube at the axilla added half an armhole to its length
       // and drove cuffs into the thumb/hand despite correct shoulder contact.
-      const S0 = d.mhUpper && M.longSleeve ? new THREE.Vector3(side*j.x,j.y,0).addScaledVector(D,Math.max(0,M.S/2-j.x))
+      const S0 = d.mhUpper ? new THREE.Vector3(side*j.x,j.y,0).addScaledVector(D,Math.max(0,M.S/2-j.x))
         : new THREE.Vector3(side * Math.max(j.x * 0.9, (M.S / 2 + M.W / 2) / 2), yTop - (M.SD + M.AD) / 2, 0);
       // окат: эллипс в плоскости проймы — по высоте от плеча до подмышки, по глубине — чтобы длина совпала с проймой
       // окат лежит вдоль линии проймы — от плечевой точки вниз к подмышке (наклонно), а не стоит вертикально снаружи от плеча:
@@ -209,8 +217,13 @@ export function drapePrepare(item, d, under) {
       // Match the actual armhole boundary rather than rounding several panel
       // vertices onto one of twenty tube samples. No gathering is intended on a tee.
       const matchedCap=!!d.mhUpper&&top,count=matchedCap?lf.length+lb.length-2:20;
-      if(matchedCap)C.orientedSleeves=true;
-      if(matchedCap)cap.angles=Array.from({length:count},(_,j)=>j<=lf.length-1?Math.PI*j/(lf.length-1):Math.PI+Math.PI*(j-lf.length+1)/(lb.length-1));
+      if(matchedCap){C.orientedSleeves=true;cap.flatMetric=true;}
+      if(matchedCap){
+        const material=new Map();for(const m of C.meshes)m.verts.forEach((v,k)=>material.set(v,m.uvm[k]));
+        const arc=L=>{const a=[0];for(let i=1;i<L.length;i++){const p=material.get(L[i-1]),q=material.get(L[i]);a.push(a.at(-1)+Math.hypot(q[0]-p[0],q[1]-p[1]));}return a.map(v=>v/a.at(-1));};
+        const af=arc(lf),ab=arc(lb);cap.angles=new Array(count);
+        af.forEach((v,i)=>{cap.angles[i]=Math.PI*v;});ab.forEach((v,i)=>{if(i&&i<ab.length-1)cap.angles[count-i]=Math.PI*(2-v);});
+      }
       const tube = addTube(C, S0, D, M.SL, radS, count, Math.max(6, Math.round(M.SL / (matchedCap?.015:.025))), mS, side, sUV, cap);
       const ring = tube.top, segs = ring.length;
       if(matchedCap){C.sector||=[];for(const row of tube.rings)row.forEach((v,k)=>{const z=Math.sin(cap.angles[k]),x=Math.cos(cap.angles[k]);C.sector.push([v,Math.abs(z)>.15?Math.sign(z):0,Math.abs(x)>.8?Math.sign(x)*side:0,j.x*side,Math.tan(j.th)*side,j.y]);});}
@@ -382,6 +395,7 @@ export function drapePrepare(item, d, under) {
   if (item.shape?.sleeveFinish === 'relax-v1') relaxSleeves(C, P, chains, push);
   observe?.('relax',P);
   if (d.mhField) projectSeams(C, P, push);
+  if(C.conformingPanels)relaxSewnCloth(C,P,push);
   observe?.('seams',P);
   return P; };
   const finish = P => { finishPoints(P);
