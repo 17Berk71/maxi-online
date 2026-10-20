@@ -93,3 +93,20 @@ test('curved dress hem stays one regular opening instead of sewing its higher co
  const j=drapePrepare(item,d),q=inspectPatternBoundary({userData:{cloth:{C:j.C}}});
  assert.equal(q.loops.length,4);assert.equal(q.nonmanifold,0);assert.ok(q.loops.every(l=>l.degree===0));
 });
+
+test('a stand reuses the entire neckline and leaves no unmatched shoulder-corner hole',async()=>{
+ await loadMakeHuman();const b={sex:'f',height:173,weight:56,chest:82,waist:62,hips:92,model:'makehuman'},d=bodyDims(b);
+ buildBody(b,new THREE.MeshStandardMaterial(),d);fit.UNDER=[];fit.UNDERZ=[];
+ const item={id:'dress-stand',kind:'dress',stand:true,puff:true,tex:{},shape:{cm:{chest:48,len:100,shoulder:37,sleeve:25}}},j=drapePrepare(item,d),q=inspectPatternBoundary({userData:{cloth:{C:j.C}}});
+ assert.equal(q.loops.length,4);assert.equal(q.nonmanifold,0);assert.ok(q.loops.every(l=>l.degree===0));
+ const stand=j.C.meshes.find(m=>m.role==='stand');assert.ok(stand);assert.ok(stand.verts.some(v=>j.C.meshes.some(m=>m.role==='front'&&m.verts.includes(v))));
+});
+
+test('trouser rise joins only rise segments and preserves three regular openings',async()=>{
+ await loadMakeHuman();const b={sex:'m',height:176,weight:74,chest:96,waist:78,hips:98,model:'makehuman'},d=bodyDims(b);
+ buildBody(b,new THREE.MeshStandardMaterial(),d);fit.UNDER=[];fit.UNDERZ=[];
+ for(const kind of ['jeans','pants','shorts']){
+  const item={id:kind,kind,tex:{},shape:{cm:{waist:42,hip:54,outseam:kind==='shorts'?48:105,inseam:kind==='shorts'?20:78},leg:[.7,.6,.5]}},j=drapePrepare(item,d),q=inspectPatternBoundary({userData:{cloth:{C:j.C}}});
+  assert.equal(q.loops.length,3,kind);assert.equal(q.nonmanifold,0,kind);assert.equal(q.collapsed,0,kind);assert.ok(q.loops.every(l=>l.degree===0),kind);
+ }
+});

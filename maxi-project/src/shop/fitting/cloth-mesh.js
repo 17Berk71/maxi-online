@@ -11,6 +11,10 @@ import {fit} from './state.js';
 import {shareSurfaceNormals} from './surface-weld.js';
 import {shareSeamValues,seamGroups} from './seam-groups.js';
 
+// 2 identifies a sewn neutral plane; an interior sample keeps the explicit
+// front/back direction of its other endpoint rather than interpreting 2 as +1.
+export const blendContactSide=(a,b)=>a===2?(b===2?2:b):b===2?a:a*b<0?0:Math.sign(a+b);
+
 function clothAO(C, P, N, n) {
   const sx_ = new Float32Array(n * 3), cnt = new Uint16Array(n), el = new Float32Array(n);
   for (let e = 0; e < C.E.length; e += 4) { const k = C.E[e + 3]; if (k !== 0 && k !== 3) continue; const i = C.E[e], j = C.E[e + 1];
@@ -86,7 +90,7 @@ export function refineClothSurface(g) {
     geometry.setIndex(idx);(cm.refinements||=[]).push({start,edges});
     const part=cl.C.meshes[cm.mi],shared=cm.surfaceShared||Array.from({length:start},(_,k)=>k<part.verts.length?cl.sewnG.has(part.verts[k]):cm.edges[k-part.verts.length].every(v=>cl.sewnG.has(part.verts[v])));
     for(const [a,b] of edges)shared.push(shared[a]&&shared[b]);cm.surfaceShared=shared;
-    if(cm.surfaceSide)for(const [a,b] of edges)cm.surfaceSide.push(cm.surfaceSide[a]*cm.surfaceSide[b]<0?0:Math.sign(cm.surfaceSide[a]+cm.surfaceSide[b]));
+    if(cm.surfaceSide)for(const [a,b] of edges)cm.surfaceSide.push(blendContactSide(cm.surfaceSide[a],cm.surfaceSide[b]));
   }
 }
 // кадр анимации: та же сетка (порядок вершин как в clothMeshes), новые точки ткани P — без пересборки
@@ -194,7 +198,7 @@ export function clothMeshes(C, P, H) {
     mesh.userData.cm = {mi, local:!!m.local, oriented:!!C.orientedSleeves, edges: [...mid.entries()].sort((a_, b_) => a_[1] - b_[1]).map(([key]) => [Math.floor(key / 100000), key % 100000])}; g.add(mesh);
     mesh.userData.cm.straight = new Set(mesh.userData.cm.edges.map(([i, j], q) => straight.has(i < j ? i * 100000 + j : j * 100000 + i) ? q : -1).filter(q => q >= 0));
     mesh.userData.cm.surfaceSide=m.verts.map(v=>renderSide[v]);
-    for(const [a,b] of mesh.userData.cm.edges){const s=mesh.userData.cm.surfaceSide;s.push(s[a]*s[b]<0?0:Math.sign(s[a]+s[b]));}
+    for(const [a,b] of mesh.userData.cm.edges){const s=mesh.userData.cm.surfaceSide;s.push(blendContactSide(s[a],s[b]));}
     if (m.relief) pleatRelief(geo, m.relief, mesh.userData.cm.edges, m.verts.length);
     // толщина на открытых краях (низ, манжеты, горловина): пришитые края — нет
     const nv = m.verts.length, ce = mesh.userData.cm.edges, sw = k => k < nv ? sewnG.has(m.verts[k]) : sewnG.has(m.verts[ce[k - nv][0]]) && sewnG.has(m.verts[ce[k - nv][1]]);

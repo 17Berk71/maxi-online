@@ -95,7 +95,8 @@ export function bottomSpec(item, d) {
   if (cm.outseam && cm.inseam) { const rise = (cm.outseam - cm.inseam) / 100 * 0.8, bodyC = 0.47 * H - 0.012; yC = Math.min(yW - rise, bodyC); yW = yC + rise; }
   let legLen = T - (yW - yC), yHem = yC - legLen, stack = 0;
   if (yHem < 0.012) { stack = 0.012 - yHem; yHem = 0.012; legLen = yC - yHem; }
-  let lw = (sh.leg || [0.6]).slice();
+  const rawLeg=sh.leg?.length?sh.leg:[.6];
+  let lw = rawLeg.length>=3?rawLeg.slice():[rawLeg[0],(rawLeg[0]+rawLeg.at(-1))/2,rawLeg.at(-1)];
   // хвост с резким сужением — шум фото (тень, обувь, загнутый край): дальше первой такой точки держим ширину
   for (let i = Math.max(1, lw.length >> 1); i < lw.length; i++) if (lw[i] < lw[i - 1] * 0.8) { for (let j = i; j < lw.length; j++) lw[j] = lw[i - 1] * 0.97; break; }
   lw = lw.map(v => v * kk);

@@ -18,6 +18,21 @@ vertices. Sleeve centres use perimeter weighting. Duplicate source hashes and
 partial/material-only back views cannot count as complete independent backs.
 The existing strict quality policy and its thresholds remain unchanged.
 
+The next recovery step removes forced front/back projection from empty body
+gaps. Mixed front/back sewn junctions use a neutral midplane; interpolation
+keeps their neighbouring surface directions. A real browser polo comparison
+has zero body crossings and zero seam gaps after this change, while remaining
+strain failures are retained. This is not full garment acceptance.
+
+Trouser panels now use exact material boundaries and sew only their actual
+rise segments. Sparse leg profiles are expanded before modifying the tail.
+Collar stands reuse the complete neckline rather than rounding it onto 24
+separate samples. MakeHuman collision data includes lower legs and feet, and
+bottoms receive displayed triangle contact correction. Pleated-grid surfaces
+still need their own audited representation and are not certified by these
+changes. Optional QA diagnostics contain private geometry and belong only in
+the private output directory.
+
 This remains experimental. Reconstructed physical patterns and material
 properties are estimates. Full outfit, animation, size and source-fidelity
 acceptance are unresolved. Do not merge or deploy this draft based on unit

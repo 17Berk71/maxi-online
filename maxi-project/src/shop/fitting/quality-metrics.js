@@ -34,7 +34,7 @@ export function displayedPositions(g,C,P){
 }
 
 export function backSourceStatus(item,dr){
- const front=item.digitization?.front,back=item.digitization?.back;
+ const views=item.digitization?.views||item.digitization||{},front=views.front,back=views.back;
  const hash=v=>v?.sourceSha256||v?.sha256||v?.sourceHash;
  if(!dr.back||!item.tex?.back||item.tex.back===item.tex.front)return 'missing';
  if(hash(front)&&hash(front)===hash(back))return 'duplicate';

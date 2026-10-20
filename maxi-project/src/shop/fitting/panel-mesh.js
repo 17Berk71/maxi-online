@@ -89,5 +89,17 @@ export function addConformingPanel(C,poly,labels,cell,place,uvf,mat,role,restSca
   for(const p of pts){const a=tops.get(p.c);if(p.y-a.y>cell*2)C.tether.push(p.g,a.g,Math.hypot(p.x-a.x,p.y-a.y)*1.02);}
  }
  C.meshes.push({verts:pts.map(p=>p.g),uv:pts.map(p=>uvf(p.x,p.y)),uvm:mesh.P,tris:mesh.tris,mat,role});
- return {pts,conforming:true,boundary:mesh.boundary.map(row=>row.map(k=>pts[k])),at:(r,c)=>pts.find(p=>p.r===r&&p.c===c)};
+ return {pts,conforming:true,segments:mesh.boundary.map((row,i)=>({label:labels[i],points:[...row,(i+1)%poly.length].map(k=>pts[k])})),boundary:mesh.boundary.map(row=>row.map(k=>pts[k])),at:(r,c)=>pts.find(p=>p.r===r&&p.c===c)};
+}
+
+export function labelledBoundary(panel,label){
+ const adjacent=new Map();for(const segment of panel.segments||[])if(segment.label===label)for(let i=1;i<segment.points.length;i++){
+  const a=segment.points[i-1].g,b=segment.points[i].g;
+  for(const [v,w]of [[a,b],[b,a]]){if(!adjacent.has(v))adjacent.set(v,new Set());adjacent.get(v).add(w);}
+ }
+ const starts=[...adjacent.keys()].filter(v=>adjacent.get(v).size===1);if(starts.length!==2)return null;
+ const byId=new Map(panel.pts.map(p=>[p.g,p]));starts.sort((a,b)=>byId.get(a).x-byId.get(b).x);
+ const path=[starts[0]];let previous;
+ while(path.at(-1)!==starts[1]){const current=path.at(-1),next=[...adjacent.get(current)].find(v=>v!==previous);if(next==null||path.includes(next))return null;path.push(next);previous=current;}
+ return path.length===adjacent.size?path:null;
 }

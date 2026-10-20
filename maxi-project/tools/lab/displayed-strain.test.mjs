@@ -12,9 +12,9 @@ test('a display correction cannot hide extension behind a relaxed solver state',
 });
 
 test('duplicate files at different URLs and material-only back crops are not complete views',()=>{
- const item={tex:{front:'front.webp',back:'back.webp'},digitization:{front:{sourceSha256:'same'},back:{sourceSha256:'same'}}},dr={back:{}};
- assert.equal(backSourceStatus(item,dr),'duplicate');item.digitization.back={sourceSha256:'other',coverage:'material-only'};assert.equal(backSourceStatus(item,dr),'partial');
- item.digitization.back={sourceSha256:'other'};assert.equal(backSourceStatus(item,dr),'independent');
+ const item={tex:{front:'front.webp',back:'back.webp'},digitization:{views:{front:{sha256:'same'},back:{sha256:'same'}}}},dr={back:{}};
+ assert.equal(backSourceStatus(item,dr),'duplicate');item.digitization.views.back={sourceSha256:'other',coverage:'material-only'};assert.equal(backSourceStatus(item,dr),'partial');
+ item.digitization.views.back={sourceSha256:'other'};assert.equal(backSourceStatus(item,dr),'independent');
  item.tex.back=item.tex.front;assert.equal(backSourceStatus(item,dr),'missing');
 });
 
