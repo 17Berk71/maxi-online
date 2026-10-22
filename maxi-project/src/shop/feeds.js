@@ -1,6 +1,7 @@
 // Товары из выгрузок магазинов (готовит tools/feeds/import_feed.py → feeds/index.json и feeds/<магазин>.json).
 // Если выгрузки у магазина нет или файлы недоступны, остаётся демо-каталог из catalog.js.
 import {PHOTOS} from './photos.js';
+import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
 let indexP = null;
@@ -48,6 +49,7 @@ export function feedCatalog(s, DEPT) {
       name: it.name, price: it.price, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,
       model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: it.pic && it.cut ? 'feed:' + it.id : null, pic: it.pic ? FEED_BASE + it.pic : null,
       sizes: it.sizes, url: it.url, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
+      evidence: catalogEvidence(it, F),
       fitPack: it.fit ? FEED_BASE + it.fit : null,   // пакет примерки (tools/feeds/fitpack.py): ткань по выкройке вместо простой формы
     }));
     // в зале мест больше, чем товаров в маленькой выгрузке, — товары повторяются по кругу
