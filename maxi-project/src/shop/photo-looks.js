@@ -35,14 +35,18 @@ export function movePhotoLook(id,dir){
   items=next;return true;
 }
 export function openPhotoLook(){
-  const existing=document.getElementById('maxi-photo-look');if(existing){existing.remove();return;}
+  const existing=document.getElementById('maxi-photo-look');if(existing){existing.querySelector('[data-close-photo-look]')?.click();return;}
   const root=document.createElement('section');root.id='maxi-photo-look';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');
   root.setAttribute('aria-label','Сопоставить фотографии товаров');
   Object.assign(root.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#f8f8fa',overflowY:'auto',padding:'20px',color:'#222',fontFamily:'system-ui,sans-serif'});
+  const previousFocus=document.activeElement;
+  const dismiss=()=>{document.removeEventListener('keydown',handleEscape,true);root.remove();if(previousFocus?.isConnected)previousFocus.focus();};
+  const handleEscape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dismiss();}};
+  document.addEventListener('keydown',handleEscape,true);
   const render=()=>{
     root.replaceChildren();
     const head=document.createElement('header');Object.assign(head.style,{display:'flex',justifyContent:'space-between',gap:'12px',alignItems:'center'});
-    const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.onclick=()=>root.remove();head.append(h,close);root.append(head);
+    const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.dataset.closePhotoLook='true';close.onclick=dismiss;head.append(h,close);root.append(head);
     const note=document.createElement('p');note.textContent='Это сопоставление изображений из товарных каталогов, иногда обработанных для витрин. Не является примеркой: размеры, пропорции и посадка не прогнозируются.';root.append(note);
     if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';root.append(empty);}
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
@@ -58,7 +62,7 @@ export function openPhotoLook(){
     }
     root.append(grid);
   };
-  root.addEventListener('keydown',e=>{if(e.key==='Escape')root.remove();});
+
   document.body.append(root);render();closeFocus();
   function closeFocus(){root.querySelector('button')?.focus();}
 }
