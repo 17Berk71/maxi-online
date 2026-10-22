@@ -22,9 +22,18 @@ export function addToPhotoLook(product,store,image){
   if(!persist(next))return false;
   items=next;return true;
 }
-export function removeFromPhotoLook(id){items=items.filter(x=>x.id!==id);persist(items);}
-export function movePhotoLook(id,dir){const n=items.findIndex(x=>x.id===id),m=n+dir;if(n<0||m<0||m>=items.length)return;
-  [items[n],items[m]]=[items[m],items[n]];persist(items);}
+export function removeFromPhotoLook(id){
+  const next=items.filter(x=>x.id!==id);
+  if(!persist(next))return false;
+  items=next;return true;
+}
+export function movePhotoLook(id,dir){
+  const n=items.findIndex(x=>x.id===id),m=n+dir;
+  if(n<0||m<0||m>=items.length)return false;
+  const next=items.slice();[next[n],next[m]]=[next[m],next[n]];
+  if(!persist(next))return false;
+  items=next;return true;
+}
 export function openPhotoLook(){
   const existing=document.getElementById('maxi-photo-look');if(existing){existing.remove();return;}
   const root=document.createElement('section');root.id='maxi-photo-look';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');
