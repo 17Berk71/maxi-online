@@ -6,7 +6,7 @@ try {
     const page=await browser.newPage({viewport:{width,height:800}});
     const errors=[];
     page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(process.env.MAXI_URL||'http://127.0.0.1:5173/',{waitUntil:'domcontentloaded'});
+    await page.goto((process.env.MAXI_URL||'http://127.0.0.1:5173').replace(/\/$/,'')+'/tools/test/fixtures/photo-board.html',{waitUntil:'domcontentloaded'});
     // Isolated photo board exercise: we need not wait for heavy mall WebGL rendering.
     await page.evaluate(async ()=>{
       const mod=await import('/src/shop/photo-looks.js');
