@@ -1,0 +1,43 @@
+// PRD FR-CAT-002/004, FR-DATA-004: explicit provenance and stock evidence.
+// Pure functions, usable in browser and Node tests. Missing evidence is never stock confirmation.
+export const AVAILABILITY = Object.freeze({
+  IN_STOCK: 'confirmed_in_stock',
+  OUT_OF_STOCK: 'confirmed_out_of_stock',
+  UNKNOWN: 'unknown',
+});
+const confirmed = new Set([AVAILABILITY.IN_STOCK, AVAILABILITY.OUT_OF_STOCK]);
+const scopes = new Set(['physical_store_tula', 'online_store', 'unspecified']);
+export function safeHttpUrl(input) {
+  if (typeof input !== 'string') return null;
+  try { const u = new URL(input); return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : null; }
+  catch { return null; }
+}
+export function inventoryEvidence(raw = {}, now = Date.now()) {
+  const e = raw && typeof raw === 'object' ? raw : {};
+  let status = confirmed.has(e.availability_status) ? e.availability_status : AVAILABILITY.UNKNOWN;
+  const scope = scopes.has(e.availability_scope) ? e.availability_scope : 'unspecified';
+  const stamp = typeof e.availability_checked_at === 'string' ? Date.parse(e.availability_checked_at) : NaN;
+  const expires = typeof e.availability_expires_at === 'string' ? Date.parse(e.availability_expires_at) : NaN;
+  const source = safeHttpUrl(e.availability_source);
+  // Only a time-bounded direct stock claim may be confirmed; catalogue presence is NOT store stock.
+  if (!source || !Number.isFinite(stamp) || !Number.isFinite(expires) ||
+      stamp > now || expires <= now || expires <= stamp || scope === 'unspecified') status = AVAILABILITY.UNKNOWN;
+  return {status, scope, checkedAt: Number.isFinite(stamp) ? new Date(stamp).toISOString() : null, source};
+}
+export function catalogEvidence(product = {}, feed = {}, now = Date.now()) {
+  const p = product && typeof product === 'object' ? product : {};
+  const f = feed && typeof feed === 'object' ? feed : {};
+  const sourceUrl = safeHttpUrl(p.source_url || p.url);
+  const demo = Boolean(p.demo || f.demo);
+  const image = typeof p.pic === 'string' ? p.pic : null;
+  const stamp = p.last_checked_at || f.updated || null;
+  const parsed = typeof stamp === 'string' ? Date.parse(stamp) : NaN;
+  return {
+    demo,
+    sourceUrl,
+    originalImage: image,
+    lastCheckedAt: Number.isFinite(parsed) ? new Date(parsed).toISOString() : null,
+    sourceType: typeof p.source_type === 'string' ? p.source_type : (f.source ? 'feed' : 'unknown'),
+    availability: demo ? inventoryEvidence({}, now) : inventoryEvidence(p, now),
+  };
+}
