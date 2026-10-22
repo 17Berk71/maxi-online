@@ -95,11 +95,13 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
   now.onclick=()=>{if(!put())return;closeShopPanel(false);openCart(true);};
   buy.append(add,now);w.appendChild(buy);}
  // MVP: source-photo board, separate from physical fitting.
- if(photo && p.feed){
+ const boardImage = evidence?.originalImage || (evidence?.demo ? photo : null);
+ if(boardImage && p.feed){
    const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить изображение в образ'), viewPhotos=el_('button','btn','Открыть образ');
-   addPhoto.onclick=()=>{if(addToPhotoLook(p,s,photo)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}};
+   addPhoto.onclick=()=>{if(addToPhotoLook(p,s,boardImage)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}};
    viewPhotos.onclick=()=>openPhotoLook();
    photos.append(addPhoto,viewPhotos);w.appendChild(photos);
+   if(evidence?.demo)w.appendChild(el_('p','sh-note','Демонстрационный образ из тестовых фотографий; исходные изображения не подтверждены.'));
  }
  // примерочная: вещь можно взять и примерить вместе с вещами из других магазинов
  if(FIT.isWearable(p)){const fr=el_('div','sh-row sh-fit');const fb=el_('button','btn');const sync=()=>{const on=FIT.has(p,s);fb.textContent=on?'В примерочной ✓ · открыть':'В примерочную';fb.classList.toggle('ok',on);};sync();
