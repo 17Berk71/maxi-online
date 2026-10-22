@@ -7,6 +7,7 @@ on:
       - 'maxi-project/src/shop/product.js'
       - 'maxi-project/src/shop/feeds.js'
       - 'maxi-project/tools/lab/catalog-evidence.test.mjs'
+      - 'maxi-project/tools/lab/photo-looks.test.mjs'
       - 'maxi-project/package*.json'
       - '.github/workflows/mvp-checks.yml'
   workflow_dispatch:
@@ -34,6 +35,6 @@ jobs:
           node --check src/shop/product.js
           node --check src/shop/feeds.js
       - name: Evidence policy tests
-        run: node --test tools/lab/catalog-evidence.test.mjs
+        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs
       - name: Production build
         run: npm run build
