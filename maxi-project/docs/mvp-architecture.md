@@ -87,3 +87,9 @@ This is intentionally more conservative than legacy imported size labels.
 This branch has not passed independent browser, lint or production-build checks.
 The reports in PR #17 are self-reported test outcomes for stage18, not acceptance of this branch.
 Never merge PR #17 and this branch directly to main before reconciliation of the entire PR chain.
+
+## Original photo provenance correction (22 Oct 2026)
+
+Feed `pic` is a resized and potentially background-removed preview, **not** an untouched source image. It may appear in a product card but must never be called original.
+The import CLI has a deliberate opt-in `--allow-original-image-links` flag. Use this only after reviewing authorization to display/embed source photos and ensuring that direct source URLs may be used; this switch by itself does **not** verify rights. It preserves the upstream HTTPS/HTTP photo URL as `original_image_url` without modifying its pixels.
+For non-demo products, the photo look board accepts `evidence.originalImage`, not the processed feed preview. Demo products can still use labeled test previews. The importer remains unapproved for real feeds until rights and vendor/local inventory evidence are verified.
