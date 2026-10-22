@@ -50,6 +50,7 @@ export function feedCatalog(s, DEPT) {
       model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: it.pic && it.cut ? 'feed:' + it.id : null, pic: it.pic ? FEED_BASE + it.pic : null,
       sizes: it.sizes, url: it.url, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
       evidence: catalogEvidence(it, F),
+      originalImageUrl: it.original_image_url || null,
       stockEvidence: {availability_status: it.availability_status, availability_scope: it.availability_scope,
         availability_source: it.availability_source, availability_checked_at: it.availability_checked_at,
         availability_expires_at: it.availability_expires_at},
