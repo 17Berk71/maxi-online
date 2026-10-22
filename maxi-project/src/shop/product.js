@@ -5,6 +5,7 @@ import {iconURL} from './icons.js';
 import {describe} from './describe.js';
 import {cart} from './cart.js';
 import {feedInfo} from './feeds.js';
+import {addToPhotoLook, openPhotoLook} from './photo-looks.js';
 import {onlineKind, onlineActions, onlineText, ACTIONS} from './online.js';
 import {$, LIN, V3} from '../core/helpers.js';
 import {humanParts} from '../mall/people-parts.js';
@@ -88,6 +89,13 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
   add.onclick=()=>{if(!put())return;add.textContent='В корзине ✓';add.classList.add('ok');showHint('«'+p.name+'» в корзине. Корзина — кнопка с сумкой вверху справа');setTimeout(()=>{add.textContent='Добавить ещё';add.classList.remove('ok');},1600);};
   now.onclick=()=>{if(!put())return;closeShopPanel(false);openCart(true);};
   buy.append(add,now);w.appendChild(buy);}
+ // MVP: source-photo board, separate from physical fitting.
+ if(photo){
+   const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить фото в образ'), viewPhotos=el_('button','btn','Открыть образ');
+   addPhoto.onclick=()=>{if(addToPhotoLook(p,s,photo)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}};
+   viewPhotos.onclick=()=>openPhotoLook();
+   photos.append(addPhoto,viewPhotos);w.appendChild(photos);
+ }
  // примерочная: вещь можно взять и примерить вместе с вещами из других магазинов
  if(FIT.isWearable(p)){const fr=el_('div','sh-row sh-fit');const fb=el_('button','btn');const sync=()=>{const on=FIT.has(p,s);fb.textContent=on?'В примерочной ✓ · открыть':'В примерочную';fb.classList.toggle('ok',on);};sync();
   fb.onclick=()=>{if(!FIT.has(p,s)){FIT.add(p,s,true);sync();showHint('«'+p.name+'» — в примерочной ('+FIT.count()+' вещ.). '+(app.mode==='store'&&app.SHOP&&app.SHOP.fit?'Кабина — в левом углу у входа':'Примерить можно в любом магазине одежды'));}else openFitting();};
