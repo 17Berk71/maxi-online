@@ -19,8 +19,9 @@ export function inventoryEvidence(raw = {}, now = Date.now()) {
   const stamp = typeof e.availability_checked_at === 'string' ? Date.parse(e.availability_checked_at) : NaN;
   const expires = typeof e.availability_expires_at === 'string' ? Date.parse(e.availability_expires_at) : NaN;
   const source = safeHttpUrl(e.availability_source);
+  const demo = e.demo === true;
   // Only a time-bounded direct stock claim may be confirmed; catalogue presence is NOT store stock.
-  if (!source || !Number.isFinite(stamp) || !Number.isFinite(expires) ||
+  if (demo || !source || !Number.isFinite(stamp) || !Number.isFinite(expires) ||
       stamp > now || expires <= now || expires <= stamp || scope === 'unspecified') status = AVAILABILITY.UNKNOWN;
   return {status, scope, checkedAt: Number.isFinite(stamp) ? new Date(stamp).toISOString() : null, source};
 }
@@ -29,7 +30,7 @@ export function catalogEvidence(product = {}, feed = {}, now = Date.now()) {
   const f = feed && typeof feed === 'object' ? feed : {};
   const sourceUrl = safeHttpUrl(p.source_url || p.url);
   const demo = Boolean(p.demo || f.demo);
-  const image = typeof p.pic === 'string' ? p.pic : null;
+  const image = typeof p.original_image_url === 'string' ? safeHttpUrl(p.original_image_url) : null;
   const stamp = p.last_checked_at || f.updated || null;
   const parsed = typeof stamp === 'string' ? Date.parse(stamp) : NaN;
   return {
@@ -38,6 +39,6 @@ export function catalogEvidence(product = {}, feed = {}, now = Date.now()) {
     originalImage: image,
     lastCheckedAt: Number.isFinite(parsed) ? new Date(parsed).toISOString() : null,
     sourceType: typeof p.source_type === 'string' ? p.source_type : (f.source ? 'feed' : 'unknown'),
-    availability: demo ? inventoryEvidence({}, now) : inventoryEvidence(p, now),
+    availability: inventoryEvidence({...p, demo}, now),
   };
 }
