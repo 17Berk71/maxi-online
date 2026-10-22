@@ -69,7 +69,7 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  const info=describe(p,m);
  const pr=el_('div','sh-pricebox');pr.append(el_('span','sh-price',fmtPrice(p.price)));if(p.oldPrice&&p.oldPrice>p.price){const o=el_('s','sh-old',fmtPrice(p.oldPrice));pr.appendChild(o);}
  pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена на '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
- const evidence=p.feed?p.evidence:null, stock=p.feed?inventoryEvidence(p.stockEvidence||{}):null;
+ const evidence=p.feed?p.evidence:null, stock=p.feed&&!evidence?.demo?inventoryEvidence(p.stockEvidence||{}):null;
  const localStock=stock&&stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
  const stockText=localStock?(stock.status===AVAILABILITY.IN_STOCK?'Подтверждено наличие в магазине Тулы.':'Подтверждено отсутствие в магазине Тулы.'):'Наличие именно в ТРЦ «Макси» не подтверждено.';
  w.appendChild(el_('p','sh-stock',p.feed?'Размеры приведены по каталогу. '+stockText:'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.'));
