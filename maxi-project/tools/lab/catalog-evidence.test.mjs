@@ -23,10 +23,18 @@ test('demo catalogue never claims inventory', () => {
  const r=catalogEvidence({...valid,pic:'original.webp',url:'https://shop.example/item'}, {demo:true,updated:'2026-10-12'},NOW);
  assert.equal(r.availability.status, AVAILABILITY.UNKNOWN);
  assert.equal(r.demo,true);
- assert.equal(r.originalImage,'original.webp');
+ assert.equal(r.originalImage,null);
 });
 test('javascript and data URLs cannot be outbound product links', () => {
  assert.equal(safeHttpUrl('javascript:alert(1)'), null);
  assert.equal(safeHttpUrl('data:text/html,test'), null);
  assert.equal(safeHttpUrl('https://example.com/item'),'https://example.com/item');
+});
+
+test('verified original image URL is distinct from processed preview', () => {
+ const r=catalogEvidence({pic:'derived.webp',original_image_url:'https://example.com/source.jpg'}, {demo:false}, NOW);
+ assert.equal(r.originalImage,'https://example.com/source.jpg');
+});
+test('demo products cannot claim stock even with complete-looking evidence', () => {
+ assert.equal(inventoryEvidence({...valid,demo:true},NOW).status, AVAILABILITY.UNKNOWN);
 });
