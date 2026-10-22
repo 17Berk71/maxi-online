@@ -9,6 +9,7 @@ on:
       - 'maxi-project/tools/lab/catalog-evidence.test.mjs'
       - 'maxi-project/tools/lab/photo-looks.test.mjs'
       - 'maxi-project/tools/test/photo-looks.browser.mjs'
+      - 'maxi-project/tools/feeds/import_feed.py'
       - 'maxi-project/package*.json'
       - '.github/workflows/mvp-checks.yml'
   workflow_dispatch:
@@ -35,6 +36,8 @@ jobs:
           node --check src/shop/photo-looks.js
           node --check src/shop/product.js
           node --check src/shop/feeds.js
+      - name: Feed importer syntax
+        run: python3 -m py_compile tools/feeds/import_feed.py
       - name: Evidence policy tests
         run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs
       - name: Production build
