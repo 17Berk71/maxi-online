@@ -242,6 +242,7 @@ def main():
     ap.add_argument('feeds', nargs='+'); ap.add_argument('--out', default=os.path.join(ROOT, 'public', 'feeds'))
     ap.add_argument('--per-shop', type=int, default=300); ap.add_argument('--source', default='')
     ap.add_argument('--demo', action='store_true', help='пометить как тестовую выгрузку (ненастоящие товары)')
+    ap.add_argument('--allow-original-image-links', action='store_true', help='разрешено только при документально проверенных правах на исходные фото; не меняет пиксели')
     ap.add_argument('--fit', action='store_true', help='собрать пакеты примерки (выкройка и ткань) для одежды — fitpack.py')
     ap.add_argument('--jobs', type=int, default=max(1, (os.cpu_count() or 2) - 1), help='сколько пакетов примерки собирать одновременно (ядра процессора)')
     a = ap.parse_args()
@@ -275,6 +276,8 @@ def main():
             iid = hashlib.md5((shop + '|' + of['group']).encode()).hexdigest()[:10]
             item = {'id': iid, 'name': of['name'], 'price': price, 'color': color_hex(of['color']), 'colorName': of['color'].lower(),
                     'sizes': of['sizes'], 'url': of['url'], 'pickup': of['pickup']}
+            if a.allow_original_image_links and re.match(r'^https?://', of.get('pic') or ''):
+                item['original_image_url'] = of['pic']
             if of.get('desc'): item['desc'] = of['desc']
             if of['oldprice']:
                 try: item['oldPrice'] = int(float(of['oldprice']))
