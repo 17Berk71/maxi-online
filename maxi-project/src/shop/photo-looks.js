@@ -3,21 +3,24 @@
 import {safeHttpUrl} from './catalog-evidence.js';
 const KEY='maxi-photo-looks-v1';
 const MAX=24;
+function imageUrl(input){return typeof input==='string' && input.startsWith('/') && !input.startsWith('//') ? input : safeHttpUrl(input);}
 function read() {
   try {const p=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(p)?p.filter(valid).slice(0,MAX):[];}
   catch{return [];}
 }
 function valid(x){return x && typeof x.id==='string' && typeof x.title==='string' && typeof x.image==='string' &&
-  !/^javascript:|^data:/i.test(x.image) && (x.image.startsWith('/') || /^https?:\/\//i.test(x.image));}
+  Boolean(imageUrl(x.image));}
 function persist(items){try{localStorage.setItem(KEY,JSON.stringify(items));return true;}catch{return false;}}
 let items=read();
 export function photoLookItems(){return items.slice();}
 export function addToPhotoLook(product,store,image){
-  if(!image || !(image.startsWith('/') || safeHttpUrl(image)))return false;
+  if(!imageUrl(image))return false;
   const id=String(store?.name||'')+'|'+String(product?.id||product?.name||'')+'|'+String(product?.color||'');
   const entry={id,title:String(product?.name||'Товар'),shop:String(store?.name||''),image,sourceUrl:safeHttpUrl(product?.url)||null};
   if(!valid(entry))return false;
-  items=[...items.filter(x=>x.id!==id),entry].slice(-MAX);persist(items);return true;
+  const next=[...items.filter(x=>x.id!==id),entry].slice(-MAX);
+  if(!persist(next))return false;
+  items=next;return true;
 }
 export function removeFromPhotoLook(id){items=items.filter(x=>x.id!==id);persist(items);}
 export function movePhotoLook(id,dir){const n=items.findIndex(x=>x.id===id),m=n+dir;if(n<0||m<0||m>=items.length)return;
@@ -25,13 +28,13 @@ export function movePhotoLook(id,dir){const n=items.findIndex(x=>x.id===id),m=n+
 export function openPhotoLook(){
   const existing=document.getElementById('maxi-photo-look');if(existing){existing.remove();return;}
   const root=document.createElement('section');root.id='maxi-photo-look';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');
-  root.setAttribute('aria-label','Собрать образ по оригинальным фотографиям');
+  root.setAttribute('aria-label','Сопоставить фотографии товаров');
   Object.assign(root.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#f8f8fa',overflowY:'auto',padding:'20px',color:'#222',fontFamily:'system-ui,sans-serif'});
   const render=()=>{
     root.replaceChildren();
     const head=document.createElement('header');Object.assign(head.style,{display:'flex',justifyContent:'space-between',gap:'12px',alignItems:'center'});
-    const h=document.createElement('h2');h.textContent='Мой образ · оригинальные фото';const close=document.createElement('button');close.textContent='Закрыть ×';close.onclick=()=>root.remove();head.append(h,close);root.append(head);
-    const note=document.createElement('p');note.textContent='Это сопоставление фотографий, а не примерка: размеры, пропорции и посадка не прогнозируются.';root.append(note);
+    const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.onclick=()=>root.remove();head.append(h,close);root.append(head);
+    const note=document.createElement('p');note.textContent='Это сопоставление изображений из товарных каталогов, иногда обработанных для витрин. Не является примеркой: размеры, пропорции и посадка не прогнозируются.';root.append(note);
     if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';root.append(empty);}
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
     for(const it of items){
