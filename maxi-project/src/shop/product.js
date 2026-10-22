@@ -69,8 +69,8 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена на '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
  w.appendChild(el_('p','sh-stock',fi?'Размеры — те, что есть в выгрузке магазина на '+fmtDate(fi.updated)+'. Есть ли вещь именно в «Макси», видно при заказе на сайте магазина.':'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.'));
  let chosen=size||null;const sz=p.sizes&&p.sizes.length?p.sizes:SIZES[m];let lab=null;
- if(sz){lab=el_('p','sh-lab',p.feed?'Размеры в наличии':'Размер');w.appendChild(lab);const row=el_('div','sh-sizes');
-  sz.forEach(x=>{const b=el_('button','sh-size'+(x===chosen?' on':''),x);b.onclick=()=>{row.querySelectorAll('.sh-size').forEach(q=>q.classList.remove('on'));b.classList.add('on');chosen=x;lab.textContent=p.feed?'Размеры в наличии':'Размер';lab.classList.remove('err');};row.appendChild(b);});w.appendChild(row);}
+ if(sz){lab=el_('p','sh-lab',p.feed?'Размеры из каталога':'Размер');w.appendChild(lab);const row=el_('div','sh-sizes');
+  sz.forEach(x=>{const b=el_('button','sh-size'+(x===chosen?' on':''),x);b.onclick=()=>{row.querySelectorAll('.sh-size').forEach(q=>q.classList.remove('on'));b.classList.add('on');chosen=x;lab.textContent=p.feed?'Размеры из каталога':'Размер';lab.classList.remove('err');};row.appendChild(b);});w.appendChild(row);}
  const buy=el_('div','sh-row sh-buy');
  if(p.feed){
   // покупка и бронь — на сайте магазина: туда ведёт ссылка на товар из выгрузки
