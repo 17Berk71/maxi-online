@@ -57,8 +57,8 @@ This is intentionally more conservative than legacy imported size labels.
 - [x] Create isolated branch, without changing main or pre-existing PRs.
 - [x] Introduce pure `catalog-evidence` module and unit tests.
 - [x] Attach evidence to imported products.
-- [ ] Run tests / Vite build on a runnable checkout; connector-only environment cannot execute repository.
-- [ ] Wire truthful availability/source UI; preserve accessibility and responsive behavior.
+- [x] GitHub Actions syntax checks, Node tests, production build, and isolated Playwright desktop/mobile smoke pass (run #11, 22 Oct 2026). This does not certify the full mall.
+- [x] Product cards avoid unverified local stock, pickup, and demo purchase claims.\n- [ ] Full keyboard/screen-reader audit and integrated mall browser E2E remain open.
 
 ### M1 real-data pilot (P0)
 - [ ] Choose real permitted product feeds across at least two categories; record rights and source terms.
@@ -68,7 +68,7 @@ This is intentionally more conservative than legacy imported size labels.
 
 ### M2 photo-first outfit board (P0)
 - [ ] New standalone route reachable from product card and quick catalogue.
-- [ ] Add, remove, reorder and save items from different stores without 3D body/AI.
+- [x] Isolated outfit board adds, removes, reorders and browser-saves images across stores without 3D/AI; independently smoke-tested.\n- [ ] Add independent named look collections and storage migration.
 - [ ] Side-by-side unmodified images with consistent frames and clear “not fit simulation” disclaimer.
 - [ ] Accessible mobile flow, image loading/empty states and storage version migration.
 
