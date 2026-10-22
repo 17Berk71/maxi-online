@@ -1,0 +1,39 @@
+name: MVP architecture checks
+on:
+  pull_request:
+    paths:
+      - 'maxi-project/src/shop/catalog-evidence.js'
+      - 'maxi-project/src/shop/photo-looks.js'
+      - 'maxi-project/src/shop/product.js'
+      - 'maxi-project/src/shop/feeds.js'
+      - 'maxi-project/tools/lab/catalog-evidence.test.mjs'
+      - 'maxi-project/package*.json'
+      - '.github/workflows/mvp-checks.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: maxi-project
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: maxi-project/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Check changed module syntax
+        run: |
+          node --check src/shop/catalog-evidence.js
+          node --check src/shop/photo-looks.js
+          node --check src/shop/product.js
+          node --check src/shop/feeds.js
+      - name: Evidence policy tests
+        run: node --test tools/lab/catalog-evidence.test.mjs
+      - name: Production build
+        run: npm run build
