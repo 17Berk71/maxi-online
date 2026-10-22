@@ -6,6 +6,7 @@ import {describe} from './describe.js';
 import {cart} from './cart.js';
 import {feedInfo} from './feeds.js';
 import {addToPhotoLook, openPhotoLook} from './photo-looks.js';
+import {inventoryEvidence, AVAILABILITY, safeHttpUrl} from './catalog-evidence.js';
 import {onlineKind, onlineActions, onlineText, ACTIONS} from './online.js';
 import {$, LIN, V3} from '../core/helpers.js';
 import {humanParts} from '../mall/people-parts.js';
@@ -68,17 +69,21 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  const info=describe(p,m);
  const pr=el_('div','sh-pricebox');pr.append(el_('span','sh-price',fmtPrice(p.price)));if(p.oldPrice&&p.oldPrice>p.price){const o=el_('s','sh-old',fmtPrice(p.oldPrice));pr.appendChild(o);}
  pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена на '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
- w.appendChild(el_('p','sh-stock',fi?'Размеры — те, что есть в выгрузке магазина на '+fmtDate(fi.updated)+'. Есть ли вещь именно в «Макси», видно при заказе на сайте магазина.':'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.'));
+ const evidence=p.feed?p.evidence:null, stock=p.feed?inventoryEvidence(p.stockEvidence||{}):null;
+ const localStock=stock&&stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
+ const stockText=localStock?(stock.status===AVAILABILITY.IN_STOCK?'Подтверждено наличие в магазине Тулы.':'Подтверждено отсутствие в магазине Тулы.'):'Наличие именно в ТРЦ «Макси» не подтверждено.';
+ w.appendChild(el_('p','sh-stock',p.feed?'Размеры приведены по каталогу. '+stockText:'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.'));
  let chosen=size||null;const sz=p.sizes&&p.sizes.length?p.sizes:SIZES[m];let lab=null;
  if(sz){lab=el_('p','sh-lab',p.feed?'Размеры из каталога':'Размер');w.appendChild(lab);const row=el_('div','sh-sizes');
   sz.forEach(x=>{const b=el_('button','sh-size'+(x===chosen?' on':''),x);b.onclick=()=>{row.querySelectorAll('.sh-size').forEach(q=>q.classList.remove('on'));b.classList.add('on');chosen=x;lab.textContent=p.feed?'Размеры из каталога':'Размер';lab.classList.remove('err');};row.appendChild(b);});w.appendChild(row);}
  const buy=el_('div','sh-row sh-buy');
  if(p.feed){
   // покупка и бронь — на сайте магазина: туда ведёт ссылка на товар из выгрузки
-  const a=el_('a','btn pri','Купить на сайте магазина ↗');a.href=p.url||siteOf(s)||mapsOf(s);a.target='_blank';a.rel='noopener';buy.appendChild(a);
-  if(p.pickup){const b=el_('a','btn','Забрать в «Макси» ↗');b.href=p.url||siteOf(s)||mapsOf(s);b.target='_blank';b.rel='noopener';buy.appendChild(b);}
-  w.appendChild(buy);
-  if(p.pickup)w.appendChild(el_('p','sh-note','«Забрать в «Макси»» — на сайте магазина выбери самовывоз из ТРЦ «Макси», Тула. Бронь и оплату ведёт сам магазин.'));}
+  const outbound=safeHttpUrl(p.url);
+  if(outbound&&!evidence?.demo){const a=el_('a','btn pri','Открыть товар на сайте ↗');a.href=outbound;a.target='_blank';a.rel='noopener noreferrer';buy.appendChild(a);}
+  else w.appendChild(el_('p','sh-note',evidence?.demo?'Тестовый товар: ссылка на покупку недоступна.':'Подтверждённая ссылка на товар недоступна.'));
+  if(localStock&&stock.status===AVAILABILITY.IN_STOCK&&p.pickup&&outbound&&!evidence?.demo){const b=el_('a','btn','Уточнить самовывоз ↗');b.href=outbound;b.target='_blank';b.rel='noopener noreferrer';buy.appendChild(b);}
+  w.appendChild(buy);}
  else if(kind==='act'){const a0=onlineActions(s)[0],a=el_('a','btn pri',ACTIONS[a0].btn);a.href=siteOf(s)||mapsOf(s);a.target='_blank';a.rel='noopener';buy.appendChild(a);w.appendChild(buy);
   w.appendChild(el_('p','sh-note',onlineText(s)+(siteOf(s)?' Оформление — на сайте «'+s.name+'».':' Сайта пока нет в нашем списке — ссылка ведёт на контакты на Яндекс Картах.')));}
  else if(kind!=='shop'){w.appendChild(el_('p','sh-stock',onlineText(s)));}
@@ -90,7 +95,7 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
   now.onclick=()=>{if(!put())return;closeShopPanel(false);openCart(true);};
   buy.append(add,now);w.appendChild(buy);}
  // MVP: source-photo board, separate from physical fitting.
- if(photo){
+ if(photo && !evidence?.demo && p.feed){
    const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить фото в образ'), viewPhotos=el_('button','btn','Открыть образ');
    addPhoto.onclick=()=>{if(addToPhotoLook(p,s,photo)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}};
    viewPhotos.onclick=()=>openPhotoLook();
@@ -107,7 +112,7 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  else{plate.appendChild(el_('h4',null,'Описание'));plate.appendChild(el_('p',null,info.text));
   plate.appendChild(el_('h4',null,'Характеристики'));const dl=el_('dl');info.specs.forEach(([k,v])=>{dl.append(el_('dt',null,k),el_('dd',null,v));});plate.appendChild(dl);}
  w.appendChild(plate);
- w.appendChild(el_('p','sh-note',fi?(fi.demo?'Тестовая выгрузка: товары, цены и ссылки ненастоящие. Так будет выглядеть магазин, подключённый через выгрузку.':'Товары и цены — из выгрузки магазина, обновляются раз в сутки. Точные — на его сайте.'):kind!=='shop'?'Позиции — пример для концепта.':'Товар, цена и размеры — пример для концепта. Настоящие наличие и цены — на сайте магазина.'));
+ w.appendChild(el_('p','sh-note',fi?(fi.demo?'Тестовая выгрузка: товары, цены и ссылки ненастоящие.':'Данные из каталога поставщика; актуальность уточняйте у продавца.'):kind!=='shop'?'Позиции — пример для концепта.':'Товар, цена и размеры — пример для концепта. Настоящие наличие и цены — на сайте магазина.'));
  const row=el_('div','sh-row');
  const site=siteOf(s);if(!p.feed){const a=el_('a','btn');a.target='_blank';a.rel='noopener';a.href=site||mapsOf(s);a.textContent=site?'Смотреть на сайте ↗':'Магазин на картах ↗';row.appendChild(a);}
  const back=el_('button','btn','Продолжить прогулку');back.onclick=()=>closeShopPanel(true);row.appendChild(back);
