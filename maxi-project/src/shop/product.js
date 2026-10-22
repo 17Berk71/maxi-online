@@ -95,8 +95,8 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
   now.onclick=()=>{if(!put())return;closeShopPanel(false);openCart(true);};
   buy.append(add,now);w.appendChild(buy);}
  // MVP: source-photo board, separate from physical fitting.
- if(photo && !evidence?.demo && p.feed){
-   const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить фото в образ'), viewPhotos=el_('button','btn','Открыть образ');
+ if(photo && p.feed){
+   const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить изображение в образ'), viewPhotos=el_('button','btn','Открыть образ');
    addPhoto.onclick=()=>{if(addToPhotoLook(p,s,photo)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}};
    viewPhotos.onclick=()=>openPhotoLook();
    photos.append(addPhoto,viewPhotos);w.appendChild(photos);
