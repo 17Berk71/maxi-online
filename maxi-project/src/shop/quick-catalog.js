@@ -1,4 +1,5 @@
 // NFR-006 / FR-MALL-005: a catalogue path that never imports the 3D application.
+import {cataloguePage} from './catalog-page.js';
 import {catalogueProducts,feedPath} from './catalog-feed.js';
 import {addToPhotoLook,openPhotoLook,photoLookMessage} from './photo-looks.js';
 import {favorites} from './favorites.js';
@@ -15,8 +16,10 @@ export async function openQuickCatalog(reason=''){
  #quick-catalog{position:fixed;inset:0;overflow:auto;z-index:9998;padding:clamp(16px,4vw,40px);background:#f8f8fa;color:#222;color-scheme:light;font:16px/1.5 system-ui,sans-serif}
  #quick-catalog *{box-sizing:border-box}#quick-catalog h1{font-size:clamp(24px,4vw,36px);margin:0}
  #quick-catalog nav,#quick-catalog .quick-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}
- #quick-catalog button,#quick-catalog a{font:inherit;min-height:44px;padding:8px 12px;border:1px solid #aaa;border-radius:8px;background:white;color:#222;text-decoration:none}
+ #quick-catalog button,#quick-catalog a,#quick-catalog input{font:inherit;min-height:44px;padding:8px 12px;border:1px solid #aaa;border-radius:8px;background:white;color:#222;text-decoration:none}
  #quick-catalog :focus-visible{outline:3px solid #4538be;outline-offset:3px}
+ #quick-catalog .quick-pagination{gap:8px}#quick-catalog .quick-pagination button{min-width:44px}
+ #quick-catalog input{width:min(100%,420px);min-width:0}#quick-catalog label{display:block}
  #quick-catalog article{border:1px solid #ddd;border-radius:12px;padding:16px;background:white;overflow-wrap:anywhere}
  #quick-catalog img{display:block;width:100%;height:240px;object-fit:contain}
  #quick-catalog .quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
@@ -26,12 +29,13 @@ export async function openQuickCatalog(reason=''){
  const nav=el('nav');nav.setAttribute('aria-label','Каталог');
  const mall=el('a','Открыть 3D-ТРЦ');const mallUrl=new URL(location.href);mallUrl.searchParams.delete('catalog');mall.href=mallUrl.href;
  const looks=el('button','Мои фотообразы');looks.onclick=openPhotoLook;nav.append(mall,looks);root.append(nav);
- root.append(el('p',reason||'Каталог доступен без загрузки 3D.'));
- root.append(el('p','Магазины перечислены по доступным файлам каталога. Это не подтверждение партнёрства или наличия в Туле.'));
+ root.append(el('p',reason||'Выберите магазин и соберите образ.'));
+ const about=el('details'),aboutTitle=el('summary','Откуда данные');about.append(aboutTitle,el('p','Магазины перечислены по доступным файлам каталога. Это не подтверждение партнёрства или наличия в Туле.'));root.append(about);
  const status=el('p','Загрузка магазинов…');status.setAttribute('role','status');root.append(status);
  const content=el('section');content.setAttribute('aria-label','Магазины и товары');root.append(content);
  // Remove inaccessible background from keyboard/screen reader navigation.
  for(const child of document.body.children)if(child.id!=='quick-catalog')child.inert=true;
+ root.addEventListener('keydown',event=>event.stopPropagation());
  document.body.append(root);title.tabIndex=-1;title.focus();
  let request=0;
  async function showStores(){
@@ -55,8 +59,21 @@ export async function openQuickCatalog(reason=''){
    const h=el('h2',name);h.tabIndex=-1;content.append(h);h.focus();
    content.append(el('p',feed.demo===true||index.demo===true?'Демонстрационный каталог: товары, цены и ссылки тестовые.':'Данные каталога поставщика; сведения и права требуют отдельной проверки.'));
    status.textContent=products.length?`Товаров: ${products.length}`:'В каталоге нет доступных товаров.';
+   const search=el('input');search.type='search';search.id='quick-product-query';search.placeholder='Название, категория или цвет';
+   const label=el('label','Поиск в каталоге');label.htmlFor=search.id;
+   const pagination=el('nav');pagination.setAttribute('aria-label','Страницы товаров');pagination.className='quick-pagination';
+   const previous=el('button','←'),next=el('button','→'),pageLabel=el('span');previous.setAttribute('aria-label','Предыдущая страница');next.setAttribute('aria-label','Следующая страница');pagination.append(previous,pageLabel,next);
+   if(products.length)content.append(label,search,pagination);
    const grid=el('div');grid.className='quick-grid';content.append(grid);
-   for(const product of products){
+   let currentPage=0;
+   const render=()=>{
+    if(token!==request)return;
+    const selected=cataloguePage(products,{query:search.value,page:currentPage});currentPage=selected.page;
+    previous.disabled=currentPage===0;next.disabled=currentPage>=selected.pageCount-1;
+    pageLabel.textContent=`Страница ${currentPage+1} из ${selected.pageCount}`;
+    status.textContent=!products.length?'В каталоге нет доступных товаров.':!selected.total?'По запросу ничего не найдено.':`Товаров: ${selected.total} · ${pageLabel.textContent}`;
+    grid.replaceChildren();
+    for(const product of selected.items){
     const card=el('article');card.append(el('h3',product.name),el('p',product.deptTitle));
     if(product.image){const image=el('img');image.src=product.image;image.alt=product.name;image.loading='lazy';image.onerror=()=>image.replaceWith(el('p','Изображение недоступно.'));card.append(image);}
     else card.append(el('p','Исходное изображение не подтверждено.'));
@@ -77,7 +94,12 @@ export async function openQuickCatalog(reason=''){
     };controls.append(add);}
     if(product.url){const link=el('a','Страница товара у продавца ↗');link.href=product.url;link.target='_blank';link.rel='noopener noreferrer';controls.append(link);}
     card.append(controls);grid.append(card);
-   }
+    }
+   };
+   previous.onclick=()=>{currentPage--;render();(previous.disabled?next:previous).focus();pagination.scrollIntoView({block:'start'});};
+   next.onclick=()=>{currentPage++;render();(next.disabled?previous:next).focus();pagination.scrollIntoView({block:'start'});};
+   search.oninput=()=>{currentPage=0;render();};
+   render();
   }catch{if(token!==request)return;status.textContent='Не удалось загрузить каталог магазина. Повторите попытку или выберите другой магазин.';const retry=el('button','Повторить загрузку каталога');retry.onclick=()=>showStore(name,entry,index);content.append(retry);}
  }
  await showStores();

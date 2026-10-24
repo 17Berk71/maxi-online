@@ -115,3 +115,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Legacy import-only YYYY-MM-DD dates remain supported, but they are separately calendar-validated and never become a verification timestamp. An invalid reference clock also makes inventory unknown.
 - Activation regression now verifies that a formerly passing candidate is rejected if approval is withdrawn before activation; stored reports are not authorization.
 - Local verification: 44 Node tests, 2 Python pricing tests, production build and bundled demo audit passed. No real stock, permission or source date was invented.
+
+### Bounded large-catalogue presentation
+
+- `catalog-page.js` provides a pure, ordered 40-product page and source-attribute search. Quick catalogue renders the selected page rather than every product in the feed. All source items remain searchable; hidden records remain excluded and missing prices remain unknown.
+- Search input and pagination controls survive card re-renders; the last-page control transfers focus to an enabled neighbor. General data information uses a disclosure while per-store demo and per-product stock labels remain visible.
+- Local browser tests at 390px/1280px traverse all 25 pages of a 1,000-product fixture, locate and save the last item, preserve keyboard focus, exclude hidden matches and reset search. The existing six WebGL/fetch/favorites browser cases and generated-revision withdrawal/rollback checks also passed.
+- Real synthetic-only screenshots compare the actual pre-pagination module at `75573e2` (1,000 DOM product cards) against 40 cards; see `docs/review-catalog-pages/README.md`. This does not certify mobile FPS or server-side pagination.
+- Local verification: 47 Node tests and build passed. Calendar evidence batch was published as `301b8db`; CI status is checked separately.

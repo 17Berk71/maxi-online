@@ -16,7 +16,7 @@ Repository `17Berk71/maxi-online`, branch `codex/mvp-prd-architecture`, draft PR
 
 1. Audit modal live announcements with a real screen reader and test touch/browser behavior on physical phones; check keyboard interactions across all legacy overlays.
 2. Expand pedestrian navigation beyond the checked Gloria Jeans / Синема Парк routes on both viewports. Search -> door -> W/touch joystick -> entry/exit now passes without position writes. Revisit the older exhaustive cinema/movie/cart script separately; its full behavior remains uncertified.
-3. Profile real mobile memory/load behavior. Quick mode avoids the heavy graph, but the 3D path still has large bundles. Paginate/virtualize large real catalogues after establishing a measured baseline.
+3. Profile real mobile memory/load behavior. Quick mode avoids the heavy graph, but the 3D path still has large bundles. Quick mode now paginates 40 cards and searches the full feed, with a 1,000-item browser fixture. Profile physical-device memory/load and add server-side pagination when actual source volumes justify it.
 4. The local candidate/revision CLI now provides review, diff, guarded activation, bulk hide and rollback (see catalog-workspace.md). Next: authenticated operator UI, partner-source pilot and live-source verification. No deployment is authorized by the CLI.
 5. Add privacy-minimal demo events with testable deduplication and rehearse a full presentation route. Do not describe fixture tests as live-merchant integration.
 
