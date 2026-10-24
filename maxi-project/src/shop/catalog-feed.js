@@ -6,12 +6,14 @@ export function feedPath(input){
 }
 // One visibility/identity policy for the lightweight catalogue and the 3D shop.
 // A hidden or malformed record must not reserve an ID ahead of a valid product.
+// Treat ambiguous truthy hide markers as hidden rather than accidentally publishing them.
+export const isHidden = record => Boolean(record?.hidden);
 export function visibleDepartments(feed){
   const seen=new Set();
   return (Array.isArray(feed?.depts)?feed.depts:[])
-    .filter(d=>d&&d.hidden!==true&&Array.isArray(d.items))
+    .filter(d=>d&&!isHidden(d)&&Array.isArray(d.items))
     .map(d=>({...d,items:d.items.filter(item=>{
-      if(!item||item.hidden===true||typeof item.id!=='string'||!item.id.trim()||
+      if(!item||isHidden(item)||typeof item.id!=='string'||!item.id.trim()||
          typeof item.name!=='string'||!item.name.trim()||seen.has(item.id))return false;
       seen.add(item.id);return true;
     })}))
