@@ -248,3 +248,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regressions for favorites re-add/reload, raw-byte preservation, mismatched store names, named looks and collision blocking. Included the new helper in CI syntax checks.
 - Code/test/CI commits: `1bb5503`, `5f8da60`, `944a142`, `9ab827a`, `77f4210`, `6e1d44f`. **The full CI/browser result for these new commits must be checked independently**; do not infer success from #129.
 - This is a conservative recovery of a short-lived experimental ID format, not a universal migration of arbitrary historical snapshots. No real catalogues, rights to original images, live inventory, merge, deployment, or main-branch changes were introduced.
+
+### 25 October 2026 — reject ambiguous raw catalogue evidence URLs
+
+- Verified the preceding branch HEAD `e871dde` passed [Actions #136](https://github.com/17Berk71/maxi-online/actions/runs/40135077731), including the configured Chromium desktop/mobile browser smoke. This does **not** certify the changes below.
+- Node's URL parser silently strips raw newlines and surrounding whitespace, and normalizes backslashes into path separators. Such input could change the apparent merchant, original-photo or stock-evidence URL. Shared `safeHttpUrl` now rejects whitespace, control characters, DEL and backslashes in raw URLs rather than silently rewriting them.
+- Added focused regression tests for outbound merchant links, source-photo links and time-bounded inventory evidence. Properly percent-encoded URL paths remain supported. Code/test commits: `c0229e1`, `7bdc315`.
+- The full CI/browser result for the **newest** branch HEAD must be checked independently. No live feeds, image permissions, stock proof, main-branch changes, PR merge or deployment were introduced.
