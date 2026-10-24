@@ -8,7 +8,9 @@ try{
   await page.route('**/feeds/img/product.svg',r=>r.fulfill({path:'tools/test/fixtures/product.svg',contentType:'image/svg+xml'}));
   await page.goto((process.env.MAXI_URL||'http://127.0.0.1:5173')+'/?catalog=1');
   await page.getByRole('button',{name:'Synthetic store · демонстрация',exact:true}).click();await page.getByRole('heading',{name:'Товар 0000',exact:true}).waitFor();
-  assert.equal(await page.locator('#quick-catalog article').count(),40);assert.equal(await page.getByRole('button',{name:'Предыдущая страница',exact:true}).isDisabled(),true);
+  assert.equal(await page.locator('#quick-catalog article').count(),40);
+  assert.equal(await page.getByText('Обработанное демонстрационное превью, не исходная фотография.',{exact:true}).count(),40,'demo previews must never be presented as source originals');
+  assert.equal(await page.getByRole('button',{name:'Предыдущая страница',exact:true}).isDisabled(),true);
   await page.getByRole('button',{name:'Следующая страница',exact:true}).click();await page.getByRole('heading',{name:'Товар 0040',exact:true}).waitFor();
   assert.equal(await page.locator('#quick-catalog article').count(),40);assert.equal(await page.getByRole('button',{name:'Следующая страница',exact:true}).evaluate(e=>e===document.activeElement),true);
   for(let n=0;n<23;n++)await page.getByRole('button',{name:'Следующая страница',exact:true}).click();
