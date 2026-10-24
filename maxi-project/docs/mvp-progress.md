@@ -99,3 +99,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Changed the guard to decrement using elapsed wall-clock frame time (`rawDt`) while retaining capped `dt` for visual door interpolation. The existing browser navigation suite exercises consecutive store visits on both viewports; this fix is being verified in [Actions #52](https://github.com/17Berk71/maxi-online/actions/runs/40079521980).
 - Updated workflow path filters and syntax checks to include `shop/enter-exit.js`. Code commits: `4cbb820`, `dbcc014`, `cd9f4cb`.
 - No claim of a stable physical-device FPS or full mall coverage is made.
+
+### Local catalogue revision workflow — continuation from 3eee0e6
+
+- Fixed inconsistent visibility: 3D imported departments now omit `hidden: true` products just as the quick catalogue does. An explicitly empty imported catalogue remains empty instead of falling back to generated demo goods; the catalogue panel displays an accessible empty state.
+- Feed-level demo status inherits the index demo flag, preventing unlabelled/fabricated seller links when an individual demo feed omits its own flag. The synthetic merchant-flow fixture now explicitly uses a non-demo contract rather than bypassing that index evidence.
+- Added `tools/feeds/catalog-workspace.mjs`: separate candidate preparation, audit and content fingerprint, product/media diff, immutable local releases, expected-index guard, expected-candidate guard, cooperative writer lock, atomic index replacement, bulk withdrawal and verified rollback. Stored approval reports are never accepted in place of recomputation with current review metadata.
+- Complete withdrawal is represented explicitly and does not count toward the real-pilot store minimum. Window previews are suppressed on withdrawal because legacy records lack product references.
+- All activation/rollback tests wrote **temporary synthetic directories only**. The active project feed files, published site and main branch were not changed. Rights are not authenticated by this offline tool, and historical assets are retained rather than privately erased.
+- Local verification: 41 Node tests and 2 Python pricing tests passed; generated versioned-media -> withdrawal -> rollback browser tests passed at 390px/1280px. Actual 3D/quick hidden-product and all-hidden-shop checks passed at both widths. Build and existing two-store product/save/reload/outbound browser regression passed at both widths. CI is checked separately after publication.

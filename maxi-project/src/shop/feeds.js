@@ -1,6 +1,7 @@
 // Товары из выгрузок магазинов (готовит tools/feeds/import_feed.py → feeds/index.json и feeds/<магазин>.json).
 // Если выгрузки у магазина нет или файлы недоступны, остаётся демо-каталог из catalog.js.
 import {PHOTOS} from './photos.js';
+import {visibleDepartments} from './catalog-feed.js';
 import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
@@ -29,8 +30,9 @@ export async function loadFeed(s) {
     try {
       const r = await fetch(FEED_BASE + e.file, {cache: 'no-cache'}); if (!r.ok) throw new Error(r.status);
       const data = await r.json();
+      data.demo=!!(idx.demo||data.demo);
       // фото с вырезанным фоном регистрируем как обычные фото товаров: дальше их вешает на вешала тот же код
-      data.depts.forEach(d => d.items.forEach(it => {
+      visibleDepartments(data).forEach(d => d.items.forEach(it => {
         if (it.pic && it.cut) PHOTOS['feed:' + it.id] = {url: FEED_BASE + it.pic, aspect: it.aspect, h: it.h || 0.7, color: it.color, colorName: it.colorName, items: []};
       }));
       s._feed = data; s._cat = null; s._ph = null;
@@ -43,7 +45,7 @@ export async function loadFeed(s) {
 // каталог магазина из выгрузки: отделы «для кого × тип», у каждого товара фото, размеры, ссылка
 export function feedCatalog(s, DEPT) {
   const F = s._feed;
-  return F.depts.filter(d => d.items.length).map(d => {
+  return visibleDepartments(F).map(d => {
     const base = DEPT[d.type] || DEPT.generic;
     const items = d.items.map(it => ({
       name: it.name, price: it.price, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,

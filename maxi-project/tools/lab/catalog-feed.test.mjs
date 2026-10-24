@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {catalogueProducts,feedPath} from '../../src/shop/catalog-feed.js';
+import {catalogueProducts,feedPath,visibleDepartments} from '../../src/shop/catalog-feed.js';
 test('feed resources remain relative to the catalogue directory',()=>{
  assert.equal(feedPath('store.json'),'feeds/store.json');assert.equal(feedPath('img/a.webp'),'feeds/img/a.webp');
  for(const path of ['https://evil.test/f.json','//evil.test/a','../private.json','/x','a\\b','x?y','%2e%2e/x'])assert.equal(feedPath(path),null,path);
@@ -14,4 +14,11 @@ test('demo links are suppressed; real originals are distinct from processed prev
  const feed={depts:[{items:[p]}]};const real=catalogueProducts(feed)[0];assert.equal(real.image,p.original_image_url);assert.equal(real.url,p.url);
  const demo=catalogueProducts({...feed,demo:true})[0];assert.equal(demo.url,null);assert.equal(demo.evidence.availability.status,'unknown');
  assert.equal(catalogueProducts({demo:true,depts:[{items:[{...p,original_image_url:null}]}]})[0].image,'feeds/img/1.webp');
+});
+
+test('3D feed departments omit hidden items without mutating raw imported records',()=>{
+ const hidden={id:'hidden',name:'Hidden',hidden:true},shown={id:'shown',name:'Shown'};
+ const input={depts:[{key:'a',items:[hidden,shown]},{key:'b',items:[hidden]},null]};
+ assert.deepEqual(visibleDepartments(input),[{key:'a',items:[shown]}]);
+ assert.equal(input.depts[0].items.length,2);assert.deepEqual(visibleDepartments({depts:[{items:[hidden]}]}),[]);
 });

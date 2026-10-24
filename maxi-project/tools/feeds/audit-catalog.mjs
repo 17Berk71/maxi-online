@@ -15,7 +15,8 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const isoDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)?Date.parse(value):NaN;
   const products=feed.depts.flatMap(d=>Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
   const summary={name,demo,category,products:products.length};stores.push(summary);
-  if(!products.length)report('empty_catalogue',name);
+  if(!products.length&&feed.catalogue_status!=='withdrawn')report('empty_catalogue',name);
+  if(products.length&&feed.catalogue_status==='withdrawn')report('withdrawn_catalogue_has_visible_products',name);
   if(!demo){
    const stamp=isoDate(approval?.reviewed_at);
    if(approval?.approved_for_publication!==true||typeof approval?.permission_reference!=='string'||!approval.permission_reference.trim()||!Number.isFinite(stamp)||stamp>now)report('rights_review_missing',name);
@@ -39,7 +40,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   }
  }
  if(!stores.length)report('no_catalogue_stores',null);
- const real=stores.filter(s=>!s.demo),categories=new Set(real.map(s=>s.category).filter(Boolean));
+ const real=stores.filter(s=>!s.demo&&s.products>0),categories=new Set(real.map(s=>s.category).filter(Boolean));
  if(requireReal&&(real.length<2||categories.size<2))report('real_multicategory_pilot_missing',null);
  return {technicalGatePassed:issues.length===0,checkedAt:new Date(now).toISOString(),mode:requireReal?'real-pilot':'fixture-audit',
   limitations:['Offline validation only; source URLs, contracts, image identity and live stock need human/network verification.','No source freshness TTL is assumed; a recorded check date does not establish current availability.'],stores,issues};

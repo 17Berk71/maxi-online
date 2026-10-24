@@ -37,7 +37,8 @@ function renderShopPanel(){const s=app.PS.s,cat=app.PS.cat;const el=$('shop');
   if(app.mode==='store'){const show=document.createElement('button');show.className='btn';show.textContent='Показать в зале';show.onclick=()=>{closeShopPanel(true);goToDept(app.shopDept);};row.appendChild(show);}
   const a=document.createElement('a');a.className='btn pri';a.target='_blank';a.rel='noopener';const site=siteOf(s);a.href=site||mapsOf(s);a.textContent=site?'Смотреть на сайте ↗':'Магазин на картах ↗';row.appendChild(a);
   w.appendChild(row);body.appendChild(w);}
- else{const grid=document.createElement('div');grid.className='sh-grid';
+ else if(!cat.length){const empty=document.createElement('p');empty.className='sh-note';empty.setAttribute('role','status');empty.textContent='В каталоге пока нет доступных товаров. Демонстрационные товары не подставляются.';body.appendChild(empty);}
+ else{const grid=document.createElement('div');grid.className='sh-grid';app.shopDept=Math.max(0,Math.min(app.shopDept,cat.length-1));
   const dep=cat[app.shopDept];const all=dep.items;const shown=Math.min(all.length,shopShown);
   const cnt=document.createElement('p');cnt.className='sh-note';const fi=feedInfo(s);cnt.textContent=fi?'Товары из выгрузки магазина'+(fi.demo?' — тестовой: товары, цены и ссылки ненастоящие':'')+' · обновлено '+fmtDate(fi.updated)+' · в отделе '+all.length:onlineKind(s)!=='shop'?'Примеры позиций. '+onlineText(s):'В отделе '+all.length+' товаров'+(s.kind==='kiosk'?'':' · у каждого своё место в зале');body.appendChild(cnt);
   all.slice(0,shown).forEach(p=>{const c=document.createElement('button');c.className='sh-card';const img=document.createElement('img');img.src=thumbURL(p);img.alt='';img.loading='lazy';

@@ -9,7 +9,7 @@ try{
   page.setDefaultTimeout(45000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const base=(process.env.MAXI_URL||'http://127.0.0.1:5173').replace(/\/$/,'');
   // All catalogue photos are synthetic: never take screenshots of private assets.
-  await page.route('**/feeds/index.json',r=>r.fulfill({json:{demo:true,shops:{'Gloria Jeans':{file:'gloria-jeans.json',win:[]},Ostin:{file:'ostin.json',win:[]}}}}));
+  await page.route('**/feeds/index.json',r=>r.fulfill({json:{demo:false,shops:{'Gloria Jeans':{file:'gloria-jeans.json',win:[]},Ostin:{file:'ostin.json',win:[]}}}}));
   await page.route('**/feeds/*-jeans.json',r=>r.fulfill({json:feed('jacket','Тестовая куртка','tshirt')}));
   await page.route('**/feeds/ostin.json',r=>r.fulfill({json:feed('pants','Тестовые брюки','pants')}));
   // Synthetic permitted-source contract, intercepted locally; never represents a real merchant.

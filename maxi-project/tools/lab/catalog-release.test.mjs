@@ -53,3 +53,11 @@ test('malformed categories and non-timestamp review dates never pass the real pi
    assert(report.issues.some(x=>x.code==='rights_review_expired'),expiresAt);
  }
 });
+
+test('intentional withdrawn catalogues may be empty but do not satisfy real-pilot store counts',()=>{
+ const f=fixture();for(const feed of Object.values(f.feeds)){feed.catalogue_status='withdrawn';feed.depts[0].items.forEach(p=>p.hidden=true);}
+ assert.equal(auditCatalogue(f.index,f.feeds,f.manifest,{now}).technicalGatePassed,true);
+ assert(auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true}).issues.some(x=>x.code==='real_multicategory_pilot_missing'));
+ f.feeds['a.json'].depts[0].items[0].hidden=false;
+ assert(auditCatalogue(f.index,f.feeds,f.manifest,{now}).issues.some(x=>x.code==='withdrawn_catalogue_has_visible_products'));
+});

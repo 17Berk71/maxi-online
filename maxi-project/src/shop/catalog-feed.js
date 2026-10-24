@@ -18,3 +18,11 @@ export function catalogueProducts(feed){
       };
     });
 }
+
+// Keep empty imported departments empty; never refill withdrawn stock with demo goods.
+export function visibleDepartments(feed){
+  return (Array.isArray(feed?.depts)?feed.depts:[])
+    .filter(d=>d&&Array.isArray(d.items))
+    .map(d=>({...d,items:d.items.filter(item=>item&&item.hidden!==true)}))
+    .filter(d=>d.items.length>0);
+}
