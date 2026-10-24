@@ -27,3 +27,9 @@ Synthetic browser fixture with WebGL explicitly unavailable. The normal route, q
 ## Data integrity regression
 
 23 Node tests and 2 Python price tests passed; importer syntax and production build passed. The actual importer was additionally exercised with a synthetic no-image feed (missing price, 1250.50, zero), writing only to a temporary directory. Source-image priority and “unknown price / verification date” are asserted through the actual product UI in the integrated desktop/mobile journey. No real source permissions were added. [Real-pilot baseline rejection](catalogue-real-gate.json) is an expected blocked result, not a broken demo fixture audit.
+
+## Individual favorites
+
+[390px screenshot](favorites-390.png) · [1280px screenshot](favorites-1280.png)
+
+Favorites use an independent key and are not a named look or a cart. They preserve missing-image records and label them. Browser regression checks reload actual catalogue pages, reopen favorites, add an item to a look, simulate quota errors and verify deletion preserves the current composition. The local named-save test also removes `crypto.randomUUID` before saving.

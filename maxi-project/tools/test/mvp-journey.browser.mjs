@@ -32,6 +32,11 @@ try{
    assert.equal(await page.getByText('Наличие именно в ТРЦ «Макси» не подтверждено.',{exact:false}).count()>0,true);
    assert.equal(await page.locator('#shop .pv-photo').getAttribute('src'),'http://127.0.0.1:5173/tools/test/fixtures/product.svg');
    assert.equal(await page.getByText('Проверка каталога: дата не указана. Импорт не является проверкой наличия.',{exact:true}).count(),1);
+   if(name==='Ostin'){
+    await page.locator('#shop .pv-photo').evaluate(img=>img.dispatchEvent(new Event('error')));
+    assert.equal(await page.getByText('Фото недоступно. Сведения о товаре и сохранение остаются доступны.',{exact:true}).count(),1);
+   }
+   await page.getByRole('button',{name:'Сохранить товар в избранное',exact:true}).click();
    if(name==='Ostin')assert.equal(await page.locator('#shop .sh-price').textContent(),'Цена не указана');
    await page.getByRole('button',{name:'Добавить изображение в образ',exact:true}).click();
    assert.equal(await page.locator('#maxi-photo-look article').count(),name==='Ostin'?2:1);
@@ -41,12 +46,13 @@ try{
   await page.getByRole('button',{name:'Мои фотообразы',exact:true}).click();
   await page.getByLabel('Название образа',{exact:true}).fill('Маршрут по двум магазинам');
   await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
-  assert.equal(await page.getByRole('status').textContent(),'Образ сохранён в этом браузере.');
+  assert.equal(await page.locator('#maxi-photo-look').getByRole('status').textContent(),'Образ сохранён в этом браузере.');
   await page.reload({waitUntil:'domcontentloaded',timeout:120000});
   await page.waitForFunction(()=>window.__maxi?.loaded,null,{timeout:120000});
   await page.getByRole('button',{name:'Мои фотообразы',exact:true}).click();
   await page.getByRole('button',{name:'Открыть образ «Маршрут по двум магазинам»',exact:true}).click();
   assert.equal(await page.locator('#maxi-photo-look article').count(),2);
+  assert.equal(await page.getByRole('region',{name:'Избранные товары',exact:true}).locator('.photo-look-saved-row').count(),2);
   assert.deepEqual(await page.locator('#maxi-photo-look article h3').allTextContents(),['Тестовая куртка','Тестовые брюки']);
   const link=page.locator('#maxi-photo-look article a').first();
   assert.equal(await link.getAttribute('href'),'https://example.org/product-jacket');

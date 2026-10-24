@@ -49,6 +49,8 @@ try {
 
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v2')).draft.length),1);
+    // LAN/mobile HTTP previews may lack the secure-context randomUUID API.
+    await page.evaluate(()=>Object.defineProperty(crypto,'randomUUID',{value:undefined,configurable:true}));
     await page.getByLabel('Название образа',{exact:true}).fill('Осенний образ');
     await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
     assert.equal(await page.getByRole('status').textContent(),'Образ сохранён в этом браузере.');

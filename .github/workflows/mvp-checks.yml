@@ -14,6 +14,9 @@ on:
       - 'maxi-project/src/shop/catalog-feed.js'
       - 'maxi-project/src/shop/catalog.js'
       - 'maxi-project/src/shop/pricing.js'
+      - 'maxi-project/src/shop/favorites.js'
+      - 'maxi-project/src/shop/product-snapshot.js'
+      - 'maxi-project/tools/lab/favorites.test.mjs'
       - 'maxi-project/tools/lab/catalog-release.test.mjs'
       - 'maxi-project/tools/feeds/audit-catalog.mjs'
       - 'maxi-project/tools/feeds/pricing.py'
@@ -59,6 +62,8 @@ jobs:
           node --check src/main.js
           node --check src/shop/quick-catalog.js
           node --check src/shop/catalog-feed.js
+          node --check src/shop/favorites.js
+          node --check src/shop/product-snapshot.js
           node --check src/shop/product.js
           node --check src/shop/feeds.js
       - name: Feed importer syntax
@@ -66,7 +71,7 @@ jobs:
           python3 -m py_compile tools/feeds/import_feed.py
           python3 -m unittest discover -s tools/feeds -p test_pricing.py
       - name: Evidence policy tests
-        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs
+        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs tools/lab/favorites.test.mjs
       - name: Audit bundled demonstration catalogue
         run: node tools/feeds/audit-catalog.mjs
       - name: Production build

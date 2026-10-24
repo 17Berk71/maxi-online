@@ -1,6 +1,7 @@
 // Photo-first, source-image-only outfit board (PRD FR-LOOK-001/002/003).
 // It intentionally does not manipulate product pixels or simulate fit.
-import {safeHttpUrl} from './catalog-evidence.js';
+import {productSnapshot} from './product-snapshot.js';
+import {favorites} from './favorites.js';
 import {createLookStore, imageUrl, MAX_ITEMS} from './photo-looks/storage.js';
 const store=createLookStore({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)});
 export const photoLookItems=()=>store.items();
@@ -11,9 +12,8 @@ export const loadPhotoLook=id=>store.load(id);
 export const deletePhotoLook=id=>store.remove(id);
 export function addToPhotoLook(product,shop,image){
   if(!imageUrl(image))return false;
-  const id=String(shop?.name||'')+'|'+String(product?.id||product?.name||'')+'|'+String(product?.color||'');
-  const demo=product?.demo===true||product?.evidence?.demo===true;
-  const entry={id,title:String(product?.name||'Товар'),shop:String(shop?.name||''),image,sourceUrl:demo?null:safeHttpUrl(product?.url),demo};
+  const entry=productSnapshot(product,shop,image);
+  const id=entry.id;
   const next=store.items().filter(x=>x.id!==id);
   if(next.length>=MAX_ITEMS)return false;
   return store.setDraft([...next,entry]);
@@ -110,7 +110,28 @@ export function openPhotoLook(){
       if(it.sourceUrl){const link=document.createElement('a');link.href=it.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';card.append(link);}
       grid.append(card);
     }
-    root.append(grid,saved);
+    const favoritesSection=document.createElement('section');favoritesSection.setAttribute('aria-label','Избранные товары');
+    const favoritesTitle=document.createElement('h3');favoritesTitle.textContent='Избранные товары';favoritesSection.append(favoritesTitle);
+    const favoritesNote=document.createElement('p');favoritesNote.textContent='Сохранённые снимки товаров в этом браузере. Наличие, фото и ссылки могли измениться.';favoritesSection.append(favoritesNote);
+    for(const entry of favorites.items()){
+      const row=document.createElement('div');row.className='photo-look-saved-row';
+      const title=document.createElement('span');title.textContent=entry.title+' · '+entry.shop+(entry.demo?' · демонстрация':'');row.append(title);
+      const add=document.createElement('button');add.textContent='В образ';add.disabled=!entry.image;add.setAttribute('aria-label','Добавить «'+entry.title+'» из избранного в образ');
+      add.onclick=()=>{
+        const next=store.items().filter(x=>x.id!==entry.id);
+        if(next.length>=MAX_ITEMS){status.textContent='В образе может быть не больше 24 вещей.';return;}
+        if(!store.setDraft([...next,entry])){status.textContent=store.message();return;}
+        render(null,null,'Товар из избранного добавлен в образ.');root.querySelector('[data-close-photo-look]')?.focus();
+      };
+      const remove=document.createElement('button');remove.textContent='Удалить';remove.setAttribute('aria-label','Удалить «'+entry.title+'» из избранного');
+      remove.onclick=()=>{if(!favorites.remove(entry.id)){status.textContent=favorites.message();return;}render(null,null,'Товар удалён из избранного.');root.querySelector('[data-close-photo-look]')?.focus();};
+      row.append(add,remove);
+      if(!entry.image){const missing=document.createElement('span');missing.textContent='Исходное фото недоступно.';row.append(missing);}
+      if(entry.sourceUrl){const link=document.createElement('a');link.href=entry.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';row.append(link);}
+      favoritesSection.append(row);
+    }
+    if(favorites.message()){const warning=document.createElement('p');warning.textContent=favorites.message();favoritesSection.append(warning);}
+    root.append(grid,saved,favoritesSection);
     if(focusId){
       const target=[...root.querySelectorAll('button')].find(b=>b.dataset.photoLookId===focusId&&b.dataset.photoLookAction===focusAction&&!b.disabled);
       (target||root.querySelector('[data-close-photo-look]'))?.focus();

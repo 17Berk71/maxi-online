@@ -1,6 +1,7 @@
 // NFR-006 / FR-MALL-005: a catalogue path that never imports the 3D application.
 import {catalogueProducts,feedPath} from './catalog-feed.js';
 import {addToPhotoLook,openPhotoLook,photoLookMessage} from './photo-looks.js';
+import {favorites} from './favorites.js';
 import {AVAILABILITY} from './catalog-evidence.js';
 const el=(tag,text)=>Object.assign(document.createElement(tag),text===undefined?{}:{textContent:text});
 async function read(url){
@@ -66,6 +67,10 @@ export async function openQuickCatalog(reason=''){
     const local=stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
     card.append(el('p',local?(stock.status===AVAILABILITY.IN_STOCK?'Подтверждено наличие в магазине Тулы.':'Подтверждено отсутствие в магазине Тулы.'):'Наличие именно в ТРЦ «Макси» не подтверждено.'));
     const controls=el('div');controls.className='quick-controls';
+    const favorite=el('button','Сохранить товар в избранное');favorite.onclick=()=>{
+     if(favorites.add(product,{name},product.image)){favorite.textContent='Сохранено в избранное ✓';status.textContent='Товар сохранён в этом браузере. Избранное доступно в «Мои фотообразы».';}
+     else status.textContent=favorites.message();
+    };controls.append(favorite);
     if(product.image){const add=el('button','Добавить изображение в образ');add.onclick=()=>{
      if(addToPhotoLook(product,{name},product.image)){status.textContent='Товар добавлен в образ.';openPhotoLook();}
      else status.textContent=photoLookMessage()||'Не удалось добавить товар. Лимит образа — 24 вещи.';

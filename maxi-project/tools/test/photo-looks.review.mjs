@@ -11,6 +11,7 @@ try{
    const mod=await import(variant==='before'?'/src/shop/photo-looks-baseline.js':'/src/shop/photo-looks.js');
    mod.addToPhotoLook({id:'1',name:'Тестовая куртка',demo:true},{name:'Демо-магазин A'},'/tools/test/fixtures/product.svg');
    mod.addToPhotoLook({id:'2',name:'Тестовые брюки',demo:true},{name:'Демо-магазин B'},'/tools/test/fixtures/product.svg');
+   if(variant==='after'){const {favorites}=await import('/src/shop/favorites.js');favorites.add({id:'1',name:'Тестовая куртка',demo:true},{name:'Демо-магазин A'},'/tools/test/fixtures/product.svg');}
    mod.openPhotoLook();
   },variant);
   if(variant==='after'){
@@ -18,6 +19,8 @@ try{
    await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
   }
   await page.locator('#maxi-photo-look img').first().waitFor();
-  await page.screenshot({path:`${out}/${variant}-${width}.png`});await page.close();
+  await page.screenshot({path:`${out}/${variant}-${width}.png`});
+  if(variant==='after'){await page.getByRole('region',{name:'Избранные товары',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:`${out}/favorites-${width}.png`});}
+  await page.close();
  }
 }finally{await browser.close();}

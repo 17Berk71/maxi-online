@@ -1,4 +1,4 @@
-# MAXI Online — MVP architecture migration (2026-10-22)
+# MAXI Online — MVP architecture migration (updated 2026-10-24)
 
 Status: IMPLEMENTATION IN PROGRESS; do not merge or deploy on documentation alone.
 Product authority: `MAXI_ONLINE_PRD_v1.0.md` (maintained externally until reviewed for commit).
@@ -21,8 +21,8 @@ This branch inherits EXPERIMENTAL 3D-fitting changes. It is NOT a release branch
 - `shop/catalog.js` — LEGACY demo catalogue; keep behind explicit demo mode, not silently presented as verified products.
 - `shop/product.js` — PRESENTATION: distinguish original photos and generated 3D models; display source, freshness, stock scope.
 - `shop/fitting/*` — EXPERIMENTAL 3D engine, preserved; not the implementation of the MVP photo board.
-- `shop/photo-looks/*` — NEW MVP UI domain (planned): image-first outfit board, deterministic sizing, reorder/remove, local persistence, original-photo provenance.
-- `shop/saved/*` — NEW MVP persistence domain (planned): versioned localStorage with migration and removal of broken source links.
+- `shop/photo-looks.js` and `photo-looks/storage.js` — independent photo board, reorder/remove, named snapshots, conservative versioned storage and migration.
+- `shop/favorites.js` — separate versioned local product snapshots; `product-snapshot.js` shares product identity and outbound-link normalization with the photo board.
 - `tools/feeds/*` — IMPORT: provenance records, source licensing review, per-store feed freshness and failure alerts before publish.
 - `tools/test/*` — E2E and mobile acceptance. Existing cinema timeout remains unresolved in stage 18.
 
@@ -34,8 +34,8 @@ This branch inherits EXPERIMENTAL 3D-fitting changes. It is NOT a release branch
 | FR-CAT-002, FR-DATA-004 | `shop/feeds.js`, `tools/feeds/import_feed.py`; new evidence contract | validation/publish gate and rights metadata missing |
 | FR-CAT-003 | original feed photo path in `shop/product.js` | source image links/permissions need validation |
 | FR-CAT-004 | new stock evidence function | UI must consume evidence; expiry and local vs online copy need visual verification |
-| FR-LOOK-001/003 | legacy 3D fitting `shop/fitting/` | independent photo-first board missing |
-| FR-LOOK save | `room-panel.js` writes looks in localStorage | saved IDs can depend on wardrobe items; migration/failure UX missing |
+| FR-LOOK-001/003 | legacy 3D fitting `shop/fitting/` | photo board and named looks implemented; originals need source/rights verification |
+| FR-LOOK save | `room-panel.js` writes looks in localStorage | independent versioned photo-look and favorite snapshots implemented; local data cannot sync across devices |
 | FR-CAT-006 | item URL outbound in `shop/product.js` | validate links and never imply internal checkout |
 | FR-DEMO-001 | `tools/test/check.mjs` | full mall check reportedly stops at cinema entry |
 
@@ -68,9 +68,9 @@ This is intentionally more conservative than legacy imported size labels.
 - [ ] Preserve original image immutably; remove generated imagery from source-image fields.
 
 ### M2 photo-first outfit board (P0)
-- [x] Photo board reachable from feed product cards and the mall toolbar; quick catalogue remains a separate follow-up.
+- [x] Photo board reachable from feed product cards and the mall toolbar; also reachable from the WebGL-independent quick catalogue.
 - [x] Isolated outfit board adds, removes, reorders and browser-saves images across stores without 3D/AI; independently smoke-tested.\n- [x] Independent named look collections, versioned storage and conservative v1 migration (24 Oct 2026).
-- [ ] Side-by-side unmodified images with consistent frames and clear “not fit simulation” disclaimer.
+- [x] Source images are compared without pixel manipulation; demo processed previews and the non-fitting nature of the board are disclosed. Real image permissions remain open.
 - [x] Focused mobile/desktop browser checks for image failure, empty states, focus, named save/reload, quota failure and migration; full screen-reader audit remains open.
 
 ### M3 investment demo quality gate (P0)

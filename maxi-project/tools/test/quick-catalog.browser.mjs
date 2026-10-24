@@ -30,6 +30,8 @@ try{
    await root.locator('img').evaluate(img=>img.complete?null:new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;}));
    await page.screenshot({path:`docs/review-2026-10-24/catalog-${width}.png`});
   }
+  await root.getByRole('button',{name:'Сохранить товар в избранное',exact:true}).first().click();
+  await root.getByRole('button',{name:'Сохранить товар в избранное',exact:true}).click();
   await root.getByRole('button',{name:'Добавить изображение в образ',exact:true}).click();
   assert.equal(await page.locator('#maxi-photo-look article').count(),1);
   await page.getByLabel('Название образа',{exact:true}).fill('Без WebGL');
@@ -41,6 +43,21 @@ try{
   assert.equal(await page.locator('#maxi-photo-look').isVisible(),true);await page.keyboard.press('Escape');
   await root.getByRole('button',{name:'← К магазинам',exact:true}).click();
   await root.getByRole('button',{name:'Тестовый магазин · демонстрация',exact:true}).waitFor();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#quick-catalog').getByRole('button',{name:'Мои фотообразы',exact:true}).click();
+  const favorites=page.getByRole('region',{name:'Избранные товары',exact:true});
+  assert.equal(await favorites.locator('.photo-look-saved-row').count(),2);
+  assert.equal(await favorites.getByRole('button',{name:'Добавить «Товар без исходного фото» из избранного в образ',exact:true}).isDisabled(),true);
+  await favorites.getByRole('button',{name:'Добавить «Тестовый товар» из избранного в образ',exact:true}).click();
+  assert.equal(await page.locator('#maxi-photo-look article').count(),1);
+  await page.evaluate(()=>{window.__favoriteWrite=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('Quota exceeded','QuotaExceededError');};});
+  await favorites.getByRole('button',{name:'Удалить «Тестовый товар» из избранного',exact:true}).click();
+  assert.equal(await favorites.locator('.photo-look-saved-row').count(),2);
+  assert.equal(await page.locator('#maxi-photo-look').getByRole('status').textContent(),'Не удалось сохранить изменения. Проверьте настройки браузера.');
+  await page.evaluate(()=>{Storage.prototype.setItem=window.__favoriteWrite;delete window.__favoriteWrite;});
+  await favorites.getByRole('button',{name:'Удалить «Тестовый товар» из избранного',exact:true}).click();
+  assert.equal(await favorites.locator('.photo-look-saved-row').count(),1);
+  assert.equal(await page.locator('#maxi-photo-look article').count(),1);
   assert.deepEqual(errors,[]);await page.close();console.log(`PASS quick catalogue (${width}px, WebGL fallback=${fallback}) including failed fetch/retry`);
  }
 }finally{await browser.close();}

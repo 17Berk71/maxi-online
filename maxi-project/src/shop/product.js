@@ -5,6 +5,7 @@ import {iconURL} from './icons.js';
 import {describe} from './describe.js';
 import {cart} from './cart.js';
 import {feedInfo} from './feeds.js';
+import {favorites} from './favorites.js';
 import {addToPhotoLook, openPhotoLook, photoLookMessage} from './photo-looks.js';
 import {inventoryEvidence, AVAILABILITY, safeHttpUrl} from './catalog-evidence.js';
 import {onlineKind, onlineActions, onlineText, ACTIONS} from './online.js';
@@ -63,7 +64,7 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  el.querySelector('.sh-tabs').innerHTML='';const body=el.querySelector('.sh-body');body.innerHTML='';body.scrollTop=0;
  const w=el_('div','sh-detail');
  const m=productModel(p);const photo=p.evidence?.originalImage || (p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic);
- if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;w.appendChild(im);w.appendChild(el_('p','sh-note',p.evidence?.originalImage?'Исходное фото из источника товара.':p.feed?'Превью из выгрузки; изображение могло быть обработано.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
+ if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;im.onerror=()=>{im.replaceWith(el_('p','sh-note','Фото недоступно. Сведения о товаре и сохранение остаются доступны.'));};w.appendChild(im);w.appendChild(el_('p','sh-note',p.evidence?.originalImage?'Исходное фото из источника товара.':p.feed?'Превью из выгрузки; изображение могло быть обработано.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
  else{const cv=viewerShow(p,onMan);w.appendChild(cv);w.appendChild(el_('p','sh-note',p.feed?'Фото в выгрузке нет — показана похожая модель. Потяни, чтобы повернуть.':'Потяни картинку, чтобы повернуть товар.'));}
  if(WEARABLE[m]&&!photo){const tg=el_('div','sh-seg');['Товар','На манекене'].forEach((t,i)=>{const b=el_('button','sh-tab'+((!!onMan)===(i===1)?' on':''),t);b.onclick=()=>renderProduct(p,i===1,chosen);tg.appendChild(b);});w.appendChild(tg);}
  const info=describe(p,m);
@@ -100,6 +101,11 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
   buy.append(add,now);w.appendChild(buy);}
  // MVP: source-photo board, separate from physical fitting.
  const boardImage = evidence?.originalImage || (evidence?.demo ? photo : null);
+ if(p.feed){
+  const favorite=el_('button','btn','Сохранить товар в избранное'),favoriteStatus=el_('p','sh-note');favoriteStatus.setAttribute('role','status');
+  favorite.onclick=()=>{if(favorites.add(p,s,boardImage)){favorite.textContent='Сохранено в избранное ✓';favoriteStatus.textContent='Товар сохранён в этом браузере. Избранное доступно в «Мои фотообразы».';}else favoriteStatus.textContent=favorites.message();};
+  w.append(favorite,favoriteStatus);
+ }
  if(boardImage && p.feed){
    const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить изображение в образ'), viewPhotos=el_('button','btn','Открыть образ');
    const photoStatus=el_('p','sh-note');photoStatus.setAttribute('role','status');w.appendChild(photoStatus);

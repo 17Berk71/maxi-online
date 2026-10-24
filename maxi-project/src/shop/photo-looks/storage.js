@@ -12,32 +12,32 @@ export function imageUrl(input){
   }
   return safeHttpUrl(input);
 }
-function normalizeItems(input){
+function normalizeItems(input,maxItems=MAX_ITEMS,allowMissingImages=false){
   if(!Array.isArray(input))return [];
   const seen=new Set();
-  return input.filter(x=>x && typeof x.id==='string' && typeof x.title==='string' && imageUrl(x.image))
-    .filter(x=>!seen.has(x.id)&&seen.add(x.id)).slice(0,MAX_ITEMS).map(x=>({
+  return input.filter(x=>x && typeof x.id==='string' && typeof x.title==='string' && (imageUrl(x.image)||(allowMissingImages&&x.image===null)))
+    .filter(x=>!seen.has(x.id)&&seen.add(x.id)).slice(0,maxItems).map(x=>({
       id:x.id,title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:imageUrl(x.image),
       sourceUrl:x.demo===true?null:safeHttpUrl(x.sourceUrl),demo:x.demo===true,
     }));
 }
 const copy=x=>JSON.parse(JSON.stringify(x));
-export function createLookStore(storage, {now=()=>new Date().toISOString(),newId=()=>crypto.randomUUID()}={}){
+export function createLookStore(storage, {now=()=>new Date().toISOString(),newId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),key=STORAGE_KEY,legacyKey=LEGACY_KEY,maxItems=MAX_ITEMS,allowMissingImages=false}={}){
   let state={version:2,draft:[],looks:[]}, raw=null, blocked=false, warning='';
   try{
-    raw=storage.getItem(STORAGE_KEY);
+    raw=storage.getItem(key);
     if(raw!==null){
       const data=JSON.parse(raw);
       if(data?.version!==2||!Array.isArray(data.draft)||!Array.isArray(data.looks))throw Error('Unsupported storage');
       const ids=new Set();
-      state={version:2,draft:normalizeItems(data.draft),looks:data.looks.filter(x=>x && typeof x.id==='string' &&
+      state={version:2,draft:normalizeItems(data.draft,maxItems,allowMissingImages),looks:data.looks.filter(x=>x && typeof x.id==='string' &&
         typeof x.name==='string' && typeof x.createdAt==='string' && Number.isFinite(Date.parse(x.createdAt)) &&
         Array.isArray(x.items) && !ids.has(x.id) && ids.add(x.id)).slice(0,MAX_LOOKS)
-        .map(x=>({id:x.id,name:x.name.slice(0,80),createdAt:x.createdAt,items:normalizeItems(x.items)}))};
+        .map(x=>({id:x.id,name:x.name.slice(0,80),createdAt:x.createdAt,items:normalizeItems(x.items,maxItems,allowMissingImages)}))};
     }else{
-      const legacy=JSON.parse(storage.getItem(LEGACY_KEY)||'[]');
+      const legacy=JSON.parse((legacyKey?storage.getItem(legacyKey):null)||'[]');
       if(!Array.isArray(legacy))throw Error('Invalid legacy storage');
-      state.draft=normalizeItems(legacy);
+      state.draft=normalizeItems(legacy,maxItems,allowMissingImages);
     }
   }catch{
     blocked=true;
@@ -47,14 +47,14 @@ export function createLookStore(storage, {now=()=>new Date().toISOString(),newId
     if(blocked)return false;
     try{
       // Refuse stale-tab edits instead of overwriting another tab's saved work.
-      if(storage.getItem(STORAGE_KEY)!==raw){warning='Образы изменены в другой вкладке. Перезагрузите страницу перед изменениями.';return false;}
+      if(storage.getItem(key)!==raw){warning='Образы изменены в другой вкладке. Перезагрузите страницу перед изменениями.';return false;}
       const encoded=JSON.stringify(next);
-      storage.setItem(STORAGE_KEY,encoded);raw=encoded;state=next;warning='';return true;
+      storage.setItem(key,encoded);raw=encoded;state=next;warning='';return true;
     }catch{warning='Не удалось сохранить изменения. Проверьте настройки браузера.';return false;}
   }
   return {
     items:()=>copy(state.draft),looks:()=>copy(state.looks),message:()=>warning,
-    setDraft(items){return commit({...state,draft:normalizeItems(items)});},
+    setDraft(items){return commit({...state,draft:normalizeItems(items,maxItems,allowMissingImages)});},
     save(name){
       name=typeof name==='string'?name.trim().slice(0,80):'';
       if(!name||!state.draft.length){warning='Добавьте товары и укажите название образа.';return false;}
