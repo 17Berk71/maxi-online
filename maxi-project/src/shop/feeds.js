@@ -5,6 +5,10 @@ import {visibleDepartments,feedPath} from './catalog-feed.js';
 import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
+// Photo keys must include the shop: different feeds can reuse the same product ID.
+// Encode both components so punctuation cannot make distinct pairs collide.
+export const feedPhotoKey = (shopName, productId) =>
+  'feed:' + encodeURIComponent(String(shopName ?? '')) + ':' + encodeURIComponent(String(productId ?? ''));
 let indexP = null;
 const WIN = {};
 export const winKeys = name => WIN[name] || [];
@@ -41,7 +45,7 @@ export async function loadFeed(s) {
       // фото с вырезанным фоном регистрируем как обычные фото товаров: дальше их вешает на вешала тот же код
       visibleDepartments(data).forEach(d => d.items.forEach(it => {
         const photo = feedPath(it.pic);
-        if (photo && it.cut) PHOTOS['feed:' + it.id] = {url: photo, aspect: it.aspect, h: it.h || 0.7, color: it.color, colorName: it.colorName, items: []};
+        if (photo && it.cut) PHOTOS[feedPhotoKey(s.name, it.id)] = {url: photo, aspect: it.aspect, h: it.h || 0.7, color: it.color, colorName: it.colorName, items: []};
       }));
       s._feed = data; s._cat = null; s._ph = null;
     } catch (err) { console.warn('выгрузка не загрузилась', s.name, err); }
@@ -60,7 +64,7 @@ export function feedCatalog(s, DEPT) {
       const evidence = catalogEvidence(it, F);
       return ({
       name: it.name, price: typeof it.price === 'number' && Number.isFinite(it.price) && it.price >= 0 ? it.price : null, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,
-      model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: preview && it.cut ? 'feed:' + it.id : null, pic: preview,
+      model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: preview && it.cut ? feedPhotoKey(s.name, it.id) : null, pic: preview,
       sizes: it.sizes, url: evidence.demo ? null : evidence.sourceUrl, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
       evidence,
       originalImageUrl: evidence.originalImage,
