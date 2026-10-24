@@ -22,6 +22,7 @@ on:
       - 'maxi-project/tools/feeds/pricing.py'
       - 'maxi-project/tools/feeds/test_pricing.py'
       - 'maxi-project/tools/lab/catalog-feed.test.mjs'
+      - 'maxi-project/src/shop/enter-exit.js'
       - 'maxi-project/src/core/loop.js'
       - 'maxi-project/src/controls/input.js'
       - 'maxi-project/src/ui/search.js'
@@ -59,6 +60,7 @@ jobs:
           node --check src/shop/catalog-evidence.js
           node --check src/shop/photo-looks.js
           node --check src/shop/photo-looks/storage.js
+          node --check src/shop/enter-exit.js
           node --check src/core/loop.js
           node --check src/controls/input.js
           node --check src/ui/search.js
