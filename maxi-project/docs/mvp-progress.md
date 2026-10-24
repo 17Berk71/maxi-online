@@ -187,7 +187,7 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 ### 24 October 2026 — cross-store feed photo identity
 
 - Confirmed **GitHub Actions #91 passed** for prior head `40d7c3b`, including the configured browser suite: https://github.com/17Berk71/maxi-online/actions/runs/40103480599
-- Fixed a shared-photo registry collision: previously `PHOTOS['feed:' + productId]` allowed a later store's image to overwrite another store's photo when both feeds reused the same SKU. Both photo registration and 3D product references now use `feedPhotoKey(shopName, productId)`, with component encoding to avoid delimiter collisions.
-- Added Node regression coverage for duplicate IDs across stores, actual registration of two different preview URLs, and punctuation in store/SKU keys. Changes: `f107ba6`, `e1e8851`, `0761da1`.
-- New CI was started for the changes; **do not mark this batch passed until the final head's run completes**. #92 was superseded/cancelled; #93 was still running at the initial check. Check the current head `0761da1` for its own workflow run.
+- Fixed a shared-photo registry collision: previously `PHOTOS['feed:' + productId]` allowed a later store's image to overwrite another store's photo when both feeds reused the same SKU. Both photo registration and 3D product references now use `feedPhotoKey(shopName, productId)`, with JSON tuple encoding to avoid delimiter collisions and malformed-Unicode crashes.
+- Added Node regression coverage for duplicate IDs across stores, actual registration of two different preview URLs, and punctuation in store/SKU keys. Changes: `f107ba6`, `e1e8851`, `0761da1`, `af844f8`, `7b8078c`.
+- New CI was started for the changes; **do not mark this batch passed until the final head's run completes**. #92 was superseded/cancelled; #93 was still running at the initial check. Check the current head after the final documentation update for its own workflow run.
 - This fix does not certify image licensing, original-photo rights, real assortment, or stock availability. No merge or deployment.
