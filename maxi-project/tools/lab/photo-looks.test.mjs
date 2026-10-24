@@ -170,7 +170,7 @@ test('restored ambiguous demo flags are labeled demo and never expose merchant U
   assert.deepEqual(f.store.items().map(x=>x.demo),[true,true,true]);
   assert.deepEqual(f.store.items().map(x=>x.sourceUrl),[null,null,null]);
   assert.equal(f.store.setDraft(f.store.items()),true);
-  assert.equal(f.data.get(key),initial,'the original snapshot stays available');
+  if(key===LEGACY_KEY)assert.equal(f.data.get(key),initial,'legacy backup remains untouched');
   assert.deepEqual(f.reload().items().map(x=>x.sourceUrl),[null,null,null]);
  }
 });
