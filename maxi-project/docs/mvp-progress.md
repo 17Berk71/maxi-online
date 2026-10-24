@@ -191,3 +191,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regression coverage for duplicate IDs across stores, actual registration of two different preview URLs, and punctuation in store/SKU keys. Changes: `f107ba6`, `e1e8851`, `0761da1`, `af844f8`, `7b8078c`.
 - New CI was started for the changes; **do not mark this batch passed until the final head's run completes**. #92 was superseded/cancelled; #93 was still running at the initial check. Check the current head after the final documentation update for its own workflow run.
 - This fix does not certify image licensing, original-photo rights, real assortment, or stock availability. No merge or deployment.
+
+### 24 October 2026 — conservative hidden flags and local revision parity
+
+- Confirmed [GitHub Actions #98](https://github.com/17Berk71/maxi-online/actions/runs/40108098404) **passed** for the preceding cross-store photo-key batch (commit `4598d65`), including the configured browser checks. This does not certify the new batch.
+- Found a publication gap: the quick/3D catalogue and offline audit only hid records with literal `hidden: true`. A source carrying `hidden: "true"` or another truthy marker could expose a supposedly withheld product or department. Introduced shared conservative `isHidden` logic; the runtime and offline audit now use the same rule. Ambiguous truthy markers are hidden rather than treated as publication permission.
+- The local candidate/revision tool now excludes hidden departments from visible store counts, marks an entirely withdrawn store as `withdrawn`, removes its unlinked window previews, and reports department-level hide/restore transitions in the revision diff. Source feed flags are not silently rewritten.
+- Added Node regressions for runtime visibility, offline real-pilot classification and local prepare → diff → activate → rollback using **temporary synthetic catalogues**. Code and test commits: `3b66502`, `af696b5`, `7a1562e`, `6af9f54`, `695fadc`, `1682305`.
+- [GitHub Actions #102](https://github.com/17Berk71/maxi-online/actions/runs/40112502480) was pending after the test commit. Record the **final** head's complete CI conclusion before marking these changes passed; cancelled intermediate runs are not verification.
+- No real merchant feed, image licence, stock proof, main-branch change, PR merge or deployment was added.
