@@ -17,3 +17,16 @@ test('hidden items and invalid paging cannot escape the rendering bound',()=>{
  for(const pageSize of [0,-1,Infinity,'1000',10000]){const result=cataloguePage(data,{pageSize,page:NaN});assert(result.items.length<=100);assert.equal(result.page,0);}
  assert.deepEqual(cataloguePage([]).items,[]);
 });
+
+test('paged catalogue treats ambiguous withdrawal markers as hidden even with raw products',()=>{
+ const input=[
+  {id:'private-string',name:'Do not show',hidden:'true'},
+  {id:'private-number',name:'Do not show',hidden:1},
+  {id:'private-ambiguous',name:'Do not show',hidden:'false'},
+  {id:'public',name:'Visible',hidden:false},
+  {id:'public-zero',name:'Also visible',hidden:0},
+ ];
+ assert.deepEqual(cataloguePage(input).items.map(p=>p.id),['public','public-zero']);
+ assert.equal(cataloguePage(input,{query:'Do not show'}).total,0);
+ assert.equal(input[0].hidden,'true','source withdrawal flags are not mutated');
+});
