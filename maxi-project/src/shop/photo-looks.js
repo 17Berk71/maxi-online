@@ -50,24 +50,42 @@ export function openPhotoLook(){
     }
   };
   document.addEventListener('keydown',handleEscape,true);
-  const render=()=>{
+  const render=(focusId=null,focusAction=null,notice='')=>{
     root.replaceChildren();
     const head=document.createElement('header');Object.assign(head.style,{display:'flex',justifyContent:'space-between',gap:'12px',alignItems:'center'});
     const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.dataset.closePhotoLook='true';close.onclick=dismiss;head.append(h,close);root.append(head);
     const note=document.createElement('p');note.textContent='Это сопоставление изображений из товарных каталогов, иногда обработанных для витрин. Не является примеркой: размеры, пропорции и посадка не прогнозируются.';root.append(note);
+    const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent=notice;root.append(status);
     if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';root.append(empty);}
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
-    for(const it of items){
+    for(const [index,it] of items.entries()){
       const card=document.createElement('article');Object.assign(card.style,{border:'1px solid #ddd',borderRadius:'12px',padding:'12px',background:'white'});
       const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';img.onerror=()=>{img.replaceWith(Object.assign(document.createElement('p'),{textContent:'Изображение недоступно. Откройте страницу товара.'}));};Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
       const title=document.createElement('h3');title.textContent=it.title;const shop=document.createElement('p');shop.textContent=it.shop;
       const controls=document.createElement('div');Object.assign(controls.style,{display:'flex',gap:'8px',flexWrap:'wrap'});
-      for(const [label,fn] of [['←',()=>movePhotoLook(it.id,-1)],['→',()=>movePhotoLook(it.id,1)],['Удалить',()=>removeFromPhotoLook(it.id)]]){const b=document.createElement('button');b.textContent=label;b.setAttribute('aria-label',label==='←'?'Переместить «'+it.title+'» влево':label==='→'?'Переместить «'+it.title+'» вправо':'Удалить «'+it.title+'»');b.onclick=()=>{if(fn()===false)return;render();root.querySelector('[data-close-photo-look]')?.focus();};controls.append(b);}
+      for(const [action,label,fn] of [['left','←',()=>movePhotoLook(it.id,-1)],['right','→',()=>movePhotoLook(it.id,1)],['remove','Удалить',()=>removeFromPhotoLook(it.id)]]){
+        const b=document.createElement('button');b.textContent=label;
+        b.dataset.photoLookId=it.id;b.dataset.photoLookAction=action;
+        b.disabled=(action==='left'&&index===0)||(action==='right'&&index===items.length-1);
+        b.setAttribute('aria-label',action==='left'?'Переместить «'+it.title+'» влево':action==='right'?'Переместить «'+it.title+'» вправо':'Удалить «'+it.title+'»');
+        b.onclick=()=>{
+          const neighbor=items[index+1]||items[index-1];
+          if(fn()===false){status.textContent='Не удалось сохранить изменения. Проверьте настройки браузера.';return;}
+          const focusId=action==='remove'?neighbor?.id:it.id;
+          const focusAction=action==='remove'?'remove':action==='left'?(index===1?'right':'left'):(index===items.length-2?'left':'right');
+          render(focusId,focusAction,action==='remove'?'Товар удалён из образа.':'Порядок товаров изменён.');
+        };
+        controls.append(b);
+      }
       card.append(img,title,shop,controls);
       if(it.sourceUrl){const link=document.createElement('a');link.href=it.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';card.append(link);}
       grid.append(card);
     }
     root.append(grid);
+    if(focusId){
+      const target=[...root.querySelectorAll('button')].find(b=>b.dataset.photoLookId===focusId&&b.dataset.photoLookAction===focusAction&&!b.disabled);
+      (target||root.querySelector('[data-close-photo-look]'))?.focus();
+    }
   };
 
   document.body.append(root);render();closeFocus();
