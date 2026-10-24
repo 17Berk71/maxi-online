@@ -166,3 +166,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Code/test commits: `2deb92f`, `c6091e7`, `b5fbc8d`, `28f267e`, `71aa0dc`, `0481c12`, `16a1cdf`, `af2fb9b`. The last pair also treats truthy non-boolean demo markers as demo, matching the presentation evidence logic. CI status for the final code checkpoint must be checked independently; do not describe this batch as passed before the final run completes.
 - Added PR-scoped GitHub Actions concurrency cancellation (`e978203`) so newer changes supersede redundant heavyweight browser runs; this is not a reduction in the required tests on the final HEAD.
 - No real catalogue, photo licence, local inventory proof, deployment, main-branch change or PR merge was introduced.
+
+### Quick-catalogue demo evidence and focus continuity — 24 October 2026
+
+- Prior HEAD `35768ff` passed [GitHub Actions #85](https://github.com/17Berk71/maxi-online/actions/runs/40091005481), including Chromium browser checks. This does not verify the new batch.
+- Truthy non-boolean `demo` flags from the catalogue index or feed now remain demo in the WebGL-independent route: product notices and cards identify synthetic data and outbound merchant links stay suppressed, matching the 3D feed policy.
+- Keyboard focus returns to the selected store after Back; the Back control takes focus during loading and Retry takes focus after a failed store fetch. The existing desktop/mobile WebGL-fallback browser suite covers both demo-flag sources, error recovery and keyboard focus.
+- New-HEAD CI is pending. Keep the PR draft; no real store, image licence, local inventory, merge or deployment is implied.

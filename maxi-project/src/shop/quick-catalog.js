@@ -40,26 +40,29 @@ export async function openQuickCatalog(reason=''){
  root.addEventListener('keydown',event=>event.stopPropagation());
  document.body.append(root);title.tabIndex=-1;title.focus();
  let request=0,stopInventory=()=>{};disposePrevious=()=>stopInventory();
- async function showStores(){
+ async function showStores(focusName=null){
   stopInventory();const token=++request;content.replaceChildren();status.textContent='Загрузка магазинов…';
+  if(focusName)title.focus();
   try{
    const index=await read('feeds/index.json');if(token!==request)return;
    const stores=Object.entries(index?.shops||{}).filter(([,entry])=>entry&&feedPath(entry.file));
    status.textContent=stores.length?'Выберите магазин.':'Нет доступных каталогов.';
    for(const [name,entry] of stores){
-    const button=el('button',name+(index.demo===true?' · демонстрация':''));button.className='quick-store';button.onclick=()=>showStore(name,entry,index);content.append(button);
+    const button=el('button',name+(Boolean(index.demo)?' · демонстрация':''));button.className='quick-store';button.onclick=()=>showStore(name,entry,index);content.append(button);
+    if(focusName===name)button.focus();
    }
-  }catch{if(token!==request)return;status.textContent='Не удалось загрузить список магазинов. Повторите попытку.';const retry=el('button','Повторить загрузку');retry.onclick=showStores;content.append(retry);}
+  }catch{if(token!==request)return;status.textContent='Не удалось загрузить список магазинов. Повторите попытку.';const retry=el('button','Повторить загрузку');retry.onclick=()=>showStores(focusName);content.append(retry);}
  }
  async function showStore(name,entry,index){
   stopInventory();const token=++request;content.replaceChildren();status.textContent='Загрузка каталога…';
-  const back=el('button','← К магазинам');back.onclick=showStores;content.append(back);
+  const back=el('button','← К магазинам');back.onclick=()=>showStores(name);content.append(back);back.focus();
   try{
    const feed=await read(feedPath(entry.file));if(token!==request)return;
    // Index-level demo flag applies even if the individual feed omits it.
-   const products=catalogueProducts({...feed,demo:feed.demo===true||index.demo===true});
+   const isDemo=Boolean(feed.demo||index.demo);
+   const products=catalogueProducts({...feed,demo:isDemo});
    const h=el('h2',name);h.tabIndex=-1;content.append(h);h.focus();
-   content.append(el('p',feed.demo===true||index.demo===true?'Демонстрационный каталог: товары, цены и ссылки тестовые.':'Данные каталога поставщика; сведения и права требуют отдельной проверки.'));
+   content.append(el('p',isDemo?'Демонстрационный каталог: товары, цены и ссылки тестовые.':'Данные каталога поставщика; сведения и права требуют отдельной проверки.'));
    status.textContent=products.length?`Товаров: ${products.length}`:'В каталоге нет доступных товаров.';
    const search=el('input');search.type='search';search.id='quick-product-query';search.placeholder='Название, категория или цвет';
    const label=el('label','Поиск в каталоге');label.htmlFor=search.id;
@@ -102,7 +105,7 @@ export async function openQuickCatalog(reason=''){
    next.onclick=()=>{currentPage++;render();(next.disabled?previous:next).focus();pagination.scrollIntoView({block:'start'});};
    search.oninput=()=>{currentPage=0;render();};
    render();
-  }catch{if(token!==request)return;status.textContent='Не удалось загрузить каталог магазина. Повторите попытку или выберите другой магазин.';const retry=el('button','Повторить загрузку каталога');retry.onclick=()=>showStore(name,entry,index);content.append(retry);}
+  }catch{if(token!==request)return;status.textContent='Не удалось загрузить каталог магазина. Повторите попытку или выберите другой магазин.';const retry=el('button','Повторить загрузку каталога');retry.onclick=()=>showStore(name,entry,index);content.append(retry);if(document.activeElement===back)retry.focus();}
  }
  await showStores();
 }
