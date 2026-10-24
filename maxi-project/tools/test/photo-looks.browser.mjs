@@ -45,6 +45,27 @@ try {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#maxi-photo-look').count(),0);
     assert.deepEqual(errors,[]);
+    // Treat browser storage as untrusted: reject malformed image URLs and strip unsafe merchant links.
+    await page.evaluate(()=>{
+      localStorage.setItem('maxi-photo-looks-v1',JSON.stringify([
+        {id:'safe',title:'Safe item',shop:'Test',image:'/tools/test/fixtures/product.svg',sourceUrl:'javascript:alert(1)'},
+        {id:'bad',title:'Bad item',image:'/'+String.fromCharCode(92)+'evil.example/image.jpg'}
+      ]));
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    const restored=await page.evaluate(async ()=>{
+      const mod=await import('/src/shop/photo-looks.js');
+      const snapshot=mod.photoLookItems();
+      snapshot[0].title='Mutated externally';
+      mod.openPhotoLook();
+      return mod.photoLookItems();
+    });
+    assert.equal(restored.length,1);
+    assert.equal(restored[0].title,'Safe item');
+    assert.equal(restored[0].sourceUrl,null);
+    assert.equal(await page.locator('#maxi-photo-look article').count(),1);
+    assert.equal(await page.locator('#maxi-photo-look a[href]').count(),0);
+    await page.keyboard.press('Escape');
     await page.close();
   }
 } finally {await browser.close();}
