@@ -89,3 +89,13 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - A repeated real-movement test caught a pointer-lock cursor warp: the first delta could turn the camera enough to walk into a different store. Pointer-lock transitions and public navigation now clear queued look deltas; the first nonzero delta after capture is discarded. Normal movement events after that are retained.
 - Browser navigation tests wait for the pointer-lock transition before holding W, avoiding a browser blur clearing the key during acquisition. No position or orientation is injected by the test.
 - After the corrections, all four routes passed again, including input-Enter for cinema, result-Enter for Gloria Jeans, search-Escape focus restoration, W-key movement and touch-joystick movement. Module checks, 27 Node tests and production build passed. The following CI run covers this final follow-up.
+
+
+### CI navigation flake investigated and fixed
+
+- [GitHub Actions #47](https://github.com/17Berk71/maxi-online/actions/runs/40079054857) **passed** all checks, including both viewport browser journeys and navigation.
+- Earlier [Actions #44](https://github.com/17Berk71/maxi-online/actions/runs/40079002894) **failed** in the desktop Cinema Park pedestrian-entry route after the first store exit. Logs show a 45-second timeout while the visitor was already at the cinema door. Do not conceal this intermittent failure behind the later passing run.
+- Root-cause hypothesis from code inspection: `doorCooldown` used the simulation frame delta capped at 50 ms. With software WebGL rendering slowly, an intended 0.8-second exit guard could last many seconds of real time, delaying the next store entry.
+- Changed the guard to decrement using elapsed wall-clock frame time (`rawDt`) while retaining capped `dt` for visual door interpolation. The existing browser navigation suite exercises consecutive store visits on both viewports; this fix is being verified in [Actions #52](https://github.com/17Berk71/maxi-online/actions/runs/40079521980).
+- Updated workflow path filters and syntax checks to include `shop/enter-exit.js`. Code commits: `4cbb820`, `dbcc014`, `cd9f4cb`.
+- No claim of a stable physical-device FPS or full mall coverage is made.
