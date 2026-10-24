@@ -22,3 +22,11 @@ test('3D feed departments omit hidden items without mutating raw imported record
  assert.deepEqual(visibleDepartments(input),[{key:'a',items:[shown]}]);
  assert.equal(input.depts[0].items.length,2);assert.deepEqual(visibleDepartments({depts:[{items:[hidden]}]}),[]);
 });
+
+test('a hidden department never exposes its products in either catalogue adapter',()=>{
+ const visible={id:'shown',name:'Visible'},concealed={id:'concealed',name:'Not for publication'};
+ const feed={depts:[{key:'hidden',hidden:true,items:[concealed]},{key:'visible',items:[visible]}]};
+ assert.deepEqual(catalogueProducts(feed).map(p=>p.id),['shown']);
+ assert.deepEqual(visibleDepartments(feed).map(d=>d.key),['visible']);
+ assert.equal(feed.depts[0].items[0],concealed,'source records are not mutated');
+});
