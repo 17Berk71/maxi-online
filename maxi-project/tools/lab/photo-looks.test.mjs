@@ -120,3 +120,27 @@ test('duplicate generated look IDs and invalid timestamps cannot poison persiste
  assert.equal(store.save('Второй'),true);
  assert.deepEqual(createLookStore(storage,options).looks().map(x=>x.name),['Первый','Второй']);
 });
+
+test('snapshot timestamps reject nonexistent calendar dates and missing timezones without losing data',()=>{
+ const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+ let stamp='2026-02-30T08:00:00.000Z';
+ const options={now:()=>stamp,newId:()=> 'look-date'};
+ const store=createLookStore(storage,options);
+ assert.equal(store.setDraft([item(1)]),true);
+ const intact=data.get(STORAGE_KEY);
+ for(const invalid of ['2026-02-30T08:00:00.000Z','2026-10-24T08:00:00','2026-13-01T08:00:00Z']){
+   stamp=invalid;
+   assert.equal(store.save('Некорректная дата'),false);
+   assert.equal(data.get(STORAGE_KEY),intact);
+ }
+ stamp='2024-02-29T08:00:00.000Z';
+ assert.equal(store.save('Високосный день'),true);
+ assert.equal(createLookStore(storage,options).looks()[0].createdAt,stamp);
+ for(const invalid of ['2026-02-30T08:00:00.000Z','2026-10-24T08:00:00']){
+   const poisoned=JSON.stringify({version:2,draft:[item(1)],looks:[{id:'bad',name:'Bad',createdAt:invalid,items:[item(1)]}]});
+   const broken=fixture({[STORAGE_KEY]:poisoned});
+   assert.equal(broken.store.setDraft([item(2)]),false);
+   assert.match(broken.store.message(),/запись отключена/);
+   assert.equal(broken.data.get(STORAGE_KEY),poisoned);
+ }
+});
