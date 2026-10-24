@@ -28,6 +28,8 @@ try {
     // Missing catalogue images must show a textual fallback rather than a blank item.
     await page.locator('#maxi-photo-look article img').first().evaluate(img=>img.dispatchEvent(new Event('error')));
     assert.equal(await page.getByText('Изображение недоступно. Откройте страницу товара.').count(),1);
+    await page.locator('#maxi-photo-look article img').first().evaluate(img=>img.dispatchEvent(new Event('error')));
+    assert.equal(await page.getByText('Изображение недоступно. Ссылка на товар не подтверждена.').count(),1);
     // Reordering keeps focus on the moved item's available control.
     await page.getByRole('button',{name:'Переместить «Jacket» вправо'}).click();
     assert.equal(await page.locator('#maxi-photo-look article h3').first().textContent(),'Trousers');
