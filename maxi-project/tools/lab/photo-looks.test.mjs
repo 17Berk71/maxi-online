@@ -82,3 +82,22 @@ test('partially damaged v2 drafts and named looks are readable but never silentl
    assert.match(f.store.message(),/запись отключена/);
  }
 });
+
+test('draft writes refuse invalid, duplicate and over-limit products without truncation',()=>{
+ const f=fixture();assert.equal(f.store.setDraft([item(1)]),true);
+ const raw=f.data.get(STORAGE_KEY);
+ const attempts=[
+  [item(2),item(2)],
+  [item(2),{...item(3),image:'javascript:alert(1)'}],
+  Array.from({length:25},(_,i)=>item(i)),
+  null,
+ ];
+ for(const entries of attempts){
+  assert.equal(f.store.setDraft(entries),false);
+  assert.match(f.store.message(),/Не удалось сохранить образ/);
+  assert.equal(f.data.get(STORAGE_KEY),raw);
+  assert.deepEqual(f.store.items(),[item(1)]);
+ }
+ assert.equal(f.store.setDraft([item(2)]),true,'valid retry must remain possible');
+ assert.deepEqual(f.reload().items(),[item(2)]);
+});
