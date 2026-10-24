@@ -6,9 +6,9 @@ import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
 // Photo keys must include the shop: different feeds can reuse the same product ID.
-// Encode both components so punctuation cannot make distinct pairs collide.
+// JSON tuple encoding keeps punctuation and even malformed Unicode IDs collision-safe.
 export const feedPhotoKey = (shopName, productId) =>
-  'feed:' + encodeURIComponent(String(shopName ?? '')) + ':' + encodeURIComponent(String(productId ?? ''));
+  'feed:' + JSON.stringify([String(shopName ?? ''), String(productId ?? '')]);
 let indexP = null;
 const WIN = {};
 export const winKeys = name => WIN[name] || [];
