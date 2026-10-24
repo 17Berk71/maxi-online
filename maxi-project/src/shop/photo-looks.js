@@ -16,7 +16,7 @@ export function photoLookItems(){return items.map(x=>({...x}));}
 export function addToPhotoLook(product,store,image){
   if(!imageUrl(image))return false;
   const id=String(store?.name||'')+'|'+String(product?.id||product?.name||'')+'|'+String(product?.color||'');
-  const entry={id,title:String(product?.name||'Товар'),shop:String(store?.name||''),image,sourceUrl:safeHttpUrl(product?.url)||null};
+  const entry={id,title:String(product?.name||'Товар'),shop:String(store?.name||''),image,sourceUrl:(product?.demo===true||product?.evidence?.demo===true)?null:(safeHttpUrl(product?.url)||null)};
   if(!valid(entry))return false;
   const next=[...items.filter(x=>x.id!==id),entry].slice(-MAX);
   if(!persist(next))return false;
