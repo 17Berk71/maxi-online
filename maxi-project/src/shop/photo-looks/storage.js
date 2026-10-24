@@ -1,5 +1,5 @@
 // FR-SAVE-002: versioned, transactional browser-only look snapshots.
-import {safeHttpUrl} from '../catalog-evidence.js';
+import {parseIsoTimestamp, safeHttpUrl} from '../catalog-evidence.js';
 export const LEGACY_KEY='maxi-photo-looks-v1';
 export const STORAGE_KEY='maxi-photo-looks-v2';
 export const MAX_ITEMS=24, MAX_LOOKS=30;
@@ -31,7 +31,7 @@ export function createLookStore(storage, {now=()=>new Date().toISOString(),newId
       if(data?.version!==2||!Array.isArray(data.draft)||!Array.isArray(data.looks))throw Error('Unsupported storage');
       const ids=new Set();
       state={version:2,draft:normalizeItems(data.draft,maxItems,allowMissingImages),looks:data.looks.filter(x=>x && typeof x.id==='string' &&
-        typeof x.name==='string' && typeof x.createdAt==='string' && Number.isFinite(Date.parse(x.createdAt)) &&
+        typeof x.name==='string' && typeof x.createdAt==='string' && Number.isFinite(parseIsoTimestamp(x.createdAt)) &&
         Array.isArray(x.items) && !ids.has(x.id) && ids.add(x.id)).slice(0,MAX_LOOKS)
         .map(x=>({id:x.id,name:x.name.slice(0,80),createdAt:x.createdAt,items:normalizeItems(x.items,maxItems,allowMissingImages)}))};
       // Never overwrite a partly recovered v2 snapshot: dropped entries, duplicate IDs or
@@ -75,7 +75,7 @@ export function createLookStore(storage, {now=()=>new Date().toISOString(),newId
       if(state.looks.length>=MAX_LOOKS){warning='Сохранено 30 образов. Удалите ненужный перед сохранением нового.';return false;}
       const id=newId(),createdAt=now();
       if(typeof id!=='string'||!id||state.looks.some(x=>x.id===id)||
-         typeof createdAt!=='string'||!Number.isFinite(Date.parse(createdAt))){
+         typeof createdAt!=='string'||!Number.isFinite(parseIsoTimestamp(createdAt))){
         warning='Не удалось сохранить образ: ошибка идентификатора или даты. Повторите попытку.';
         return false;
       }
