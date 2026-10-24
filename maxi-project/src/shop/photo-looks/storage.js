@@ -30,7 +30,7 @@ function normalizeItems(input,maxItems=MAX_ITEMS,allowMissingImages=false){
   return input.filter(x=>x && typeof x.id==='string' && typeof x.title==='string' && (imageUrl(x.image)||(allowMissingImages&&x.image===null)))
     .filter(x=>!seen.has(x.id)&&seen.add(x.id)).slice(0,maxItems).map(x=>({
       id:x.id,title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:imageUrl(x.image),
-      sourceUrl:x.demo===true?null:safeHttpUrl(x.sourceUrl),demo:x.demo===true,
+      sourceUrl:x.demo?null:safeHttpUrl(x.sourceUrl),demo:Boolean(x.demo),
     }));
 }
 const copy=x=>JSON.parse(JSON.stringify(x));
