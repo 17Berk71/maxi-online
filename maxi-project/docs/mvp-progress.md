@@ -123,3 +123,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Local browser tests at 390px/1280px traverse all 25 pages of a 1,000-product fixture, locate and save the last item, preserve keyboard focus, exclude hidden matches and reset search. The existing six WebGL/fetch/favorites browser cases and generated-revision withdrawal/rollback checks also passed.
 - Real synthetic-only screenshots compare the actual pre-pagination module at `75573e2` (1,000 DOM product cards) against 40 cards; see `docs/review-catalog-pages/README.md`. This does not certify mobile FPS or server-side pagination.
 - Local verification: 47 Node tests and build passed. Calendar evidence batch was published as `301b8db`; CI status is checked separately.
+
+### Expiry in an already-open catalogue/product
+
+- Found a remaining freshness error: an open view could retain its initial stock label after evidence expired. Added shared `inventory-watch.js` with expiry scheduling, visibility/focus revalidation and explicit cleanup on product close, catalogue navigation and page changes.
+- Quick catalogue recomputes evidence from raw fields instead of trusting a cached evidence snapshot. Status text updates in place, preserving card nodes and focus; expired online proof still never becomes local stock.
+- Actual product viewer updates its live stock text and hides the physical-pickup action when its proof expires. If that action had focus, focus moves to the ordinary merchant link. Returning to the catalogue also stops the prior product viewer and stock observer.
+- Local verification: 50 Node tests and build passed. New 390px/1280px browser checks cover natural timer expiry for in/out stock, background-tab clock advance, online/local separation, source-image preservation, pickup removal, focus preservation and saving after expiry. All proof URLs and timestamps in this test are synthetic fixtures; no live inventory is asserted.

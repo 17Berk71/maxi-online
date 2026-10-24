@@ -3,13 +3,15 @@ import {cataloguePage} from './catalog-page.js';
 import {catalogueProducts,feedPath} from './catalog-feed.js';
 import {addToPhotoLook,openPhotoLook,photoLookMessage} from './photo-looks.js';
 import {favorites} from './favorites.js';
-import {AVAILABILITY} from './catalog-evidence.js';
+import {watchInventory,physicalStockText} from './inventory-watch.js';
 const el=(tag,text)=>Object.assign(document.createElement(tag),text===undefined?{}:{textContent:text});
 async function read(url){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
  try{const response=await fetch(url,{cache:'no-cache',signal:controller.signal});if(!response.ok)throw Error('HTTP '+response.status);return await response.json();}finally{clearTimeout(timer);}
 }
+let disposePrevious=()=>{};
 export async function openQuickCatalog(reason=''){
+ disposePrevious();
  document.getElementById('quick-catalog')?.remove();
  const root=el('main');root.id='quick-catalog';
  const style=el('style');style.textContent=`
@@ -37,9 +39,9 @@ export async function openQuickCatalog(reason=''){
  for(const child of document.body.children)if(child.id!=='quick-catalog')child.inert=true;
  root.addEventListener('keydown',event=>event.stopPropagation());
  document.body.append(root);title.tabIndex=-1;title.focus();
- let request=0;
+ let request=0,stopInventory=()=>{};disposePrevious=()=>stopInventory();
  async function showStores(){
-  const token=++request;content.replaceChildren();status.textContent='Загрузка магазинов…';
+  stopInventory();const token=++request;content.replaceChildren();status.textContent='Загрузка магазинов…';
   try{
    const index=await read('feeds/index.json');if(token!==request)return;
    const stores=Object.entries(index?.shops||{}).filter(([,entry])=>entry&&feedPath(entry.file));
@@ -50,7 +52,7 @@ export async function openQuickCatalog(reason=''){
   }catch{if(token!==request)return;status.textContent='Не удалось загрузить список магазинов. Повторите попытку.';const retry=el('button','Повторить загрузку');retry.onclick=showStores;content.append(retry);}
  }
  async function showStore(name,entry,index){
-  const token=++request;content.replaceChildren();status.textContent='Загрузка каталога…';
+  stopInventory();const token=++request;content.replaceChildren();status.textContent='Загрузка каталога…';
   const back=el('button','← К магазинам');back.onclick=showStores;content.append(back);
   try{
    const feed=await read(feedPath(entry.file));if(token!==request)return;
@@ -72,17 +74,16 @@ export async function openQuickCatalog(reason=''){
     previous.disabled=currentPage===0;next.disabled=currentPage>=selected.pageCount-1;
     pageLabel.textContent=`Страница ${currentPage+1} из ${selected.pageCount}`;
     status.textContent=!products.length?'В каталоге нет доступных товаров.':!selected.total?'По запросу ничего не найдено.':`Товаров: ${selected.total} · ${pageLabel.textContent}`;
-    grid.replaceChildren();
+    stopInventory();const stockEntries=[];grid.replaceChildren();
     for(const product of selected.items){
     const card=el('article');card.append(el('h3',product.name),el('p',product.deptTitle));
     if(product.image){const image=el('img');image.src=product.image;image.alt=product.name;image.loading='lazy';image.onerror=()=>image.replaceWith(el('p','Изображение недоступно.'));card.append(image);}
     else card.append(el('p','Исходное изображение не подтверждено.'));
     card.append(el('p',product.price===null?'Цена не указана':new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB'}).format(product.price)));
-    const evidence=product.evidence,stock=evidence.availability;
+    const evidence=product.evidence;
     card.append(el('p',evidence.demo?'Демонстрационный товар':'Источник: '+(feed.source||evidence.sourceType)));
     card.append(el('p','Дата проверки: '+(evidence.lastCheckedAt?new Date(evidence.lastCheckedAt).toLocaleDateString('ru-RU'):'не указана')+'. Дата проверки каталога не подтверждает остатки.'));
-    const local=stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
-    card.append(el('p',local?(stock.status===AVAILABILITY.IN_STOCK?'Подтверждено наличие в магазине Тулы.':'Подтверждено отсутствие в магазине Тулы.'):'Наличие именно в ТРЦ «Макси» не подтверждено.'));
+    const stockNote=el('p');card.append(stockNote);stockEntries.push({raw:{...product,demo:evidence.demo},note:stockNote});
     const controls=el('div');controls.className='quick-controls';
     const favorite=el('button','Сохранить товар в избранное');favorite.onclick=()=>{
      if(favorites.add(product,{name},product.image)){favorite.textContent='Сохранено в избранное ✓';status.textContent='Товар сохранён в этом браузере. Избранное доступно в «Мои фотообразы».';}
@@ -95,6 +96,7 @@ export async function openQuickCatalog(reason=''){
     if(product.url){const link=el('a','Страница товара у продавца ↗');link.href=product.url;link.target='_blank';link.rel='noopener noreferrer';controls.append(link);}
     card.append(controls);grid.append(card);
     }
+    stopInventory=watchInventory(stockEntries,(entry,stock,previous)=>{entry.note.textContent=physicalStockText(stock);if(previous?.scope==='physical_store_tula'&&previous.status!=='unknown'&&stock.status==='unknown'){const notice='Подтверждение наличия устарело. Уточните наличие у продавца.';if(status.textContent!==notice)status.textContent=notice;}},{isActive:()=>root.isConnected&&token===request});
    };
    previous.onclick=()=>{currentPage--;render();(previous.disabled?next:previous).focus();pagination.scrollIntoView({block:'start'});};
    next.onclick=()=>{currentPage++;render();(next.disabled?previous:next).focus();pagination.scrollIntoView({block:'start'});};

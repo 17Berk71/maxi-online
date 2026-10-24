@@ -4,7 +4,7 @@ Repository `17Berk71/maxi-online`, branch `codex/mvp-prd-architecture`, draft PR
 
 ## Implemented and checked
 
-- Evidence-based stock scopes, demo-link suppression, original/processed-image separation.
+- Evidence-based stock scopes, automatic expiry in open views, demo-link suppression, original/processed-image separation.
 - Independent photo board with named save/load/delete, legacy migration, validation, focus handling, error states and conservative storage-conflict handling.
 - Separate persisted favorite-product snapshots, including records with missing source photos.
 - Quick catalogue (`?catalog=1`) that loads without app.js, WebGL fallback and asynchronous 3D-startup fallback. Network retry paths are tested.

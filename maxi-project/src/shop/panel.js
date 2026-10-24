@@ -21,7 +21,7 @@ export function requestLockIfNeeded(){if(!coarse&&isFP()&&!locked){requestLock()
 export function kioskHasGoods(s){return (s.kind==='kiosk'||s.island)&&s.cat!=='tbd'&&s.cat!=='wc';}
 export function openKioskPanel(s){if(!s._feedTried){loadFeed(s).then(()=>openKioskPanel(s));return;}app.PS={s,cat:catalogOf(s)};app.shopDept=0;app.shopProd=null;shopShown=24;renderShopPanel();openShopPanel();
  showHint('«'+s.name+'» — товары островка. Нажми на товар, чтобы посмотреть его');}
-function renderShopPanel(){const s=app.PS.s,cat=app.PS.cat;const el=$('shop');
+function renderShopPanel(){stopViewer();const s=app.PS.s,cat=app.PS.cat;const el=$('shop');
  el.querySelector('.sh-name').textContent=s.name;el.querySelector('.sh-what').textContent=(s.what||'')+' · '+floorName(s.floor);
  el.querySelector('.sh-dot').style.background=s.colHex;
  const tabs=el.querySelector('.sh-tabs');tabs.innerHTML='';

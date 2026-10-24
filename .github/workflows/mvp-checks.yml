@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'maxi-project/src/shop/catalog-evidence.js'
+      - 'maxi-project/src/shop/inventory-watch.js'
+      - 'maxi-project/tools/lab/inventory-watch.test.mjs'
       - 'maxi-project/src/shop/photo-looks.js'
       - 'maxi-project/src/shop/photo-looks/**'
       - 'maxi-project/src/app.js'
@@ -64,6 +66,7 @@ jobs:
       - name: Check changed module syntax
         run: |
           node --check src/shop/catalog-evidence.js
+          node --check src/shop/inventory-watch.js
           node --check src/shop/photo-looks.js
           node --check src/shop/photo-looks/storage.js
           node --check src/shop/enter-exit.js
@@ -88,7 +91,7 @@ jobs:
           python3 -m py_compile tools/feeds/import_feed.py
           python3 -m unittest discover -s tools/feeds -p test_pricing.py
       - name: Evidence policy tests
-        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs tools/lab/favorites.test.mjs tools/lab/catalog-workspace.test.mjs tools/lab/catalog-page.test.mjs
+        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs tools/lab/favorites.test.mjs tools/lab/catalog-workspace.test.mjs tools/lab/catalog-page.test.mjs tools/lab/inventory-watch.test.mjs
       - name: Audit bundled demonstration catalogue
         run: node tools/feeds/audit-catalog.mjs
       - name: Production build
@@ -105,6 +108,7 @@ jobs:
           node tools/test/photo-looks.browser.mjs
           node tools/test/quick-catalog.browser.mjs
           node tools/test/catalog-page.browser.mjs
+          node tools/test/inventory-expiry.browser.mjs
           node tools/test/catalog-workspace.browser.mjs
           node tools/test/catalog-visibility.browser.mjs
           node tools/test/mvp-journey.browser.mjs

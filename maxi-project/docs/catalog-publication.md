@@ -41,3 +41,5 @@ For each visible real product the gate requires a stable ID, title, safe source 
 The bundled index contains **3 demonstration store catalogues and 125 demonstration products**. They are not connected real stores. Fixture audit passes; the real-pilot gate correctly fails with `real_multicategory_pilot_missing`. See [baseline report](review-2026-10-24/catalogue-real-gate.json).
 
 Verification/permission timestamps also undergo calendar validation: impossible dates, invalid leap days and timezone-less timestamps are rejected rather than normalized. Only legacy **import** dates may use YYYY-MM-DD; they are calendar-validated and remain distinct from actual catalogue/stock verification.
+
+Already-open quick catalogues and product cards re-evaluate proof at its expiry and on tab visibility/focus changes. They update the displayed stock text in place and remove the product pickup action when local proof expires. This only revalidates the stored time-bounded record: it does not fetch new stock or infer a new confirmation. There is no invented global catalogue freshness TTL.
