@@ -147,3 +147,9 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `2f425ff` / `462a3f2`: missing-image fallback no longer directs users to a nonexistent merchant page. When the saved product lacks a verified HTTP(S) destination, the UI explicitly says that no product link is confirmed. Desktop/mobile Chromium smoke checks both link-present and link-absent cases.
 - GitHub Actions [#69](https://github.com/17Berk71/maxi-online/actions/runs/40086559503) is the verification run for the final code checkpoint `462a3f2`; record its actual conclusion before claiming full CI success.
 - Only synthetic fixture records were used; no actual store, rights, availability, main-branch merge or deployment is implied.
+
+### CI navigation regression found and mitigation — 24 October 2026
+
+- GitHub Actions [#69](https://github.com/17Berk71/maxi-online/actions/runs/40086559503) **failed** at the existing desktop Синема Парк pedestrian test. The photo-board browser suite, six quick-catalogue cases, 1,000-product paging, expiry, catalogue revision, hidden products and two-store integrated journey all passed beforehand; Node, importer, audit and build steps passed.
+- The cinema failure is a 45-second `waitForFunction` timeout in `mall-navigation.browser.mjs`. Debug output captured immediately afterward already reported `mode: 'store'`, floor 2 and forward movement. This supports a slow SwiftShader frame/timing hypothesis, not a verified defect in the photo board. The intermittent navigation issue is **not** marked resolved.
+- `282de8f` updates the real keyboard navigation test to use the supported Shift+W sprint for the second store, and a fixed polling interval for entry detection; it does not mutate player coordinates or call the store-entry function directly. Re-run the complete CI and retain the failure as a known flake until repeated browser evidence is available.
