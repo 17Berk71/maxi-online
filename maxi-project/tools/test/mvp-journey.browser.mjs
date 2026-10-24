@@ -30,6 +30,9 @@ try{
    await page.locator('#shop .sh-card').first().click();
    assert.equal(await page.locator('#shop .sh-name').textContent(),name==='Ostin'?'Тестовые брюки':'Тестовая куртка');
    assert.equal(await page.getByText('Наличие именно в ТРЦ «Макси» не подтверждено.',{exact:false}).count()>0,true);
+   assert.equal(await page.locator('#shop .pv-photo').getAttribute('src'),'http://127.0.0.1:5173/tools/test/fixtures/product.svg');
+   assert.equal(await page.getByText('Проверка каталога: дата не указана. Импорт не является проверкой наличия.',{exact:true}).count(),1);
+   if(name==='Ostin')assert.equal(await page.locator('#shop .sh-price').textContent(),'Цена не указана');
    await page.getByRole('button',{name:'Добавить изображение в образ',exact:true}).click();
    assert.equal(await page.locator('#maxi-photo-look article').count(),name==='Ostin'?2:1);
    await page.keyboard.press('Escape');
@@ -53,4 +56,4 @@ try{
   assert.deepEqual(errors,[]);await page.close();console.log(`PASS integrated mall -> two store catalogues -> photo look -> save/reload -> synthetic merchant (${width}px)`);
  }
 }finally{await browser.close();}
-function feed(id,name,type){return {demo:false,source:'Synthetic test fixture, not a real catalogue',updated:'2026-10-24',depts:[{key:type,title:'Тестовый отдел',type,who:'adult',items:[{id,name,price:100,color:'#345678',sizes:['M'],pic:'../tools/test/fixtures/product.svg',cut:false,url:`https://example.org/product-${id}`,original_image_url:'http://127.0.0.1:5173/tools/test/fixtures/product.svg'}]}]};}
+function feed(id,name,type){return {demo:false,source:'Synthetic test fixture, not a real catalogue',updated:'2026-10-24',depts:[{key:type,title:'Тестовый отдел',type,who:'adult',items:[{id,name,price:id==='pants'?null:100,color:'#345678',sizes:['M'],pic:'../tools/test/fixtures/product.svg',cut:false,url:`https://example.org/product-${id}`,original_image_url:'http://127.0.0.1:5173/tools/test/fixtures/product.svg'}]}]};}

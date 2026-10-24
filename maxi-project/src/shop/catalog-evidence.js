@@ -31,13 +31,16 @@ export function catalogEvidence(product = {}, feed = {}, now = Date.now()) {
   const sourceUrl = safeHttpUrl(p.source_url || p.url);
   const demo = Boolean(p.demo || f.demo);
   const image = typeof p.original_image_url === 'string' ? safeHttpUrl(p.original_image_url) : null;
-  const stamp = p.last_checked_at || f.updated || null;
+  const stamp = p.last_checked_at || f.last_checked_at || null;
+  const importStamp=p.imported_at||f.imported_at||f.updated;
+  const imported=typeof importStamp==='string'?Date.parse(importStamp):NaN;
   const parsed = typeof stamp === 'string' ? Date.parse(stamp) : NaN;
   return {
     demo,
     sourceUrl,
     originalImage: image,
-    lastCheckedAt: Number.isFinite(parsed) ? new Date(parsed).toISOString() : null,
+    importedAt: Number.isFinite(imported)&&imported<=now ? new Date(imported).toISOString() : null,
+    lastCheckedAt: Number.isFinite(parsed)&&parsed<=now ? new Date(parsed).toISOString() : null,
     sourceType: typeof p.source_type === 'string' ? p.source_type : (f.source ? 'feed' : 'unknown'),
     availability: inventoryEvidence({...p, demo}, now),
   };

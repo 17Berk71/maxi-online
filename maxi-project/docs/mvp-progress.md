@@ -43,3 +43,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Catalogue fetch failures expose retry and store-back controls. Unknown prices stay unknown; demo URLs stay suppressed; processed previews cannot become real original photos. Bad feed paths and hidden/duplicate products are rejected.
 - Found and fixed an inherited integration error: importer preview paths such as `feeds/img/example.webp` were rejected by the photo board. Safe relative paths now work without weakening scheme/backslash/traversal rejection.
 - Local checks: 17 Node tests passed; quick catalogue six browser cases passed (390px/1280px × direct/WebGL unavailable/async 3D failure); production build passed. Full integrated mall regression also passed at 390px and 1280px after the lazy-launch changes.
+
+### Catalogue correctness and readiness evidence
+
+- WebGL-independent catalogue batch published as `9ce1a20`; GitHub Actions #37 **passed**: https://github.com/17Berk71/maxi-online/actions/runs/40077245973
+- Fixed legacy price corruption: absent prices no longer import as zero or display as free; decimal prices retain cents. Shared price formatter tests cover null, strings, nonfinite/negative values and real numeric zero.
+- Import and catalogue verification dates are separate. Future verification timestamps are rejected. Importer records `imported_at` and `source_type`, without inventing a manual verification timestamp.
+- Main product viewer prefers explicit original-image URLs; source photos and processed previews have different captions. Integrated browser checks assert the original URL, missing price and unknown catalogue-check date.
+- Added an offline catalogue audit and documented review manifest contract (`docs/catalog-publication.md`). The bundled baseline is 3 **demo** catalogues / 125 demo products. Real multicategory gate fails as intended; no contracts, licences, live sources or store affiliations were fabricated.
+- Local verification: **23 Node tests + 2 Python tests passed**, importer compiled, build passed, focused photo-board suite passed at both widths, all six quick-catalogue cases passed, integrated mall journey passed at 390px and 1280px. An actual importer invocation against a synthetic no-image YML confirmed null / 1250.50 / 0 prices and import/check-date separation; output stayed outside public feeds.

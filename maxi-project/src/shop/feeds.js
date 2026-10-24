@@ -48,7 +48,7 @@ export function feedCatalog(s, DEPT) {
     const items = d.items.map(it => ({
       name: it.name, price: it.price, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,
       model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: it.pic && it.cut ? 'feed:' + it.id : null, pic: it.pic ? FEED_BASE + it.pic : null,
-      sizes: it.sizes, url: it.url, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
+      sizes: it.sizes, url: it.source_url || it.url, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
       evidence: catalogEvidence(it, F),
       originalImageUrl: it.original_image_url || null,
       stockEvidence: {availability_status: it.availability_status, availability_scope: it.availability_scope,

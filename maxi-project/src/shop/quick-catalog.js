@@ -62,7 +62,7 @@ export async function openQuickCatalog(reason=''){
     card.append(el('p',product.price===null?'Цена не указана':new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB'}).format(product.price)));
     const evidence=product.evidence,stock=evidence.availability;
     card.append(el('p',evidence.demo?'Демонстрационный товар':'Источник: '+(feed.source||evidence.sourceType)));
-    card.append(el('p','Дата данных: '+(evidence.lastCheckedAt?new Date(evidence.lastCheckedAt).toLocaleDateString('ru-RU'):'не указана')+'. Дата данных не подтверждает остатки.'));
+    card.append(el('p','Дата проверки: '+(evidence.lastCheckedAt?new Date(evidence.lastCheckedAt).toLocaleDateString('ru-RU'):'не указана')+'. Дата проверки каталога не подтверждает остатки.'));
     const local=stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
     card.append(el('p',local?(stock.status===AVAILABILITY.IN_STOCK?'Подтверждено наличие в магазине Тулы.':'Подтверждено отсутствие в магазине Тулы.'):'Наличие именно в ТРЦ «Макси» не подтверждено.'));
     const controls=el('div');controls.className='quick-controls';

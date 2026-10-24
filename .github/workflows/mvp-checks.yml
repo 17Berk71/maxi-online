@@ -12,6 +12,12 @@ on:
       - 'maxi-project/src/style.css'
       - 'maxi-project/src/shop/quick-catalog.js'
       - 'maxi-project/src/shop/catalog-feed.js'
+      - 'maxi-project/src/shop/catalog.js'
+      - 'maxi-project/src/shop/pricing.js'
+      - 'maxi-project/tools/lab/catalog-release.test.mjs'
+      - 'maxi-project/tools/feeds/audit-catalog.mjs'
+      - 'maxi-project/tools/feeds/pricing.py'
+      - 'maxi-project/tools/feeds/test_pricing.py'
       - 'maxi-project/tools/lab/catalog-feed.test.mjs'
       - 'maxi-project/src/core/loop.js'
       - 'maxi-project/src/controls/input.js'
@@ -56,9 +62,13 @@ jobs:
           node --check src/shop/product.js
           node --check src/shop/feeds.js
       - name: Feed importer syntax
-        run: python3 -m py_compile tools/feeds/import_feed.py
+        run: |
+          python3 -m py_compile tools/feeds/import_feed.py
+          python3 -m unittest discover -s tools/feeds -p test_pricing.py
       - name: Evidence policy tests
-        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs
+        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs
+      - name: Audit bundled demonstration catalogue
+        run: node tools/feeds/audit-catalog.mjs
       - name: Production build
         run: npm run build
       - name: Install Chromium for focused browser smoke test

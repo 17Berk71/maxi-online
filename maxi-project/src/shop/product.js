@@ -62,14 +62,18 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  el.querySelector('.sh-name').textContent=p.name;el.querySelector('.sh-what').textContent=s.name+' · '+(p.deptTitle||(DEPT[p.dept]?DEPT[p.dept].t:''));el.querySelector('.sh-dot').style.background=s.colHex;
  el.querySelector('.sh-tabs').innerHTML='';const body=el.querySelector('.sh-body');body.innerHTML='';body.scrollTop=0;
  const w=el_('div','sh-detail');
- const m=productModel(p);const photo=p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic;
- if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;w.appendChild(im);w.appendChild(el_('p','sh-note',p.feed?'Фото из выгрузки магазина.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
+ const m=productModel(p);const photo=p.evidence?.originalImage || (p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic);
+ if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;w.appendChild(im);w.appendChild(el_('p','sh-note',p.evidence?.originalImage?'Исходное фото из источника товара.':p.feed?'Превью из выгрузки; изображение могло быть обработано.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
  else{const cv=viewerShow(p,onMan);w.appendChild(cv);w.appendChild(el_('p','sh-note',p.feed?'Фото в выгрузке нет — показана похожая модель. Потяни, чтобы повернуть.':'Потяни картинку, чтобы повернуть товар.'));}
  if(WEARABLE[m]&&!photo){const tg=el_('div','sh-seg');['Товар','На манекене'].forEach((t,i)=>{const b=el_('button','sh-tab'+((!!onMan)===(i===1)?' on':''),t);b.onclick=()=>renderProduct(p,i===1,chosen);tg.appendChild(b);});w.appendChild(tg);}
  const info=describe(p,m);
  const pr=el_('div','sh-pricebox');pr.append(el_('span','sh-price',fmtPrice(p.price)));if(p.oldPrice&&p.oldPrice>p.price){const o=el_('s','sh-old',fmtPrice(p.oldPrice));pr.appendChild(o);}
- pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена на '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
+ pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена из каталога · импорт '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
  const evidence=p.feed?p.evidence:null, stock=p.feed&&!evidence?.demo?inventoryEvidence(p.stockEvidence||{}):null;
+ if(evidence){
+  w.appendChild(el_('p','sh-note','Проверка каталога: '+(evidence.lastCheckedAt?fmtDate(evidence.lastCheckedAt):'дата не указана')+'. Импорт не является проверкой наличия.'));
+  if(evidence.importedAt)w.appendChild(el_('p','sh-note','Дата импорта: '+fmtDate(evidence.importedAt)));
+ }
  const localStock=stock&&stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
  const stockText=localStock?(stock.status===AVAILABILITY.IN_STOCK?'Подтверждено наличие в магазине Тулы.':'Подтверждено отсутствие в магазине Тулы.'):'Наличие именно в ТРЦ «Макси» не подтверждено.';
  w.appendChild(el_('p','sh-stock',p.feed?'Размеры приведены по каталогу. '+stockText:'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.'));

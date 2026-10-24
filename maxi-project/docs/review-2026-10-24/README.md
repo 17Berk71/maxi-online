@@ -23,3 +23,7 @@ Local Chromium: 153.0.8010.0, headless; 3D integration uses SwiftShader. These a
 [390px screenshot](catalog-390.png) · [1280px screenshot](catalog-1280.png)
 
 Synthetic browser fixture with WebGL explicitly unavailable. The normal route, quick route and asynchronous startup rejection are tested separately. Index and store feed requests each fail once, then recover through the visible retry controls. A demo item is added and named-saved without 3D; unknown prices and stock are labelled, fabricated merchant links are absent. No app module is requested on direct quick/WebGL-unavailable paths.
+
+## Data integrity regression
+
+23 Node tests and 2 Python price tests passed; importer syntax and production build passed. The actual importer was additionally exercised with a synthetic no-image feed (missing price, 1250.50, zero), writing only to a temporary directory. Source-image priority and “unknown price / verification date” are asserted through the actual product UI in the integrated desktop/mobile journey. No real source permissions were added. [Real-pilot baseline rejection](catalogue-real-gate.json) is an expected blocked result, not a broken demo fixture audit.

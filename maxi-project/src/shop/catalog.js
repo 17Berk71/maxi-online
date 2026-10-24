@@ -125,6 +125,7 @@ function catalogOf(s){if(s._cat)return s._cat;if(s._feed){s._cat=feedCatalog(s,D
   const dep={key:k,title:d.t,icon:d.icon,model:d.model,lay:d.lay,items:[],itemAt(i){while(dep.items.length<=i)dep.items.push(makeItem(s.id,k,d,dep.items.length));return dep.items[i];}};
   for(let i=0;i<N;i++)dep.itemAt(i);return dep;});
  s._cat=deps;return deps;}
-const fmtPrice=p=>p?p.toLocaleString('ru-RU')+' ₽':'бесплатно';
+// Re-export the shared optional-price formatter for legacy consumers.
+import {fmtPrice} from './pricing.js';
 
 export {SITES,siteOf,mapsOf,DEPT,deptsFor,PALETTE,catalogOf,fmtPrice,PHOTOS};

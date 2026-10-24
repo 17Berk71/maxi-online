@@ -74,8 +74,8 @@ This is intentionally more conservative than legacy imported size labels.
 - [x] Focused mobile/desktop browser checks for image failure, empty states, focus, named save/reload, quota failure and migration; full screen-reader audit remains open.
 
 ### M3 investment demo quality gate (P0)
-- [ ] E2E: open mall -> distinct categories -> product -> original-photo board -> save -> merchant link.
-- [ ] Strict mobile viewport/browser/WebGL fallback testing; capture reproducible screenshots.
+- [x] Integrated application journey through two store scenes/catalogues, product, photo board, named save/reload and a synthetic merchant tab. Distinct real store categories and pedestrian navigation remain unverified.
+- [x] Chromium mobile/desktop and WebGL/startup fallback tests, with synthetic screenshots. Physical-device and wider-browser testing remain open.
 - [ ] Verify consent/licensing/source correctness and no unsupported stock/promotional claims.
 - [ ] Capture performance budget and failing devices rather than asserting an unmeasured FPS.
 
