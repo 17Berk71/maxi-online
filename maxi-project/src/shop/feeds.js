@@ -57,12 +57,13 @@ export function feedCatalog(s, DEPT) {
     const base = DEPT[d.type] || DEPT.generic;
     const items = d.items.map(it => {
       const preview = feedPath(it.pic);
+      const evidence = catalogEvidence(it, F);
       return ({
-      name: it.name, price: it.price, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,
+      name: it.name, price: typeof it.price === 'number' && Number.isFinite(it.price) && it.price >= 0 ? it.price : null, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,
       model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: preview && it.cut ? 'feed:' + it.id : null, pic: preview,
-      sizes: it.sizes, url: it.source_url || it.url, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
-      evidence: catalogEvidence(it, F),
-      originalImageUrl: it.original_image_url || null,
+      sizes: it.sizes, url: evidence.demo ? null : evidence.sourceUrl, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
+      evidence,
+      originalImageUrl: evidence.originalImage,
       stockEvidence: {availability_status: it.availability_status, availability_scope: it.availability_scope,
         availability_source: it.availability_source, availability_checked_at: it.availability_checked_at,
         availability_expires_at: it.availability_expires_at},
