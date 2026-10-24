@@ -200,3 +200,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regressions for runtime visibility, offline real-pilot classification and local prepare → diff → activate → rollback using **temporary synthetic catalogues**. Code and test commits: `3b66502`, `af696b5`, `7a1562e`, `6af9f54`, `695fadc`, `1682305`.
 - [GitHub Actions #102](https://github.com/17Berk71/maxi-online/actions/runs/40112502480) was pending after the test commit. Record the **final** head's complete CI conclusion before marking these changes passed; cancelled intermediate runs are not verification.
 - No real merchant feed, image licence, stock proof, main-branch change, PR merge or deployment was added.
+
+### Continuation — 24 October 2026, catalogue withdrawal and image provenance
+
+- Confirmed branch HEAD before changes: `eee5fa2`; PR #18 remains open against `codex/stage-18-recovery`. GitHub Actions #104 completed successfully on that baseline, including browser smoke: https://github.com/17Berk71/maxi-online/actions/runs/40112556254
+- `02b1155` and `f0b66c3`: the bounded catalogue paginator now applies the same conservative `isHidden` withdrawal policy as both feed adapters, including raw string/numeric markers. Added unit regressions for direct paging and filtered searches; a focused four-test Node reproduction passed locally. This is defensive parity, not proof of real stock.
+- `423b400` and `7a9588d`: quick-catalogue cards explicitly distinguish processed demo previews from source-linked photos and state that image-use rights are unverified. The 1,000-product Chromium fixture now checks the caption at both 390px and 1280px.
+- Full CI and browser checks for this new batch must be read from the latest workflow run; do not claim they passed until completed. All new browser data remain synthetic. No real feeds, rights approvals, deployment or main-branch changes were introduced.
