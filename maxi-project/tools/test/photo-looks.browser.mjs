@@ -34,6 +34,15 @@ try {
     assert.equal(await page.getByRole('button',{name:'Переместить «Jacket» влево'}).evaluate(e=>e===document.activeElement),true);
     assert.equal(await page.getByRole('status').textContent(),'Порядок товаров изменён.');
     assert.equal(await page.getByRole('button',{name:'Переместить «Trousers» влево'}).isDisabled(),true);
+    // A failed localStorage write must leave the board unchanged and announce the failure.
+    await page.evaluate(()=>{
+      window.__photoBoardSetItem=Storage.prototype.setItem;
+      Storage.prototype.setItem=function(){throw new DOMException('Quota exceeded','QuotaExceededError');};
+    });
+    await page.getByRole('button',{name:'Удалить «Trousers»'}).click();
+    assert.equal(await page.locator('#maxi-photo-look article').count(),2);
+    assert.equal(await page.getByRole('status').textContent(),'Не удалось сохранить изменения. Проверьте настройки браузера.');
+    await page.evaluate(()=>{Storage.prototype.setItem=window.__photoBoardSetItem;delete window.__photoBoardSetItem;});
     await page.getByRole('button',{name:'Удалить «Trousers»'}).click();
     assert.equal(await page.getByRole('button',{name:'Удалить «Jacket»'}).evaluate(e=>e===document.activeElement),true);
     assert.equal(await page.getByRole('status').textContent(),'Товар удалён из образа.');
