@@ -3,10 +3,22 @@ import {parseIsoTimestamp, safeHttpUrl} from '../catalog-evidence.js';
 export const LEGACY_KEY='maxi-photo-looks-v1';
 export const STORAGE_KEY='maxi-photo-looks-v2';
 export const MAX_ITEMS=24, MAX_LOOKS=30;
+// Root-relative images must not escape their intended path via encoded dot segments.
+// A browser or reverse proxy may decode and normalize these before requesting them.
+function safeRootImagePath(input){
+  const path=input.split(/[?#]/,1)[0];
+  try{
+    const decoded=decodeURIComponent(path);
+    return !decoded.startsWith('//')&&!decoded.includes('\\')&&
+      !/[\u0000-\u001f]/.test(decoded)&&
+      !decoded.split('/').some(segment=>segment==='.'||segment==='..')&&
+      !/%(?:2f|5c|25)/i.test(path);
+  }catch{return false;}
+}
 export function imageUrl(input){
   if(typeof input!=='string')return null;
   if(!/[\\\s\u0000-\u001f]/.test(input)){
-    if(input.startsWith('/')&&!input.startsWith('//'))return input;
+    if(input.startsWith('/')&&!input.startsWith('//')&&safeRootImagePath(input))return input;
     // Imported previews are relative to the app root (including subdirectory deployments).
     if(/^[a-zA-Z0-9][a-zA-Z0-9_./-]*$/.test(input)&&!input.split('/').some(x=>x==='..'||x==='.'))return input;
   }
