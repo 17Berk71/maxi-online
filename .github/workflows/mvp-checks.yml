@@ -45,6 +45,9 @@ on:
       - 'maxi-project/package*.json'
       - '.github/workflows/mvp-checks.yml'
   workflow_dispatch:
+concurrency:
+  group: mvp-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
