@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {feedCatalog,feedIndexReady,feedPhotoKey,loadFeed,winKeys} from '../../src/shop/feeds.js';
+import {PHOTOS} from '../../src/shop/photos.js';
 
 const DEPT={generic:{icon:'box',model:'box',lay:'wall'}};
 test('3D feed catalogue rejects unsafe preview/fit paths and matches normalized visible items',()=>{
@@ -24,7 +25,13 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
  const original=globalThis.fetch,requests=[];
  globalThis.fetch=async url=>{
   requests.push(url);
-  if(url==='feeds/index.json')return {ok:true,json:async()=>({shops:{Fixture:{file:'../private.json',win:[{pic:'../private.webp'},{pic:'img/safe.webp'}]}}})};
+  if(url==='feeds/index.json')return {ok:true,json:async()=>({shops:{
+   Fixture:{file:'../private.json',win:[{pic:'../private.webp'},{pic:'img/safe.webp'}]},
+   'Store A':{file:'a.json'},'Store B':{file:'b.json'}
+  }})};
+  if(url==='feeds/a.json'||url==='feeds/b.json')return {ok:true,json:async()=>({demo:true,depts:[{key:'tops',type:'generic',items:[{
+   id:'same-sku',name:'Synthetic top',pic:url==='feeds/a.json'?'img/a.webp':'img/b.webp',cut:true
+  }]}]})};
   throw Error('Unexpected request '+url);
  };
  try{
@@ -32,7 +39,11 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
   assert.equal(winKeys('Fixture').length,1);
   const store={name:'Fixture'};
   assert.equal(await loadFeed(store),false);
-  assert.deepEqual(requests,['feeds/index.json']);
+  assert.equal(await loadFeed({name:'Store A'}),true);
+  assert.equal(await loadFeed({name:'Store B'}),true);
+  assert.equal(PHOTOS[feedPhotoKey('Store A','same-sku')].url,'feeds/img/a.webp');
+  assert.equal(PHOTOS[feedPhotoKey('Store B','same-sku')].url,'feeds/img/b.webp');
+  assert.deepEqual(requests,['feeds/index.json','feeds/a.json','feeds/b.json']);
  }finally{globalThis.fetch=original;}
 });
 
