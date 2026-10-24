@@ -103,6 +103,23 @@ try {
     assert.equal(await page.locator('#maxi-photo-look article').count(),2);
     assert.equal(await page.locator('#maxi-photo-look a[href]').count(),0);
     await page.keyboard.press('Escape');
+    // A partly corrupted v2 board must announce read-only recovery and preserve the raw backup.
+    const damagedRaw=await page.evaluate(()=>{
+      const raw=JSON.stringify({version:2,draft:[
+        {id:'kept',title:'Сохранённый товар',shop:'Fixture',image:'/tools/test/fixtures/product.svg',demo:false},
+        {id:'broken',title:'Повреждённый товар',shop:'Fixture',image:'javascript:alert(1)',demo:false}
+      ],looks:[]});
+      localStorage.setItem('maxi-photo-looks-v2',raw);
+      return raw;
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.evaluate(async()=>{(await import('/src/shop/photo-looks.js')).openPhotoLook();});
+    assert.match(await page.getByRole('status').textContent(),/запись отключена/);
+    assert.equal(await page.locator('#maxi-photo-look article').count(),1);
+    await page.getByRole('button',{name:'Удалить «Сохранённый товар»'}).click();
+    assert.equal(await page.locator('#maxi-photo-look article').count(),1);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('maxi-photo-looks-v2')),damagedRaw);
+    await page.keyboard.press('Escape');
     await page.close();
   }
 } finally {await browser.close();}
