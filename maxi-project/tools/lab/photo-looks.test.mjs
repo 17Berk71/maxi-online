@@ -63,3 +63,22 @@ test('public board API preserves reorder semantics and refuses overflow without 
  assert.equal(add(25),false);assert.equal(mod.photoLookItems().length,24);assert.equal(mod.photoLookItems()[0].title,'Item 2');
  assert.equal(mod.addToPhotoLook({id:'bad'},{name:'Shop'},'javascript:alert(1)'),false);
 });
+
+
+test('partially damaged v2 drafts and named looks are readable but never silently overwritten',()=>{
+ const snapshot={version:2,draft:[item(1),{...item(2),image:'javascript:alert(1)'}],
+   looks:[{id:'look-1',name:'Сохранённый',createdAt:'2026-10-24T08:00:00.000Z',
+     items:[item(3),{...item(4),image:'javascript:alert(1)'}]}]};
+ for(const damage of [
+   snapshot,
+   {...snapshot,draft:[item(1)],looks:[snapshot.looks[0],{...snapshot.looks[0]}]},
+   {...snapshot,draft:[item(1)],looks:[{...snapshot.looks[0],items:[item(3)]}],},
+   {...snapshot,draft:[...Array.from({length:25},(_,i)=>item(i))],looks:[]},
+ ]){
+   const raw=JSON.stringify(damage),f=fixture({[STORAGE_KEY]:raw});
+   assert.equal(f.store.setDraft([item(9)]),false);
+   assert.equal(f.store.save('Не перезаписывать'),false);
+   assert.equal(f.data.get(STORAGE_KEY),raw);
+   assert.match(f.store.message(),/запись отключена/);
+ }
+});
