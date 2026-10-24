@@ -4,9 +4,10 @@ Updated: 2026-10-24. Scope: experimental branch `codex/mvp-prd-architecture`, dr
 
 ## Latest verified change
 
-- `6bed685` — the photo-first outfit board retains keyboard focus on the edited product after reordering or removal, disables impossible boundary moves, announces successful edits through a live status region, and displays a storage-failure message rather than silently ignoring an unsuccessful save.
-- `e4c3592` — Playwright desktop/mobile smoke now asserts focus restoration, reorder result, disabled boundary action, and accessible status text.
-- GitHub Actions **MVP architecture checks #27** on `e4c3592`: **passed** (syntax, importer syntax, evidence policy tests, production build, Chromium photo-board smoke at 390px and 1280px). Workflow run: https://github.com/17Berk71/maxi-online/actions/runs/40071377205
+- `1067217` — restored photo-board entries are normalized before display: persisted merchant URLs are accepted only as HTTP(S), and protocol-relative-looking local paths with backslashes are rejected. `photoLookItems()` now returns independent item copies so callers cannot mutate internal board state.
+- `19b10b0` — desktop/mobile Playwright smoke now checks malicious saved links, invalid image paths and mutation isolation across a fresh page load.
+- GitHub Actions **MVP architecture checks #30** on `19b10b0`: **passed** (module/importer syntax, evidence policy tests, production build, Chromium photo-board smoke at 390px and 1280px). Workflow: https://github.com/17Berk71/maxi-online/actions/runs/40075162621
+- The checks use synthetic fixture images and URLs. No real catalogue, licence or store-stock claims were added.
 
 ## Boundaries / outstanding release blockers
 
