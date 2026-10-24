@@ -92,3 +92,24 @@ test('activation reevaluates current approval rather than trusting a previously 
  manifest.stores.A.approved_for_publication=false;
  assert.throws(()=>activate({candidate:f.candidate(1),target:f.target,expectedIndexHash:'missing',expectedCandidateHash:prepared.fingerprint,manifest}),/rights_review_missing/);assert.equal(indexHash(f.target),'missing');
 });
+
+test('hidden department withdrawal removes store count and window previews, with reversible diff',t=>{
+ const f=fixture(t);
+ prepareCandidate({source:f.source,candidate:f.candidate(1)});
+ const first=activateCandidate({candidate:f.candidate(1),target:f.target,expectedIndexHash:'missing'});
+ const sourceFeed=JSON.parse(fs.readFileSync(join(f.source,'a.json'),'utf8'));
+ sourceFeed.depts[0].hidden='true';
+ write(join(f.source,'a.json'),sourceFeed);
+ const stage=prepareCandidate({source:f.source,candidate:f.candidate(2)});
+ assert.equal(stage.audit.technicalGatePassed,true);
+ const index=JSON.parse(fs.readFileSync(join(f.candidate(2),'index.json'),'utf8'));
+ const candidateFeed=JSON.parse(fs.readFileSync(join(f.candidate(2),'a.json'),'utf8'));
+ assert.equal(index.shops.A.n,0);
+ assert.deepEqual(index.shops.A.win,[]);
+ assert.equal(candidateFeed.catalogue_status,'withdrawn');
+ assert.deepEqual(catalogueDiff({current:f.target,candidate:f.candidate(2)}).hidden.map(p=>p.id),['1','2']);
+ const second=activateCandidate({candidate:f.candidate(2),target:f.target,expectedIndexHash:first.indexHash});
+ assert.equal(activeFeed(f.target).catalogue_status,'withdrawn');
+ rollbackCatalogue({target:f.target,revision:first.revision,expectedIndexHash:second.indexHash});
+ assert.equal(activeFeed(f.target).depts[0].hidden,undefined);
+});
