@@ -89,4 +89,6 @@ test('a real-pilot catalogue cannot count demo-labelled products as verified ass
  assert(report.issues.some(x=>x.code==='demo_product_in_real_catalogue'&&x.store==='A'));
  assert(report.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
  assert.equal(report.stores.find(s=>s.name==='A').containsDemoProducts,true);
+ f.feeds['a.json'].depts[0].items[0].demo='true';
+ assert(auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true}).issues.some(x=>x.code==='demo_product_in_real_catalogue'));
 });
