@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createLookStore, STORAGE_KEY, LEGACY_KEY} from '../../src/shop/photo-looks/storage.js';
+import {createLookStore, imageUrl, STORAGE_KEY, LEGACY_KEY} from '../../src/shop/photo-looks/storage.js';
 const item=n=>({id:String(n),title:'Товар '+n,shop:'Shop',image:'/image.svg',sourceUrl:'https://example.org/'+n,demo:false});
 function fixture(initial={}){
   const data=new Map(Object.entries(initial));let refuse=false;
@@ -143,4 +143,21 @@ test('snapshot timestamps reject nonexistent calendar dates and missing timezone
    assert.match(broken.store.message(),/запись отключена/);
    assert.equal(broken.data.get(STORAGE_KEY),poisoned);
  }
+});
+
+
+test('root-relative images reject traversal, encoded separators and malformed escapes',()=>{
+ const allowed=['/images/photo.webp','/images/photo%20one.webp?size=small','feeds/img/photo.webp','https://example.org/original.jpg'];
+ for(const path of allowed)assert.equal(imageUrl(path),path);
+ for(const path of [
+  '/../private.png','/images/./photo.png','/images/%2e%2e/private.png',
+  '/images/%2E./private.png','/images/%2f%2fhost/photo.png',
+  '/images/%5cprivate.png','/images/%252e%252e/private.png',
+  '/images/%00photo.png','/%ZZ/photo.png'
+ ])assert.equal(imageUrl(path),null,path);
+ const raw=JSON.stringify({version:2,draft:[item(1),{...item(2),image:'/images/%2e%2e/private.png'}],looks:[]});
+ const f=fixture({[STORAGE_KEY]:raw});
+ assert.deepEqual(f.store.items().map(x=>x.id),['1']);
+ assert.equal(f.store.setDraft([item(3)]),false,'damaged saved data must remain read-only');
+ assert.equal(f.data.get(STORAGE_KEY),raw,'original damaged snapshot is preserved');
 });
