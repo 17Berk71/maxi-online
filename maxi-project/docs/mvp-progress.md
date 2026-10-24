@@ -265,3 +265,5 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added a Node regression covering both views, an upstream SKU already beginning with `f-`, distinct SKUs and distinct stores. Extended the synthetic Chromium investor journey to re-add a 3D-saved item from quick mode and check that favorite and photo-board counts do not increase.
 - Existing saved records created from the old 3D-only `f-` identity remain untouched. A universal migration would be ambiguous when a legitimate upstream SKU begins with `f-`; legacy duplicates may require user removal. No destructive rewriting was attempted.
 - **CI/browser result for this new commit is not yet confirmed at writing.** All fixtures remain synthetic. No real feed, image licence, verified local stock, deployment, merge or `main` change.
+
+- Follow-up safety guard: quick-catalogue normalization explicitly resets any upstream `sourceProductId` field to the actual validated item ID. An adversarial fixture checks that untrusted metadata cannot impersonate another saved SKU. This follow-up supersedes the earlier pending CI; validate the newest HEAD only.
