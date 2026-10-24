@@ -139,3 +139,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `7b0107c` and `f5e2553`: shared HTTP(S) URL validation rejects embedded usernames/passwords in merchant links, source-image URLs and stock-evidence links. Tests ensure credential-bearing stock sources cannot confirm availability.
 - Verification: CI for the final code checkpoint `f5e2553` must finish before this batch is marked passed. Earlier successful CI does not certify these new commits.
 - No real merchant feed, image licence, local inventory confirmation, deployment or merge has been added.
+
+### Snapshot-date integrity and truthful missing-image copy — 24 October 2026
+
+- Baseline verified: GitHub Actions #65 on `0ae7709` completed successfully before this batch.
+- `58179b7` / `49c4fa9`: named-look storage now uses the shared calendar-valid, timezone-aware timestamp validator on both write and recovery. Previously `Date.parse` could silently normalize a nonexistent date (e.g. 30 February) or accept a timezone-less timestamp. Invalid stored snapshots remain read-only with original bytes preserved; leap-day ISO timestamps remain valid. Node regressions cover failed writes, valid retry and read-only recovery.
+- `2f425ff` / `462a3f2`: missing-image fallback no longer directs users to a nonexistent merchant page. When the saved product lacks a verified HTTP(S) destination, the UI explicitly says that no product link is confirmed. Desktop/mobile Chromium smoke checks both link-present and link-absent cases.
+- GitHub Actions [#69](https://github.com/17Berk71/maxi-online/actions/runs/40086559503) is the verification run for the final code checkpoint `462a3f2`; record its actual conclusion before claiming full CI success.
+- Only synthetic fixture records were used; no actual store, rights, availability, main-branch merge or deployment is implied.
