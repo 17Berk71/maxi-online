@@ -74,4 +74,5 @@ test('3D feed photo IDs are isolated per shop even when product IDs overlap',()=
  assert.notEqual(first.photo,second.photo,'one shop must not overwrite another shop photo');
  assert.equal(first.pic,second.pic,'the preview URL remains unchanged');
  assert.notEqual(feedPhotoKey('A:B','C'),feedPhotoKey('A','B:C'),'punctuation must not cause collisions');
+ assert.doesNotThrow(()=>feedPhotoKey('Malformed',String.fromCharCode(0xD800)),'unpaired Unicode must not crash catalogue loading');
 });
