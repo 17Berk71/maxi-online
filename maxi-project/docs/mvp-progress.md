@@ -222,3 +222,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added regression tests for string and numeric demo flags in favorites, legacy/v2 look storage and stock evidence. Legacy backup remains untouched when migrated; v2 is writable after safe normalization.
 - Code and test checkpoint: `5860873`. GitHub Actions for the new commits were triggered; **full CI/browser result not yet confirmed** when this entry was written. Earlier overlapping runs were cancelled by workflow concurrency. Re-check the workflow on the final branch HEAD before reporting success.
 - No real catalogue, rights evidence or live stock added. No `main` changes, PR merge or deployment.
+
+### Continuation — 24 October 2026, saved product identity tuple collisions
+
+- Verified the previous branch HEAD `9afc73e` passed [GitHub Actions #121](https://github.com/17Berk71/maxi-online/actions/runs/40121512113), including the configured Chromium suite. This result does not validate the following changes.
+- Found a product-identity collision in `product-snapshot.js`: joining store name, SKU and color with `|` can produce the same saved ID for different products when upstream store names or SKUs themselves contain that separator. The same snapshot function is used by favorites and photo looks, so this could replace an unrelated saved entry.
+- `d8877cf` uses a JSON tuple for separator-bearing components while retaining the exact prior ID for ordinary names/SKUs, limiting disruption to existing saved records. `c9a94b7` adds a persisted-favorites regression for distinct stores/SKUs, reloading, removing and the unchanged ordinary ID format.
+- These are synthetic, adversarial identity fixtures; no real merchant catalogue, photo licence or inventory proof was added. Full CI and browser status for the final HEAD must be checked before declaring this batch passed. Keep PR #18 draft; no merge, deployment or main-branch change.
