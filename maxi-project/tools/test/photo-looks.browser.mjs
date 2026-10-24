@@ -12,8 +12,8 @@ try {
       const mod=await import('/src/shop/photo-looks.js');
       localStorage.removeItem('maxi-photo-looks-v1');
       // Start with an empty board in this clean CI browser context.
-      mod.addToPhotoLook({id:'one',name:'Jacket',url:'https://example.org/jacket'},{name:'Shop A'},'https://example.org/jacket.jpg');
-      mod.addToPhotoLook({id:'two',name:'Trousers'},{name:'Shop B'},'https://example.org/trousers.jpg');
+      mod.addToPhotoLook({id:'one',name:'Jacket',url:'https://example.org/jacket'},{name:'Shop A'},'/tools/test/fixtures/product.svg');
+      mod.addToPhotoLook({id:'two',name:'Trousers'},{name:'Shop B'},'/tools/test/fixtures/product.svg');
       mod.openPhotoLook();
     });
     await page.locator('#maxi-photo-look').waitFor({timeout:15000});
