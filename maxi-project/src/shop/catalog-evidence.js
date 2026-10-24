@@ -8,7 +8,10 @@ export const AVAILABILITY = Object.freeze({
 const confirmed = new Set([AVAILABILITY.IN_STOCK, AVAILABILITY.OUT_OF_STOCK]);
 const scopes = new Set(['physical_store_tula', 'online_store', 'unspecified']);
 export function safeHttpUrl(input) {
-  if (typeof input !== 'string') return null;
+  // URL() silently strips newlines and leading/trailing whitespace, and treats
+  // backslashes as slashes. Reject ambiguous raw links instead of rewriting them
+  // into a different merchant, image or stock-evidence destination.
+  if (typeof input !== 'string' || /[\s\\\u0000-\u001f\u007f]/u.test(input)) return null;
   try { const u = new URL(input); return (u.protocol === 'https:' || u.protocol === 'http:') && !u.username && !u.password ? u.href : null; }
   catch { return null; }
 }
