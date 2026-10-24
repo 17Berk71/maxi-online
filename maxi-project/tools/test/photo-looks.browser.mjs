@@ -19,6 +19,15 @@ try {
     await page.locator('#maxi-photo-look').waitFor({timeout:15000});
     assert.equal(await page.locator('#maxi-photo-look article').count(),2);
     assert.equal(await page.locator('#maxi-photo-look article img').count(),2);
+    // Focus cannot escape a modal dialog through either direction of Tab navigation.
+    await page.locator('#maxi-photo-look [data-close-photo-look]').focus();
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await page.evaluate(()=>document.activeElement?.textContent?.includes('Страница товара')),true);
+    await page.keyboard.press('Tab');
+    assert.equal(await page.locator('#maxi-photo-look [data-close-photo-look]').evaluate(e=>e===document.activeElement),true);
+    // Missing catalogue images must show a textual fallback rather than a blank item.
+    await page.locator('#maxi-photo-look article img').first().evaluate(img=>img.dispatchEvent(new Event('error')));
+    assert.equal(await page.getByText('Изображение недоступно. Откройте страницу товара.').count(),1);
     await page.getByRole('button',{name:'Удалить'}).first().click();
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v1')).length),1);
