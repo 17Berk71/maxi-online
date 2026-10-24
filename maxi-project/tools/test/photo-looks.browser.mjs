@@ -28,7 +28,16 @@ try {
     // Missing catalogue images must show a textual fallback rather than a blank item.
     await page.locator('#maxi-photo-look article img').first().evaluate(img=>img.dispatchEvent(new Event('error')));
     assert.equal(await page.getByText('Изображение недоступно. Откройте страницу товара.').count(),1);
-    await page.getByRole('button',{name:'Удалить'}).first().click();
+    // Reordering keeps focus on the moved item's available control.
+    await page.getByRole('button',{name:'Переместить «Jacket» вправо'}).click();
+    assert.equal(await page.locator('#maxi-photo-look article h3').first().textContent(),'Trousers');
+    assert.equal(await page.getByRole('button',{name:'Переместить «Jacket» влево'}).evaluate(e=>e===document.activeElement),true);
+    assert.equal(await page.getByRole('status').textContent(),'Порядок товаров изменён.');
+    assert.equal(await page.getByRole('button',{name:'Переместить «Trousers» влево'}).isDisabled(),true);
+    await page.getByRole('button',{name:'Удалить «Trousers»'}).click();
+    assert.equal(await page.getByRole('button',{name:'Удалить «Jacket»'}).evaluate(e=>e===document.activeElement),true);
+    assert.equal(await page.getByRole('status').textContent(),'Товар удалён из образа.');
+
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v1')).length),1);
     const horizontal=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
