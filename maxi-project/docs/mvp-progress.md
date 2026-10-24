@@ -2,7 +2,7 @@
 
 Updated: 2026-10-24. Scope: experimental branch `codex/mvp-prd-architecture`, draft PR #18 (base: `codex/stage-18-recovery`). **Do not merge or deploy.**
 
-## Latest verified change
+## Recovery baseline history
 
 - `1067217` — restored photo-board entries are normalized before display: persisted merchant URLs are accepted only as HTTP(S), and protocol-relative-looking local paths with backslashes are rejected. `photoLookItems()` now returns independent item copies so callers cannot mutate internal board state.
 - `19b10b0` — desktop/mobile Playwright smoke now checks malicious saved links, invalid image paths and mutation isolation across a fresh page load.
@@ -15,13 +15,13 @@ Updated: 2026-10-24. Scope: experimental branch `codex/mvp-prd-architecture`, dr
 
 ## Boundaries / outstanding release blockers
 
-- Browser smoke uses an isolated photo-board fixture, **not** an end-to-end journey through the actual 3D mall.
+- The original smoke fixture remains isolated; additional integrated application and pedestrian-navigation suites now cover selected mall paths. They are not a certification of every store or device.
 - No verified, rights-cleared live multi-category catalogue or current local-store stock evidence is available for a real-data pilot. Do not label feed previews as original photographs or infer photo usage rights from a URL.
-- Saved named look collections, versioned storage/migration, and full screen-reader/device testing are still incomplete.
+- Named collections, favorites and versioned storage/migration are implemented and regression-tested. Full screen-reader and physical-device testing remain incomplete.
 - The inherited stage-18 3D fitting remains experimental and is **not** accepted for investor-facing realism claims.
 - No deployment, PR merge, or change to `main` has been performed.
 
-Next safe steps: strengthen storage validation and error-state tests, add independent saved-look versioning, then run full integrated mall-to-product-to-photo-board browser journeys before any release decision.
+Current continuation priorities and boundaries: `docs/mvp-next.md`. Read the detailed evidence below; the early baseline bullets are historical.
 
 ## Continuation — 24 October 2026 (Work)
 
@@ -61,3 +61,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `product-snapshot.js` centralizes product identity, demo status and safe source URLs. Missing product-viewer photos have a textual fallback without disabling saving.
 - Fixed named-save behavior in environments lacking `crypto.randomUUID` (such as some HTTP LAN previews). Local identifiers have a non-security fallback; Chromium smoke explicitly removes randomUUID before saving/reloading a look.
 - Local Node suite: **27 tests passed**; Python pricing: **2 tests passed**. Focused browser checks passed, including the HTTP API fallback. Quick-catalogue checks cover favorite restore, missing photos, add-to-look and quota-failure deletion. Integrated mall journeys also passed at 390px and 1280px, including product-viewer image failure and favorite restoration from both stores.
+
+### Search and pedestrian navigation
+
+- Favorite-product batch published as `c0bae38`; GitHub Actions #39 **passed**: https://github.com/17Berk71/maxi-online/actions/runs/40078161288
+- Store search results are native keyboard-operable buttons, with store/floor labels, shortcut isolation and focus passed to the chosen store action. The mobile selection retains the store card and its entry control.
+- Escape explicitly releases pointer lock when the keyboard event reaches the app, allowing the visible store exit controls to be used. The previous click attempt while pointer lock was active was blocked by the canvas; the test now follows Escape -> exit as a user would.
+- New `mall-navigation.browser.mjs` uses public search and door controls followed by real W-key movement (1280px) or Chromium-dispatched touch-joystick input (390px). Debug state is read for assertions, but coordinates are never written and enterShop is never called by the test.
+- Local results: **all four entry/exit routes passed** — Gloria Jeans (floor 1) and Синема Парк (floor 2), each at 1280px and 390px. The historical cinema-entry timeout did not reproduce in this focused path. The older exhaustive cinema/movie/cart script is not thereby certified.
+- Module syntax, production build and diff whitespace checks passed. Navigation suite is included in the next CI run; current run state must be checked on GitHub.

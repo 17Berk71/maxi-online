@@ -24,6 +24,7 @@ on:
       - 'maxi-project/tools/lab/catalog-feed.test.mjs'
       - 'maxi-project/src/core/loop.js'
       - 'maxi-project/src/controls/input.js'
+      - 'maxi-project/src/ui/search.js'
       - 'maxi-project/index.html'
       - 'maxi-project/src/shop/product.js'
       - 'maxi-project/src/shop/feeds.js'
@@ -37,6 +38,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     defaults:
@@ -58,6 +60,7 @@ jobs:
           node --check src/shop/photo-looks/storage.js
           node --check src/core/loop.js
           node --check src/controls/input.js
+          node --check src/ui/search.js
           node --check src/app.js
           node --check src/main.js
           node --check src/shop/quick-catalog.js
@@ -88,3 +91,4 @@ jobs:
           node tools/test/photo-looks.browser.mjs
           node tools/test/quick-catalog.browser.mjs
           node tools/test/mvp-journey.browser.mjs
+          node tools/test/mall-navigation.browser.mjs

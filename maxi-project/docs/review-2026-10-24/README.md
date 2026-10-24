@@ -33,3 +33,8 @@ Synthetic browser fixture with WebGL explicitly unavailable. The normal route, q
 [390px screenshot](favorites-390.png) · [1280px screenshot](favorites-1280.png)
 
 Favorites use an independent key and are not a named look or a cart. They preserve missing-image records and label them. Browser regression checks reload actual catalogue pages, reopen favorites, add an item to a look, simulate quota errors and verify deletion preserves the current composition. The local named-save test also removes `crypto.randomUUID` before saving.
+
+
+## Pedestrian mall navigation
+
+`node tools/test/mall-navigation.browser.mjs`: four locally passing routes. Each uses visible search, the store card and the door action, followed by W-key movement on desktop or browser touch dispatch on the mobile joystick. Both Gloria Jeans (first floor) and Синема Парк (second floor) pass entry and exit. Debug data is read only; player positions and store state are never injected. No mall screenshots are captured by this test, so inherited clothing assets do not enter new review evidence. Chromium/SwiftShader and touch emulation remain distinct from a real device certification.

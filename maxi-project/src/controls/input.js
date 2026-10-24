@@ -76,6 +76,7 @@ joyEnd = e=>{if(e.pointerId!==joyId)return;joyId=null;app.joyV={x:0,y:0,run:0};k
 joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',joyEnd);
 
 addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&locked){releaseLock();return;}
  if(app.ride&&e.target.tagName!=='INPUT'&&(e.code==='KeyW'||e.code==='ArrowUp'||e.code==='ShiftLeft'||e.code==='ShiftRight'))keys[e.code]=true;// на эскалаторе: зажал W — бежишь по ленте
  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'){if(e.key==='Escape'){closeSearch();closeCart();}if(e.key==='Enter'&&e.target.id==='q'){const f=$('results').querySelector('li[data-id]');if(f)f.click();}return;}
  if(e.key==='/'){e.preventDefault();openSearch();return;}
