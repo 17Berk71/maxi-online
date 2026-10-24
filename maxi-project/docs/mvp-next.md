@@ -9,7 +9,7 @@ Repository `17Berk71/maxi-online`, branch `codex/mvp-prd-architecture`, draft PR
 - Separate persisted favorite-product snapshots, including records with missing source photos.
 - Quick catalogue (`?catalog=1`) that loads without app.js, WebGL fallback and asynchronous 3D-startup fallback. Network retry paths are tested.
 - Unknown-price preservation, decimal importer prices, distinct import and verification dates, source-photo priority and offline catalogue evidence audit.
-- Public search and pedestrian entry/exit on both floors, using W on desktop and actual browser touch dispatch for the mobile joystick; native keyboard search results and explicit Escape pointer unlock.
+- Public search and pedestrian entry/exit on both floors, using W on desktop and actual browser touch dispatch for the mobile joystick; native keyboard search results, Enter/Escape shortcuts, explicit Escape pointer unlock and capture-delta reset to prevent camera warps.
 - Tests and evidence: `docs/mvp-progress.md`, `docs/review-2026-10-24/README.md`. Exact CI outcomes must be read from GitHub for the current HEAD.
 
 ## Remaining technical work, in priority order

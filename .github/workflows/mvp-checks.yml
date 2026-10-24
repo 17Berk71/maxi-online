@@ -25,6 +25,7 @@ on:
       - 'maxi-project/src/core/loop.js'
       - 'maxi-project/src/controls/input.js'
       - 'maxi-project/src/ui/search.js'
+      - 'maxi-project/src/nav/travel.js'
       - 'maxi-project/index.html'
       - 'maxi-project/src/shop/product.js'
       - 'maxi-project/src/shop/feeds.js'
@@ -61,6 +62,7 @@ jobs:
           node --check src/core/loop.js
           node --check src/controls/input.js
           node --check src/ui/search.js
+          node --check src/nav/travel.js
           node --check src/app.js
           node --check src/main.js
           node --check src/shop/quick-catalog.js

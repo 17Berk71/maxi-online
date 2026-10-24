@@ -81,3 +81,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Code commits: `c46f81d`, `d3575f0`, `3ee6008`, `c5ed37f`, `f2c297b`, `f707c02`, `fa37ad3`. Documentation: `5658196`.
 - Verification: [GitHub Actions #47](https://github.com/17Berk71/maxi-online/actions/runs/40079054857) checks the latest code; record its final status before claiming this batch is fully validated. Previous #40 was still running when this work began.
 - Boundaries unchanged: no authorized real feed, rights-cleared photo collection, local-stock proof, full screen-reader certification or physical-device benchmark. No merge, deployment or main-branch edit.
+
+### Search shortcut and pointer-lock follow-up
+
+- Navigation batch published as `d0cdac5`; GitHub Actions #40 **passed**: https://github.com/17Berk71/maxi-online/actions/runs/40078622436
+- Extended keyboard coverage caught two remaining native-button integration gaps: Enter in the search input still targeted the old list item, and Escape on a result was swallowed. Enter now activates the first native result and cancels its default action; Escape closes search and returns focus to its opener.
+- A repeated real-movement test caught a pointer-lock cursor warp: the first delta could turn the camera enough to walk into a different store. Pointer-lock transitions and public navigation now clear queued look deltas; the first nonzero delta after capture is discarded. Normal movement events after that are retained.
+- Browser navigation tests wait for the pointer-lock transition before holding W, avoiding a browser blur clearing the key during acquisition. No position or orientation is injected by the test.
+- After the corrections, all four routes passed again, including input-Enter for cinema, result-Enter for Gloria Jeans, search-Escape focus restoration, W-key movement and touch-joystick movement. Module checks, 27 Node tests and production build passed. The following CI run covers this final follow-up.

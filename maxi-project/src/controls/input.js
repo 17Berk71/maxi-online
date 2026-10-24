@@ -20,11 +20,11 @@ import {pick} from '../ui/pick.js';
 import {closeSearch, openSearch} from '../ui/search.js';
 import {app} from '../core/state.js';
 export let ptrs, locked, lockFailed, mouse, SENS_BASE;
-let downInfo, pinch0, lockErrors, joy, knob, joyId, joyEnd;
+let downInfo, pinch0, lockErrors, joy, knob, joyId, joyEnd, firstLockMove;
 
 function lockError(){lockErrors++;if(lockErrors>=3)lockFailed=true;updateCross();showHint(lockFailed?'Браузер не даёт скрыть курсор — обзор поворачивается, когда уводишь мышь от центра. Клик по сцене снова попробует скрыть курсор.':'Кликни по сцене ещё раз, чтобы продолжить прогулку');}
 export function requestLock(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(lockError);}catch(e){lockError();}}
-export function releaseLock(){if(document.pointerLockElement)document.exitPointerLock();}
+export function releaseLock(){app.lookDX=app.lookDY=0;if(document.pointerLockElement)document.exitPointerLock();}
 export function isFP(){return app.mode==='walk'||app.mode==='store';}
 export function panelsClosed(){return !document.getElementById('maxi-photo-look')&&$('card').hidden&&$('shop').hidden&&$('lift').hidden&&$('cartBox').hidden&&$('bigmap').hidden&&$('info').hidden&&!fitOpen();}
 export function updateCross(){$('cross').hidden=!(locked&&isFP());$('aim').hidden=!(locked&&isFP());$('lockTip').hidden=!(!coarse&&!locked&&isFP()&&panelsClosed()&&!app.ride);}
@@ -41,8 +41,8 @@ export function init() {
 
 ptrs = new Map();downInfo = null; pinch0 = 0;
 // ---- управление мышью без курсора (захват указателя)
-locked = false; lockFailed = !('requestPointerLock' in HTMLCanvasElement.prototype); lockErrors = 0; mouse = {in:false,x:0,y:0};
-document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas;if(locked){lockErrors=0;lockFailed=false;hideHint();}updateCross();});
+firstLockMove=false;locked = false; lockFailed = !('requestPointerLock' in HTMLCanvasElement.prototype); lockErrors = 0; mouse = {in:false,x:0,y:0};
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas;firstLockMove=locked;app.lookDX=app.lookDY=0;if(locked){lockErrors=0;lockFailed=false;hideHint();}updateCross();});
 document.addEventListener('pointerlockerror',lockError);
 canvas.addEventListener('pointerdown',e=>{
  if(app.ride&&app.ride.kind!=='esc')return;
@@ -64,7 +64,11 @@ SENS_BASE = 0.0021;app.lookDX = 0; app.lookDY = 0;
 document.addEventListener('mousemove',e=>{
  if(e.target===canvas){mouse.in=true;mouse.x=e.clientX;mouse.y=e.clientY;}
  if(coarse||!isFP()||app.anim||(app.ride&&app.ride.kind!=='esc'))return;
- if(locked){app.lookDX+=(e.movementX||0);app.lookDY+=(e.movementY||0);}});
+ if(locked){
+  // Pointer-lock cursor warps can report the old UI cursor position as a large first delta.
+  if(firstLockMove&&(e.movementX||e.movementY)){firstLockMove=false;return;}
+  app.lookDX+=(e.movementX||0);app.lookDY+=(e.movementY||0);
+ }});
 canvas.addEventListener('mouseleave',()=>{mouse.in=false;});
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(app.ride)return;if(app.mode==='top'){topv.h=clampH(topv.h*Math.exp(e.deltaY*0.0012));hideGoHere();}else{const f=-Math.sign(e.deltaY)*2;tryMove(-Math.sin(player.yaw)*f,-Math.cos(player.yaw)*f);}},{passive:false});
@@ -78,7 +82,7 @@ joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',jo
 addEventListener('keydown',e=>{
  if(e.key==='Escape'&&locked){releaseLock();return;}
  if(app.ride&&e.target.tagName!=='INPUT'&&(e.code==='KeyW'||e.code==='ArrowUp'||e.code==='ShiftLeft'||e.code==='ShiftRight'))keys[e.code]=true;// на эскалаторе: зажал W — бежишь по ленте
- if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'){if(e.key==='Escape'){closeSearch();closeCart();}if(e.key==='Enter'&&e.target.id==='q'){const f=$('results').querySelector('li[data-id]');if(f)f.click();}return;}
+ if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'){if(e.key==='Escape'){closeSearch();closeCart();}if(e.key==='Enter'&&e.target.id==='q'){e.preventDefault();const f=$('results').querySelector('li[data-id] button');if(f)f.click();}return;}
  if(e.key==='/'){e.preventDefault();openSearch();return;}
  if(e.key==='Escape'){if(!$('bigmap').hidden){closeBigMap();return;}if(!$('cartBox').hidden){closeCart();return;}if(!$('lift').hidden){hideLiftPanel(false);return;}if(!locked)closeCard();$('info').hidden=true;hideGoHere();if(!$('shop').hidden&&!locked)closeShopPanel(false);return;}
  if(app.ride||!$('bigmap').hidden||fitOpen())return;

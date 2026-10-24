@@ -18,7 +18,7 @@ function renderResults(q){q=q.trim().toLowerCase();const ul=$('results');ul.inne
  const list=named.filter(s=>!q||((s.names||[s.name]).join(' ')+' '+(s.what||'')+' '+CATS[s.cat].n+' '+CATS[s.cat].k+' '+s.floor+' этаж').toLowerCase().includes(q)).sort((a,b)=>{const ai=a.name.toLowerCase().startsWith(q)?0:1,bi=b.name.toLowerCase().startsWith(q)?0:1;return ai-bi||a.name.localeCompare(b.name,'ru');});
  if(!list.length){const li=document.createElement('li');li.style.cursor='default';li.style.color='var(--muted)';li.textContent='В ТРЦ такого не нашлось';ul.appendChild(li);return;}
  list.slice(0,100).forEach(s=>{const li=document.createElement('li');li.dataset.id=s.id;const button=document.createElement('button');button.type='button';button.className='store-result';button.setAttribute('aria-label',s.name+' · '+floorName(s.floor));const i=document.createElement('i');i.style.background=s.colHex;const bt=document.createElement('b');bt.textContent=s.name;const sm=document.createElement('small');sm.textContent=(s.what||CATS[s.cat].n)+' · '+floorName(s.floor);button.append(i,bt,sm);li.append(button);
-  button.onkeydown=e=>e.stopPropagation();
+  button.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();closeSearch();$('bSearch').focus();}};
   button.onclick=()=>{closeSearch();if(app.mode==='top')showTop(s);else{walkTo(s);openCard(s);}document.querySelector('#cBtns button')?.focus();};ul.appendChild(li);});}
 
 // по порядку, при запуске
