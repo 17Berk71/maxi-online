@@ -21,6 +21,7 @@ on:
       - 'maxi-project/src/shop/pricing.js'
       - 'maxi-project/src/shop/favorites.js'
       - 'maxi-project/src/shop/product-snapshot.js'
+      - 'maxi-project/src/shop/product-identity.js'
       - 'maxi-project/tools/lab/favorites.test.mjs'
       - 'maxi-project/tools/lab/catalog-release.test.mjs'
       - 'maxi-project/tools/feeds/audit-catalog.mjs'
@@ -86,6 +87,7 @@ jobs:
           node --check src/shop/catalog-page.js
           node --check src/shop/favorites.js
           node --check src/shop/product-snapshot.js
+          node --check src/shop/product-identity.js
           node --check src/shop/product.js
           node --check src/shop/feeds.js
           node --check src/shop/panel.js
