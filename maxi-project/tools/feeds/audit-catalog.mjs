@@ -13,7 +13,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const demo=!!(index.demo||feed.demo),approval=manifest?.stores?.[name];
   const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
   const products=feed.depts.flatMap(d=>d?.hidden!==true&&Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
-  const hasDemoProducts=!demo&&products.some(p=>p?.demo===true);
+  const hasDemoProducts=!demo&&products.some(p=>Boolean(p?.demo));
   const summary={name,demo,category,products:products.length,containsDemoProducts:hasDemoProducts};stores.push(summary);
   if(hasDemoProducts)report('demo_product_in_real_catalogue',name);
   if(!products.length&&feed.catalogue_status!=='withdrawn')report('empty_catalogue',name);
