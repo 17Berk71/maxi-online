@@ -11,14 +11,16 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   if(!entry||!feedPath(entry.file)){report('unsafe_feed_path',name);continue;}
   const feed=feeds[entry.file];if(!feed||!Array.isArray(feed.depts)){report('feed_unreadable',name);continue;}
   const demo=!!(index.demo||feed.demo),approval=manifest?.stores?.[name];
+  const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
+  const isoDate=value=>typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value)?Date.parse(value):NaN;
   const products=feed.depts.flatMap(d=>Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
-  const summary={name,demo,category:approval?.category||null,products:products.length};stores.push(summary);
+  const summary={name,demo,category,products:products.length};stores.push(summary);
   if(!products.length)report('empty_catalogue',name);
   if(!demo){
-   const stamp=Date.parse(approval?.reviewed_at);
+   const stamp=isoDate(approval?.reviewed_at);
    if(approval?.approved_for_publication!==true||typeof approval?.permission_reference!=='string'||!approval.permission_reference.trim()||!Number.isFinite(stamp)||stamp>now)report('rights_review_missing',name);
-   if(!approval?.category)report('store_category_missing',name);
-   if(approval?.expires_at && !(Date.parse(approval.expires_at)>now))report('rights_review_expired',name);
+   if(!category)report('store_category_missing',name);
+   if(approval&&Object.hasOwn(approval,'expires_at')&&approval.expires_at!==null && !(isoDate(approval.expires_at)>now))report('rights_review_expired',name);
   }
   const ids=new Set();
   for(const product of products){
