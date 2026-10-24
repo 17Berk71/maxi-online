@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import {resolve,join,sep} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {feedPath} from '../../src/shop/catalog-feed.js';
+import {feedPath,isHidden} from '../../src/shop/catalog-feed.js';
 import {auditCatalogue} from './audit-catalog.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,stable(value[k])])):value;
@@ -44,11 +44,12 @@ function capture(root,{hide={},indexOverride=null}={}){
    if(item.pic)item.pic=asset(item.pic);
    if(item.fit)item.fit=asset(item.fit);
   }
-  const visible=all.filter(p=>p.hidden!==true);if(!visible.length&&all.length&&all.every(p=>p.hidden===true))feed.catalogue_status='withdrawn';
+  const visible=feed.depts.flatMap(d=>isHidden(d)?[]:d.items).filter(p=>!isHidden(p));
+  if(!visible.length&&all.length)feed.catalogue_status='withdrawn';
   if(visible.length&&feed.catalogue_status==='withdrawn')throw Error('Withdrawn catalogue contains visible products: '+name);
   entry.n=visible.length;
   // Existing window entries lack product IDs: suppress them conservatively after any withdrawal.
-  entry.win=all.some(p=>p.hidden===true)?[]:(entry.win||[]).map(w=>({...w,pic:asset(w.pic)}));
+  entry.win=feed.depts.some(isHidden)||all.some(isHidden)?[]:(entry.win||[]).map(w=>({...w,pic:asset(w.pic)}));
   const file=canonicalPath(entry.file);entry.file=file;feeds[file]=feed;put(file,json(feed));
  }
  put('index.json',json(index));
@@ -122,7 +123,7 @@ export function rollbackCatalogue({target,revision,expectedIndexHash,manifest={}
 }
 export function catalogueDiff({current,candidate}){
  const before=current?capture(rootPath(current)):null,after=candidateGraph(candidate),records=graph=>new Map(Object.entries(graph?.feeds||{}).flatMap(([file,feed])=>{
-  const store=Object.entries(graph.index.shops).find(([,entry])=>entry.file===file)[0];return feed.depts.flatMap(d=>d.items.map(p=>[JSON.stringify([store,p.id]),{store,id:p.id,title:p.name,record:p}]));
+  const store=Object.entries(graph.index.shops).find(([,entry])=>entry.file===file)[0];return feed.depts.flatMap(d=>d.items.map(p=>[JSON.stringify([store,p.id]),{store,id:p.id,title:p.name,record:p,hidden:isHidden(d)||isHidden(p)}]));
  }));
  const old=records(before),next=records(after),diff={added:[],removed:[],changed:[],hidden:[],restored:[],unchanged:0,assets:{added:[],removed:[],changed:[]}};
  const assetNames=graph=>[...(graph?.files.keys()||[])].filter(name=>name!=='index.json'&&!Object.hasOwn(graph.feeds,name));
@@ -133,8 +134,8 @@ export function catalogueDiff({current,candidate}){
  for(const key of new Set([...old.keys(),...next.keys()])){
   const a=old.get(key),b=next.get(key),entry=b||a,summary={store:entry.store,id:entry.id,title:entry.title};
   if(!a)diff.added.push(summary);else if(!b)diff.removed.push(summary);
-  else if(a.record.hidden!==true&&b.record.hidden===true)diff.hidden.push(summary);
-  else if(a.record.hidden===true&&b.record.hidden!==true)diff.restored.push(summary);
+  else if(!a.hidden&&b.hidden)diff.hidden.push(summary);
+  else if(a.hidden&&!b.hidden)diff.restored.push(summary);
   else if(!json(a.record).equals(json(b.record)))diff.changed.push(summary);else diff.unchanged++;
  }
  return diff;
