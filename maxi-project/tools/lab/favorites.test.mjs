@@ -82,3 +82,32 @@ test('encoded tuple identities cannot collide with ordinary legacy pipe IDs',()=
  assert.equal(fresh.add({id:'X',name:'Malformed Unicode'},malformed,null),true);
  assert.equal(fresh.has({id:'X'},malformed),true);
 });
+
+
+test('old raw tuple favorite IDs migrate in memory without losing or duplicating saved items',()=>{
+ const f=setup(),parts=['Store|North','SKU','Blue'];
+ const oldId='tuple:'+JSON.stringify(parts);
+ const currentId='tuple:'+encodeURIComponent(JSON.stringify(parts));
+ const saved={version:2,draft:[{id:oldId,title:'Old jacket',shop:parts[0],image:null,sourceUrl:product.url,demo:false}],looks:[]};
+ const raw=JSON.stringify(saved);
+ f.data.set(FAVORITES_KEY,raw);
+ const loaded=createFavorites(f.storage);
+ assert.equal(loaded.items()[0].id,currentId);
+ assert.equal(f.data.get(FAVORITES_KEY),raw,'reading must not rewrite a saved snapshot');
+ const oldProduct={id:'SKU',color:'Blue',name:'Updated jacket'};
+ const oldShop={name:'Store|North'};
+ assert.equal(loaded.has(oldProduct,oldShop),true);
+ assert.equal(loaded.add(oldProduct,oldShop,null),true);
+ assert.equal(createFavorites(f.storage).items().length,1,'re-adding must replace the same product');
+ assert.equal(createFavorites(f.storage).items()[0].title,'Updated jacket');
+});
+
+test('ambiguous legacy tuple identity does not override a mismatched stored shop',()=>{
+ const f=setup(),parts=['Store|North','SKU',''];
+ const id='tuple:'+JSON.stringify(parts);
+ const raw=JSON.stringify({version:2,draft:[{id,title:'Untouched',shop:'Other shop',image:null,demo:false}],looks:[]});
+ f.data.set(FAVORITES_KEY,raw);
+ const restored=createFavorites(f.storage);
+ assert.equal(restored.items()[0].id,id);
+ assert.equal(f.data.get(FAVORITES_KEY),raw);
+});
