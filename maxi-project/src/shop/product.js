@@ -5,6 +5,10 @@ import {iconURL} from './icons.js';
 import {describe} from './describe.js';
 import {cart} from './cart.js';
 import {feedInfo} from './feeds.js';
+import {favorites} from './favorites.js';
+import {addToPhotoLook, openPhotoLook, photoLookMessage} from './photo-looks.js';
+import {watchInventory,physicalStockText} from './inventory-watch.js';
+import {inventoryEvidence, AVAILABILITY, safeHttpUrl} from './catalog-evidence.js';
 import {onlineKind, onlineActions, onlineText, ACTIONS} from './online.js';
 import {$, LIN, V3} from '../core/helpers.js';
 import {humanParts} from '../mall/people-parts.js';
@@ -19,6 +23,7 @@ import {floorName} from '../ui/pick.js';
 import {app} from '../core/state.js';
 export let el_, fmtDate;
 let SIZES, WEARABLE, PV, TH, thumbCache;
+let stopInventory=()=>{};
 
 function productModel(p){if(p.model)return p.model;const dep=DEPT[p.dept];return dep?dep.model:'box';}
 // сцена просмотра: мягкий свет с трёх сторон, подиум
@@ -32,7 +37,7 @@ function ensureViewer(){if(PV)return PV;const cv=document.createElement('canvas'
  const c=new THREE.PerspectiveCamera(30,640/440,0.02,50);const vs=viewerScene();PV=Object.assign({cv,r,c,rot:0.6,drag:null,raf:0,run:false},vs);
  cv.addEventListener('pointerdown',e=>{PV.drag=e.clientX;cv.setPointerCapture(e.pointerId);});cv.addEventListener('pointermove',e=>{if(PV.drag!=null){PV.rot+=(e.clientX-PV.drag)*0.012;PV.drag=e.clientX;}});
  cv.addEventListener('pointerup',()=>{PV.drag=null;});cv.addEventListener('pointercancel',()=>{PV.drag=null;});return PV;}
-export function stopViewer(){if(PV){PV.run=false;cancelAnimationFrame(PV.raf);}}
+export function stopViewer(){stopInventory();stopInventory=()=>{};if(PV){PV.run=false;cancelAnimationFrame(PV.raf);}}
 // товар целиком (или на манекене) в группе, поставленный на подиум; h — высота для камеры
 function productGroup(p,onMannequin){models();const m=productModel(p);const g=new THREE.Group();let h=1;
  if(onMannequin&&WEARABLE[m]){const parts=humanParts(true);const skin=new THREE.MeshStandardMaterial({color:LIN('#efece6'),roughness:.35});const fab=MOD.partMat({m:m==='longsleeve'?'knit':'fabric'},p.color);
@@ -56,28 +61,36 @@ export function thumbURL(p){if(p.photo&&PHOTOS[p.photo])return PHOTOS[p.photo].u
  TH.c.position.set(0,h*0.7,h*2.4+0.25);TH.c.lookAt(0,h*0.45,0);TH.r.render(TH.sc,TH.c);let url;try{url=TH.cv.toDataURL('image/jpeg',0.82);}catch(e){url=iconURL(p.icon,p.color);}
  thumbCache.set(p.id,url);return url;}
 export function openProduct(p){app.shopProd=p;app.shopDept=Math.max(0,app.PS.cat.findIndex(d=>d.key===p.dept));renderProduct(p,false);openShopPanel();}
-export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.feed?feedInfo(s):null,kind=onlineKind(s);
+export function renderProduct(p,onMan,size){stopInventory();stopInventory=()=>{};const s=app.PS.s,el=$('shop'),fi=p.feed?feedInfo(s):null,kind=onlineKind(s);
  el.querySelector('.sh-name').textContent=p.name;el.querySelector('.sh-what').textContent=s.name+' · '+(p.deptTitle||(DEPT[p.dept]?DEPT[p.dept].t:''));el.querySelector('.sh-dot').style.background=s.colHex;
  el.querySelector('.sh-tabs').innerHTML='';const body=el.querySelector('.sh-body');body.innerHTML='';body.scrollTop=0;
  const w=el_('div','sh-detail');
- const m=productModel(p);const photo=p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic;
- if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;w.appendChild(im);w.appendChild(el_('p','sh-note',p.feed?'Фото из выгрузки магазина.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
+ const m=productModel(p);const photo=p.evidence?.originalImage || (p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic);
+ if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;im.onerror=()=>{im.replaceWith(el_('p','sh-note','Фото недоступно. Сведения о товаре и сохранение остаются доступны.'));};w.appendChild(im);w.appendChild(el_('p','sh-note',p.evidence?.originalImage?'Исходное фото из источника товара.':p.feed?'Превью из выгрузки; изображение могло быть обработано.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
  else{const cv=viewerShow(p,onMan);w.appendChild(cv);w.appendChild(el_('p','sh-note',p.feed?'Фото в выгрузке нет — показана похожая модель. Потяни, чтобы повернуть.':'Потяни картинку, чтобы повернуть товар.'));}
  if(WEARABLE[m]&&!photo){const tg=el_('div','sh-seg');['Товар','На манекене'].forEach((t,i)=>{const b=el_('button','sh-tab'+((!!onMan)===(i===1)?' on':''),t);b.onclick=()=>renderProduct(p,i===1,chosen);tg.appendChild(b);});w.appendChild(tg);}
  const info=describe(p,m);
  const pr=el_('div','sh-pricebox');pr.append(el_('span','sh-price',fmtPrice(p.price)));if(p.oldPrice&&p.oldPrice>p.price){const o=el_('s','sh-old',fmtPrice(p.oldPrice));pr.appendChild(o);}
- pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена на '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
- w.appendChild(el_('p','sh-stock',fi?'Размеры — те, что есть в выгрузке магазина на '+fmtDate(fi.updated)+'. Есть ли вещь именно в «Макси», видно при заказе на сайте магазина.':'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.'));
+ pr.appendChild(el_('span','sh-rate',fi?(fi.demo?'цена из тестовой выгрузки':'цена из каталога · импорт '+fmtDate(fi.updated)):'цена условная'));w.appendChild(pr);
+ const evidence=p.feed?p.evidence:null, stock=p.feed&&!evidence?.demo?inventoryEvidence(p.stockEvidence||{}):null;
+ if(evidence){
+  w.appendChild(el_('p','sh-note','Проверка каталога: '+(evidence.lastCheckedAt?fmtDate(evidence.lastCheckedAt):'дата не указана')+'. Импорт не является проверкой наличия.'));
+  if(evidence.importedAt)w.appendChild(el_('p','sh-note','Дата импорта: '+fmtDate(evidence.importedAt)));
+ }
+ const localStock=stock&&stock.scope==='physical_store_tula'&&stock.status!==AVAILABILITY.UNKNOWN;
+ const stockNote=el_('p','sh-stock',p.feed?'Размеры приведены по каталогу. '+physicalStockText(stock||{status:AVAILABILITY.UNKNOWN}):'«'+s.name+'», '+floorName(s.floor)+'. Наличие и настоящую цену уточняй в магазине или на его сайте.');
+ stockNote.setAttribute('aria-live','polite');w.appendChild(stockNote);let pickupLink=null;
  let chosen=size||null;const sz=p.sizes&&p.sizes.length?p.sizes:SIZES[m];let lab=null;
- if(sz){lab=el_('p','sh-lab',p.feed?'Размеры в наличии':'Размер');w.appendChild(lab);const row=el_('div','sh-sizes');
-  sz.forEach(x=>{const b=el_('button','sh-size'+(x===chosen?' on':''),x);b.onclick=()=>{row.querySelectorAll('.sh-size').forEach(q=>q.classList.remove('on'));b.classList.add('on');chosen=x;lab.textContent=p.feed?'Размеры в наличии':'Размер';lab.classList.remove('err');};row.appendChild(b);});w.appendChild(row);}
+ if(sz){lab=el_('p','sh-lab',p.feed?'Размеры из каталога':'Размер');w.appendChild(lab);const row=el_('div','sh-sizes');
+  sz.forEach(x=>{const b=el_('button','sh-size'+(x===chosen?' on':''),x);b.onclick=()=>{row.querySelectorAll('.sh-size').forEach(q=>q.classList.remove('on'));b.classList.add('on');chosen=x;lab.textContent=p.feed?'Размеры из каталога':'Размер';lab.classList.remove('err');};row.appendChild(b);});w.appendChild(row);}
  const buy=el_('div','sh-row sh-buy');
  if(p.feed){
   // покупка и бронь — на сайте магазина: туда ведёт ссылка на товар из выгрузки
-  const a=el_('a','btn pri','Купить на сайте магазина ↗');a.href=p.url||siteOf(s)||mapsOf(s);a.target='_blank';a.rel='noopener';buy.appendChild(a);
-  if(p.pickup){const b=el_('a','btn','Забрать в «Макси» ↗');b.href=p.url||siteOf(s)||mapsOf(s);b.target='_blank';b.rel='noopener';buy.appendChild(b);}
-  w.appendChild(buy);
-  if(p.pickup)w.appendChild(el_('p','sh-note','«Забрать в «Макси»» — на сайте магазина выбери самовывоз из ТРЦ «Макси», Тула. Бронь и оплату ведёт сам магазин.'));}
+  const outbound=safeHttpUrl(p.url);
+  if(outbound&&!evidence?.demo){const a=el_('a','btn pri','Открыть товар на сайте ↗');a.href=outbound;a.target='_blank';a.rel='noopener noreferrer';buy.appendChild(a);}
+  else w.appendChild(el_('p','sh-note',evidence?.demo?'Тестовый товар: ссылка на покупку недоступна.':'Подтверждённая ссылка на товар недоступна.'));
+  if(localStock&&stock.status===AVAILABILITY.IN_STOCK&&p.pickup&&outbound&&!evidence?.demo){const b=el_('a','btn','Уточнить самовывоз ↗');b.href=outbound;b.target='_blank';b.rel='noopener noreferrer';pickupLink=b;buy.appendChild(b);}
+  w.appendChild(buy);}
  else if(kind==='act'){const a0=onlineActions(s)[0],a=el_('a','btn pri',ACTIONS[a0].btn);a.href=siteOf(s)||mapsOf(s);a.target='_blank';a.rel='noopener';buy.appendChild(a);w.appendChild(buy);
   w.appendChild(el_('p','sh-note',onlineText(s)+(siteOf(s)?' Оформление — на сайте «'+s.name+'».':' Сайта пока нет в нашем списке — ссылка ведёт на контакты на Яндекс Картах.')));}
  else if(kind!=='shop'){w.appendChild(el_('p','sh-stock',onlineText(s)));}
@@ -88,6 +101,21 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
   add.onclick=()=>{if(!put())return;add.textContent='В корзине ✓';add.classList.add('ok');showHint('«'+p.name+'» в корзине. Корзина — кнопка с сумкой вверху справа');setTimeout(()=>{add.textContent='Добавить ещё';add.classList.remove('ok');},1600);};
   now.onclick=()=>{if(!put())return;closeShopPanel(false);openCart(true);};
   buy.append(add,now);w.appendChild(buy);}
+ // MVP: source-photo board, separate from physical fitting.
+ const boardImage = evidence?.originalImage || (evidence?.demo ? photo : null);
+ if(p.feed){
+  const favorite=el_('button','btn','Сохранить товар в избранное'),favoriteStatus=el_('p','sh-note');favoriteStatus.setAttribute('role','status');
+  favorite.onclick=()=>{if(favorites.add(p,s,boardImage)){favorite.textContent='Сохранено в избранное ✓';favoriteStatus.textContent='Товар сохранён в этом браузере. Избранное доступно в «Мои фотообразы».';}else favoriteStatus.textContent=favorites.message();};
+  w.append(favorite,favoriteStatus);
+ }
+ if(boardImage && p.feed){
+   const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить изображение в образ'), viewPhotos=el_('button','btn','Открыть образ');
+   const photoStatus=el_('p','sh-note');photoStatus.setAttribute('role','status');w.appendChild(photoStatus);
+   addPhoto.onclick=()=>{if(addToPhotoLook(p,s,boardImage)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}else photoStatus.textContent=photoLookMessage()||'Не удалось добавить товар. В образе может быть не больше 24 вещей.';};
+   viewPhotos.onclick=()=>openPhotoLook();
+   photos.append(addPhoto,viewPhotos);w.appendChild(photos);
+   if(evidence?.demo)w.appendChild(el_('p','sh-note','Демонстрационный образ из тестовых фотографий; исходные изображения не подтверждены.'));
+ }
  // примерочная: вещь можно взять и примерить вместе с вещами из других магазинов
  if(FIT.isWearable(p)){const fr=el_('div','sh-row sh-fit');const fb=el_('button','btn');const sync=()=>{const on=FIT.has(p,s);fb.textContent=on?'В примерочной ✓ · открыть':'В примерочную';fb.classList.toggle('ok',on);};sync();
   fb.onclick=()=>{if(!FIT.has(p,s)){FIT.add(p,s,true);sync();showHint('«'+p.name+'» — в примерочной ('+FIT.count()+' вещ.). '+(app.mode==='store'&&app.SHOP&&app.SHOP.fit?'Кабина — в левом углу у входа':'Примерить можно в любом магазине одежды'));}else openFitting();};
@@ -99,11 +127,15 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  else{plate.appendChild(el_('h4',null,'Описание'));plate.appendChild(el_('p',null,info.text));
   plate.appendChild(el_('h4',null,'Характеристики'));const dl=el_('dl');info.specs.forEach(([k,v])=>{dl.append(el_('dt',null,k),el_('dd',null,v));});plate.appendChild(dl);}
  w.appendChild(plate);
- w.appendChild(el_('p','sh-note',fi?(fi.demo?'Тестовая выгрузка: товары, цены и ссылки ненастоящие. Так будет выглядеть магазин, подключённый через выгрузку.':'Товары и цены — из выгрузки магазина, обновляются раз в сутки. Точные — на его сайте.'):kind!=='shop'?'Позиции — пример для концепта.':'Товар, цена и размеры — пример для концепта. Настоящие наличие и цены — на сайте магазина.'));
+ w.appendChild(el_('p','sh-note',fi?(fi.demo?'Тестовая выгрузка: товары, цены и ссылки ненастоящие.':'Данные из каталога поставщика; актуальность уточняйте у продавца.'):kind!=='shop'?'Позиции — пример для концепта.':'Товар, цена и размеры — пример для концепта. Настоящие наличие и цены — на сайте магазина.'));
  const row=el_('div','sh-row');
  const site=siteOf(s);if(!p.feed){const a=el_('a','btn');a.target='_blank';a.rel='noopener';a.href=site||mapsOf(s);a.textContent=site?'Смотреть на сайте ↗':'Магазин на картах ↗';row.appendChild(a);}
  const back=el_('button','btn','Продолжить прогулку');back.onclick=()=>closeShopPanel(true);row.appendChild(back);
  w.appendChild(row);body.appendChild(w);
+ if(p.feed)stopInventory=watchInventory([{raw:{...(p.stockEvidence||{}),demo:!!evidence?.demo}}],(_entry,current)=>{
+  stockNote.textContent='Размеры приведены по каталогу. '+physicalStockText(current);
+  if(pickupLink){const allowed=current.scope==='physical_store_tula'&&current.status===AVAILABILITY.IN_STOCK;if(!allowed&&document.activeElement===pickupLink)buy.querySelector('a')?.focus();pickupLink.hidden=!allowed;}
+ },{isActive:()=>stockNote.isConnected});
  const f=el.querySelector('.sh-site');f.href=site||mapsOf(s);f.textContent=site?'Сайт магазина ↗':'Магазин на Яндекс Картах ↗';demoLine(s);}
 
 // по порядку, при запуске

@@ -21,7 +21,7 @@ import {app} from './state.js';
 
 export async function start(){
  try{await Promise.race([Promise.all(['800 40px Manrope',...FONT_LOADS].map(f=>document.fonts.load(f).catch(()=>{})).concat([feedIndexReady()])),new Promise(r=>setTimeout(r,3000))]);}catch(e){}
- try{build();}catch(err){$('loading').textContent='Не получилось построить сцену: '+err.message;console.error(err);return;}
+ try{build();}catch(err){$('loading').textContent='Не получилось построить сцену: '+err.message;throw err;}
  {const w=nearestFree(player.x,player.z);if(w){player.x=w[0];player.z=w[1];}}
  const qs=new URLSearchParams(location.search);if(qs.has('calm'))app.calm=qs.get('calm')!=='0';setCalm(app.calm);
  applyStyle(qs.get('style')||'coolG');

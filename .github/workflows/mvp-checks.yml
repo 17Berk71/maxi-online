@@ -1,0 +1,120 @@
+name: MVP architecture checks
+on:
+  pull_request:
+    paths:
+      - 'maxi-project/src/shop/catalog-evidence.js'
+      - 'maxi-project/src/shop/inventory-watch.js'
+      - 'maxi-project/tools/lab/inventory-watch.test.mjs'
+      - 'maxi-project/src/shop/photo-looks.js'
+      - 'maxi-project/src/shop/photo-looks/**'
+      - 'maxi-project/src/app.js'
+      - 'maxi-project/src/main.js'
+      - 'maxi-project/src/core/start.js'
+      - 'maxi-project/src/core/launch.js'
+      - 'maxi-project/src/style.css'
+      - 'maxi-project/src/shop/quick-catalog.js'
+      - 'maxi-project/src/shop/catalog-feed.js'
+      - 'maxi-project/tools/lab/feeds-3d.test.mjs'
+      - 'maxi-project/src/shop/catalog-page.js'
+      - 'maxi-project/tools/lab/catalog-page.test.mjs'
+      - 'maxi-project/src/shop/catalog.js'
+      - 'maxi-project/src/shop/pricing.js'
+      - 'maxi-project/src/shop/favorites.js'
+      - 'maxi-project/src/shop/product-snapshot.js'
+      - 'maxi-project/tools/lab/favorites.test.mjs'
+      - 'maxi-project/tools/lab/catalog-release.test.mjs'
+      - 'maxi-project/tools/feeds/audit-catalog.mjs'
+      - 'maxi-project/tools/feeds/pricing.py'
+      - 'maxi-project/tools/feeds/test_pricing.py'
+      - 'maxi-project/tools/lab/catalog-feed.test.mjs'
+      - 'maxi-project/src/shop/enter-exit.js'
+      - 'maxi-project/src/core/loop.js'
+      - 'maxi-project/src/controls/input.js'
+      - 'maxi-project/src/ui/search.js'
+      - 'maxi-project/src/nav/travel.js'
+      - 'maxi-project/index.html'
+      - 'maxi-project/src/shop/product.js'
+      - 'maxi-project/src/shop/feeds.js'
+      - 'maxi-project/src/shop/panel.js'
+      - 'maxi-project/src/shop/hall.js'
+      - 'maxi-project/tools/feeds/catalog-workspace.mjs'
+      - 'maxi-project/tools/lab/catalog-workspace.test.mjs'
+      - 'maxi-project/tools/lab/catalog-evidence.test.mjs'
+      - 'maxi-project/tools/lab/photo-looks.test.mjs'
+      - 'maxi-project/tools/test/**'
+      - 'maxi-project/tools/feeds/import_feed.py'
+      - 'maxi-project/package*.json'
+      - '.github/workflows/mvp-checks.yml'
+  workflow_dispatch:
+concurrency:
+  group: mvp-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: maxi-project
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: maxi-project/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Check changed module syntax
+        run: |
+          node --check src/shop/catalog-evidence.js
+          node --check src/shop/inventory-watch.js
+          node --check src/shop/photo-looks.js
+          node --check src/shop/photo-looks/storage.js
+          node --check src/shop/enter-exit.js
+          node --check src/core/loop.js
+          node --check src/controls/input.js
+          node --check src/ui/search.js
+          node --check src/nav/travel.js
+          node --check src/app.js
+          node --check src/main.js
+          node --check src/shop/quick-catalog.js
+          node --check src/shop/catalog-feed.js
+          node --check src/shop/feeds.js
+          node --check src/shop/catalog-page.js
+          node --check src/shop/favorites.js
+          node --check src/shop/product-snapshot.js
+          node --check src/shop/product.js
+          node --check src/shop/feeds.js
+          node --check src/shop/panel.js
+          node --check src/shop/hall.js
+          node --check tools/feeds/catalog-workspace.mjs
+      - name: Feed importer syntax
+        run: |
+          python3 -m py_compile tools/feeds/import_feed.py
+          python3 -m unittest discover -s tools/feeds -p test_pricing.py
+      - name: Evidence policy tests
+        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs tools/lab/favorites.test.mjs tools/lab/catalog-workspace.test.mjs tools/lab/catalog-page.test.mjs tools/lab/inventory-watch.test.mjs tools/lab/feeds-3d.test.mjs
+      - name: Audit bundled demonstration catalogue
+        run: node tools/feeds/audit-catalog.mjs
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium for focused browser smoke test
+        run: npx playwright install --with-deps chromium
+      - name: Photo board desktop/mobile smoke
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/maxi-vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5173/src/shop/photo-looks.js >/dev/null; then break; fi
+            sleep 1
+          done
+          node tools/test/photo-looks.browser.mjs
+          node tools/test/quick-catalog.browser.mjs
+          node tools/test/catalog-page.browser.mjs
+          node tools/test/inventory-expiry.browser.mjs
+          node tools/test/catalog-workspace.browser.mjs
+          node tools/test/catalog-visibility.browser.mjs
+          node tools/test/mvp-journey.browser.mjs
+          node tools/test/mall-navigation.browser.mjs

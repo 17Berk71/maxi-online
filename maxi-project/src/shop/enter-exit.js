@@ -49,8 +49,10 @@ export function updateShopDoor(){if(!app.SHOP)return;const o=app.SHOP.doorOpen,h
 export function disposeShop(){if(!app.SHOP)return;app.SHOP.scene.traverse(o=>{if(o.geometry&&!(MOD&&MOD.geos.has(o.geometry)))o.geometry.dispose();if(o.material){const shared=Object.values(MAT);(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(shared.includes(m))return;if(m.map&&![shelfAtlas,marble,blobTex].includes(m.map)&&!(MOD&&MOD.texs.has(m.map)))m.map.dispose();m.dispose();});}});app.SHOP=null;app.SHOP_PEOPLE=null;}
 function setMallUI(on){document.body.classList.toggle('in-store',!on);['chips','mini','note'].forEach(id=>{$(id).style.display=on?'':'none';});document.querySelectorAll('#top .seg').forEach(e=>{e.style.display=on?'':'none';});}
 // двери: открываются при приближении, проход в проём — вход
-export function updateMallDoors(dt){if(!world.doors)return;let changed=false;const px=player.x,pz=player.z;
- if(doorCooldown>0)doorCooldown-=dt;
+export function updateMallDoors(dt,elapsed=dt){if(!world.doors)return;let changed=false;const px=player.x,pz=player.z;
+ // Exit re-entry guard is wall-clock time, not frame-limited movement time.
+ // Under slow software WebGL, a 0.8 s guard must not last tens of seconds.
+ if(doorCooldown>0)doorCooldown=Math.max(0,doorCooldown-elapsed);
  world.doors.forEach(s=>{const d=s.door;const dx=px-d.c.x,dz=pz-d.c.z;const along=dx*d.n.x+dz*d.n.z,lat=dx*d.R.x+dz*d.R.z;
   const near=app.mode==='walk'&&!app.ride&&d.floor===app.curFloor&&Math.hypot(dx,dz)<5.5&&along>-1;const target=near?1:0;
   if(Math.abs(d.open-target)>0.001){d.open=app.calm?target:d.open+(target-d.open)*Math.min(1,dt*4);changed=true;}
