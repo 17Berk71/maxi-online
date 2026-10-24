@@ -68,3 +68,25 @@ test('calendar-invalid rights review/expiry dates fail even when JavaScript norm
  f.manifest.stores.A.reviewed_at='2026-10-24T08:00:00Z';f.manifest.stores.A.expires_at='2027-02-30T12:00:00Z';
  assert(auditCatalogue(f.index,f.feeds,f.manifest,{now}).issues.some(x=>x.code==='rights_review_expired'));
 });
+
+test('hidden departments are not counted or published by the real-pilot gate',()=>{
+ const f=fixture();
+ f.feeds['a.json'].depts.unshift({key:'private',hidden:true,items:[{id:'unreviewed',name:'Hidden item',price:-1,source_url:'javascript:alert(1)'}]});
+ const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert.equal(report.technicalGatePassed,true);
+ assert.equal(report.stores.find(s=>s.name==='A').products,1);
+ assert(!report.issues.some(x=>x.item==='unreviewed'));
+ f.feeds['a.json'].depts[1].hidden=true;
+ const withdrawn=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert(withdrawn.issues.some(x=>x.code==='empty_catalogue'));
+ assert(withdrawn.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
+});
+test('a real-pilot catalogue cannot count demo-labelled products as verified assortment',()=>{
+ const f=fixture();
+ f.feeds['a.json'].depts[0].items[0].demo=true;
+ const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert.equal(report.technicalGatePassed,false);
+ assert(report.issues.some(x=>x.code==='demo_product_in_real_catalogue'&&x.store==='A'));
+ assert(report.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
+ assert.equal(report.stores.find(s=>s.name==='A').containsDemoProducts,true);
+});
