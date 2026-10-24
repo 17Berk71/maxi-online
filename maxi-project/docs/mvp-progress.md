@@ -214,3 +214,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - The photo-look/favorites image validator previously accepted root-relative paths with literal or percent-encoded `..` components, encoded separators and malformed percent escapes. Browsers/proxies can normalize those paths before requesting an image. `imageUrl()` now rejects these ambiguous root-relative paths while preserving normal local paths, ordinary percent-encoded filenames, safe HTTP(S) originals and existing relative demo previews.
 - Added a Node regression covering accepted images, literal/encoded path escapes, and read-only recovery of a damaged saved v2 collection. Code/test commits: `93640fd`, `d8495d6`.
 - Final CI for this batch must be checked against the newest branch HEAD; **do not claim success based on #110**. No real merchant catalogue, photo rights, local inventory proof, deployment, PR merge or main-branch changes were introduced.
+
+### Continuation — 24 October 2026, ambiguous demo evidence (PR #18)
+
+- Verified branch HEAD `639aec6` before edits and GitHub Actions #113 **passed** on that exact SHA (including configured Chromium desktop/mobile browser suites).
+- Fixed fail-open handling of non-boolean demo markers in `product-snapshot.js`, restored look/favorite snapshots, and direct `inventoryEvidence` calls. Any truthy/ambiguous demo marker now conservatively disables outbound merchant URLs and confirmed stock claims; only an explicit falsy/absent marker is treated as non-demo. This does **not** verify a product is real or its photo is licensed.
+- Added regression tests for string and numeric demo flags in favorites, legacy/v2 look storage and stock evidence. Legacy backup remains untouched when migrated; v2 is writable after safe normalization.
+- Code and test checkpoint: `5860873`. GitHub Actions for the new commits were triggered; **full CI/browser result not yet confirmed** when this entry was written. Earlier overlapping runs were cancelled by workflow concurrency. Re-check the workflow on the final branch HEAD before reporting success.
+- No real catalogue, rights evidence or live stock added. No `main` changes, PR merge or deployment.
