@@ -69,3 +69,24 @@ test('ambiguous demo markers cannot produce verified stock claims',()=>{
  }
  assert.equal(inventoryEvidence({...valid,demo:false},NOW).status,AVAILABILITY.IN_STOCK);
 });
+
+test('ambiguous raw URL whitespace and backslashes cannot become merchant, photo or stock links',()=>{
+ const unsafe=[
+  ' https://partner.example/item',
+  'https://partner.example/item ',
+  'https://partner.example/\nitem',
+  'https://partner.example/\titem',
+  'https://partner.example\\@other.example/item',
+  'https://partner.example/item\u007f',
+ ];
+ for(const url of unsafe){
+  assert.equal(safeHttpUrl(url),null,JSON.stringify(url));
+  const evidence=catalogEvidence({url,original_image_url:url},{},NOW);
+  assert.equal(evidence.sourceUrl,null);
+  assert.equal(evidence.originalImage,null);
+  assert.equal(inventoryEvidence({...valid,availability_source:url},NOW).status,AVAILABILITY.UNKNOWN);
+ }
+ const permitted='https://partner.example/item%20name?variant=blue#photo';
+ assert.equal(safeHttpUrl(permitted),permitted,'encoded spaces and normal URL syntax remain valid');
+ assert.equal(inventoryEvidence({...valid,availability_source:permitted},NOW).status,AVAILABILITY.IN_STOCK);
+});
