@@ -80,7 +80,11 @@ export async function openQuickCatalog(reason=''){
     stopInventory();const stockEntries=[];grid.replaceChildren();
     for(const product of selected.items){
     const card=el('article');card.append(el('h3',product.name),el('p',product.deptTitle));
-    if(product.image){const image=el('img');image.src=product.image;image.alt=product.name;image.loading='lazy';image.onerror=()=>image.replaceWith(el('p','Изображение недоступно.'));card.append(image);}
+    if(product.image){const image=el('img');image.src=product.image;image.alt=product.name;image.loading='lazy';image.onerror=()=>image.replaceWith(el('p','Изображение недоступно.'));
+    const imageLabel=product.image===product.evidence.originalImage
+      ? 'Фото по исходной ссылке из каталога. Права на использование не подтверждены.'
+      : 'Обработанное демонстрационное превью, не исходная фотография.';
+    card.append(image,el('p',imageLabel));}
     else card.append(el('p','Исходное изображение не подтверждено.'));
     card.append(el('p',product.price===null?'Цена не указана':new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB'}).format(product.price)));
     const evidence=product.evidence;
