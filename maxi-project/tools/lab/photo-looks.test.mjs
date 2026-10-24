@@ -101,3 +101,22 @@ test('draft writes refuse invalid, duplicate and over-limit products without tru
  assert.equal(f.store.setDraft([item(2)]),true,'valid retry must remain possible');
  assert.deepEqual(f.reload().items(),[item(2)]);
 });
+
+test('duplicate generated look IDs and invalid timestamps cannot poison persisted snapshots',()=>{
+ const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+ let id='look-1',timestamp='2026-10-24T08:00:00.000Z';
+ const options={newId:()=>id,now:()=>timestamp};
+ const store=createLookStore(storage,options);
+ assert.equal(store.setDraft([item(1)]),true);
+ assert.equal(store.save('Первый'),true);
+ const raw=data.get(STORAGE_KEY);
+ assert.equal(store.save('Повторный ID'),false);
+ assert.match(store.message(),/идентификатора или даты/);
+ assert.equal(data.get(STORAGE_KEY),raw);
+ id='look-2';timestamp='not-a-date';
+ assert.equal(store.save('Плохая дата'),false);
+ assert.equal(data.get(STORAGE_KEY),raw);
+ timestamp='2026-10-24T08:01:00.000Z';
+ assert.equal(store.save('Второй'),true);
+ assert.deepEqual(createLookStore(storage,options).looks().map(x=>x.name),['Первый','Второй']);
+});
