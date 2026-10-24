@@ -44,3 +44,13 @@ test('hidden or malformed duplicates cannot suppress a valid later product in ei
  assert.equal(feed.depts[1].items[0],hidden,'normalization must not mutate source data');
  assert.equal(feed.depts[2].items.length,4);
 });
+
+test('ambiguous truthy hide markers cannot leak products or reserve their IDs',()=>{
+ const feed={demo:true,depts:[
+  {key:'private',hidden:'true',items:[{id:'same',name:'Private'}]},
+  {key:'visible',items:[{id:'hidden',name:'Private',hidden:1},{id:'same',name:'Public',hidden:false},{id:'last',name:'Last',hidden:''}]},
+ ]};
+ assert.deepEqual(visibleDepartments(feed).map(d=>d.items.map(p=>p.name)),[['Public','Last']]);
+ assert.deepEqual(catalogueProducts(feed).map(p=>p.name),['Public','Last']);
+ assert.equal(feed.depts[0].hidden,'true','source flags remain unchanged');
+});
