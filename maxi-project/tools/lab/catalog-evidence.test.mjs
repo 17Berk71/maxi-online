@@ -59,3 +59,13 @@ test('credential-bearing URLs are never exposed as product links, original image
  }
  assert.equal(safeHttpUrl('https://partner.example/item'),'https://partner.example/item');
 });
+
+test('ambiguous demo markers cannot produce verified stock claims',()=>{
+ for(const marker of ['true','false',1]){
+  assert.equal(inventoryEvidence({...valid,demo:marker},NOW).status,AVAILABILITY.UNKNOWN);
+  const result=catalogEvidence({...valid,demo:marker,url:'https://partner.example/item'},{},NOW);
+  assert.equal(result.demo,true);
+  assert.equal(result.availability.status,AVAILABILITY.UNKNOWN);
+ }
+ assert.equal(inventoryEvidence({...valid,demo:false},NOW).status,AVAILABILITY.IN_STOCK);
+});
