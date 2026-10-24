@@ -3,16 +3,16 @@
 import {safeHttpUrl} from './catalog-evidence.js';
 const KEY='maxi-photo-looks-v1';
 const MAX=24;
-function imageUrl(input){return typeof input==='string' && input.startsWith('/') && !input.startsWith('//') ? input : safeHttpUrl(input);}
+function imageUrl(input){return typeof input==='string' && input.startsWith('/') && !input.startsWith('//') && !input.includes('\\') ? input : safeHttpUrl(input);}
 function read() {
-  try {const p=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(p)?p.filter(valid).slice(0,MAX):[];}
+  try {const p=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(p)?p.filter(valid).slice(0,MAX).map(x=>({id:x.id,title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:x.image,sourceUrl:safeHttpUrl(x.sourceUrl)})):[];}
   catch{return [];}
 }
 function valid(x){return x && typeof x.id==='string' && typeof x.title==='string' && typeof x.image==='string' &&
   Boolean(imageUrl(x.image));}
 function persist(items){try{localStorage.setItem(KEY,JSON.stringify(items));return true;}catch{return false;}}
 let items=read();
-export function photoLookItems(){return items.slice();}
+export function photoLookItems(){return items.map(x=>({...x}));}
 export function addToPhotoLook(product,store,image){
   if(!imageUrl(image))return false;
   const id=String(store?.name||'')+'|'+String(product?.id||product?.name||'')+'|'+String(product?.color||'');
