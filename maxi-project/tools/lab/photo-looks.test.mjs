@@ -72,7 +72,7 @@ test('partially damaged v2 drafts and named looks are readable but never silentl
  for(const damage of [
    snapshot,
    {...snapshot,draft:[item(1)],looks:[snapshot.looks[0],{...snapshot.looks[0]}]},
-   {...snapshot,draft:[item(1)],looks:[{...snapshot.looks[0],items:[item(3)]}],},
+   {...snapshot,draft:[item(1)],looks:[{...snapshot.looks[0],createdAt:'not-a-date',items:[item(3)]}],},
    {...snapshot,draft:[...Array.from({length:25},(_,i)=>item(i))],looks:[]},
  ]){
    const raw=JSON.stringify(damage),f=fixture({[STORAGE_KEY]:raw});
