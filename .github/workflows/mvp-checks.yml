@@ -4,11 +4,16 @@ on:
     paths:
       - 'maxi-project/src/shop/catalog-evidence.js'
       - 'maxi-project/src/shop/photo-looks.js'
+      - 'maxi-project/src/shop/photo-looks/**'
+      - 'maxi-project/src/app.js'
+      - 'maxi-project/src/core/loop.js'
+      - 'maxi-project/src/controls/input.js'
+      - 'maxi-project/index.html'
       - 'maxi-project/src/shop/product.js'
       - 'maxi-project/src/shop/feeds.js'
       - 'maxi-project/tools/lab/catalog-evidence.test.mjs'
       - 'maxi-project/tools/lab/photo-looks.test.mjs'
-      - 'maxi-project/tools/test/photo-looks.browser.mjs'
+      - 'maxi-project/tools/test/**'
       - 'maxi-project/tools/feeds/import_feed.py'
       - 'maxi-project/package*.json'
       - '.github/workflows/mvp-checks.yml'
@@ -34,6 +39,10 @@ jobs:
         run: |
           node --check src/shop/catalog-evidence.js
           node --check src/shop/photo-looks.js
+          node --check src/shop/photo-looks/storage.js
+          node --check src/core/loop.js
+          node --check src/controls/input.js
+          node --check src/app.js
           node --check src/shop/product.js
           node --check src/shop/feeds.js
       - name: Feed importer syntax
@@ -52,3 +61,4 @@ jobs:
             sleep 1
           done
           node tools/test/photo-looks.browser.mjs
+          node tools/test/mvp-journey.browser.mjs

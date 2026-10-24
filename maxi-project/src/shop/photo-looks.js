@@ -1,48 +1,55 @@
 // Photo-first, source-image-only outfit board (PRD FR-LOOK-001/002/003).
 // It intentionally does not manipulate product pixels or simulate fit.
 import {safeHttpUrl} from './catalog-evidence.js';
-const KEY='maxi-photo-looks-v1';
-const MAX=24;
-function imageUrl(input){return typeof input==='string' && input.startsWith('/') && !input.startsWith('//') && !input.includes('\\') ? input : safeHttpUrl(input);}
-function read() {
-  try {const p=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(p)?p.filter(valid).slice(0,MAX).map(x=>({id:x.id,title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:x.image,sourceUrl:safeHttpUrl(x.sourceUrl)})):[];}
-  catch{return [];}
-}
-function valid(x){return x && typeof x.id==='string' && typeof x.title==='string' && typeof x.image==='string' &&
-  Boolean(imageUrl(x.image));}
-function persist(items){try{localStorage.setItem(KEY,JSON.stringify(items));return true;}catch{return false;}}
-let items=read();
-export function photoLookItems(){return items.map(x=>({...x}));}
-export function addToPhotoLook(product,store,image){
+import {createLookStore, imageUrl, MAX_ITEMS} from './photo-looks/storage.js';
+const store=createLookStore({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)});
+export const photoLookItems=()=>store.items();
+export const savedPhotoLooks=()=>store.looks();
+export const photoLookMessage=()=>store.message();
+export const savePhotoLook=name=>store.save(name);
+export const loadPhotoLook=id=>store.load(id);
+export const deletePhotoLook=id=>store.remove(id);
+export function addToPhotoLook(product,shop,image){
   if(!imageUrl(image))return false;
-  const id=String(store?.name||'')+'|'+String(product?.id||product?.name||'')+'|'+String(product?.color||'');
-  const entry={id,title:String(product?.name||'Товар'),shop:String(store?.name||''),image,sourceUrl:(product?.demo===true||product?.evidence?.demo===true)?null:(safeHttpUrl(product?.url)||null)};
-  if(!valid(entry))return false;
-  const next=[...items.filter(x=>x.id!==id),entry].slice(-MAX);
-  if(!persist(next))return false;
-  items=next;return true;
+  const id=String(shop?.name||'')+'|'+String(product?.id||product?.name||'')+'|'+String(product?.color||'');
+  const demo=product?.demo===true||product?.evidence?.demo===true;
+  const entry={id,title:String(product?.name||'Товар'),shop:String(shop?.name||''),image,sourceUrl:demo?null:safeHttpUrl(product?.url),demo};
+  const next=store.items().filter(x=>x.id!==id);
+  if(next.length>=MAX_ITEMS)return false;
+  return store.setDraft([...next,entry]);
 }
-export function removeFromPhotoLook(id){
-  const next=items.filter(x=>x.id!==id);
-  if(!persist(next))return false;
-  items=next;return true;
-}
+export function removeFromPhotoLook(id){return store.setDraft(store.items().filter(x=>x.id!==id));}
 export function movePhotoLook(id,dir){
-  const n=items.findIndex(x=>x.id===id),m=n+dir;
-  if(n<0||m<0||m>=items.length)return false;
-  const next=items.slice();[next[n],next[m]]=[next[m],next[n]];
-  if(!persist(next))return false;
-  items=next;return true;
+  const items=store.items(),n=items.findIndex(x=>x.id===id),m=n+dir;
+  if(![-1,1].includes(dir)||n<0||m<0||m>=items.length)return false;
+  [items[n],items[m]]=[items[m],items[n]];
+  return store.setDraft(items);
 }
 export function openPhotoLook(){
   const existing=document.getElementById('maxi-photo-look');if(existing){existing.querySelector('[data-close-photo-look]')?.click();return;}
   const root=document.createElement('section');root.id='maxi-photo-look';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');
   root.setAttribute('aria-label','Сопоставить фотографии товаров');
-  Object.assign(root.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#f8f8fa',overflowY:'auto',padding:'20px',color:'#222',fontFamily:'system-ui,sans-serif'});
+  const style=document.createElement('style');style.textContent=`
+    #maxi-photo-look *{box-sizing:border-box}
+    #maxi-photo-look button,#maxi-photo-look input{font:inherit;min-height:44px;padding:8px 12px;border:1px solid #aaa;border-radius:8px}
+    #maxi-photo-look button{cursor:pointer;background:#fff;color:#222}
+    #maxi-photo-look button:disabled{cursor:default;opacity:.5}
+    #maxi-photo-look :focus-visible{outline:3px solid #4538be;outline-offset:3px}
+    #maxi-photo-look h2{font-size:clamp(20px,4vw,28px)}
+    #maxi-photo-look a,#maxi-photo-look h3{overflow-wrap:anywhere}
+    #maxi-photo-look .photo-look-save,#maxi-photo-look .photo-look-saved-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+    #maxi-photo-look input{max-width:100%;min-width:0}
+    #maxi-photo-look .photo-look-saved-row span{overflow-wrap:anywhere;max-width:100%}
+  `;
+  document.head.append(style);
+  Object.assign(root.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#f8f8fa',colorScheme:'light',overflowY:'auto',padding:'20px',color:'#222',fontFamily:'system-ui,sans-serif'});
   const previousFocus=document.activeElement;
-  const dismiss=()=>{document.removeEventListener('keydown',handleEscape,true);root.remove();if(previousFocus?.isConnected)previousFocus.focus();};
+  const background=[...document.body.children].map(el=>[el,el.inert]);
+  for(const [el] of background)el.inert=true;
+  root.addEventListener('keydown',e=>e.stopPropagation());
+  const dismiss=()=>{document.removeEventListener('keydown',handleEscape,true);root.remove();style.remove();for(const [el,inert] of background)el.inert=inert;if(previousFocus?.isConnected)previousFocus.focus();};
   const handleEscape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dismiss();return;}
-    if(e.key==='Tab') {const controls=[...root.querySelectorAll('button,a[href]')].filter(x=>!x.disabled);
+    if(e.key==='Tab') {const controls=[...root.querySelectorAll('button,a[href],input')].filter(x=>!x.disabled);
       if(!controls.length)return;
       const first=controls[0],last=controls[controls.length-1];
       if(e.shiftKey&&(document.activeElement===first||!root.contains(document.activeElement))){e.preventDefault();last.focus();}
@@ -51,11 +58,32 @@ export function openPhotoLook(){
   };
   document.addEventListener('keydown',handleEscape,true);
   const render=(focusId=null,focusAction=null,notice='')=>{
+    const items=store.items();
     root.replaceChildren();
     const head=document.createElement('header');Object.assign(head.style,{display:'flex',justifyContent:'space-between',gap:'12px',alignItems:'center'});
     const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.dataset.closePhotoLook='true';close.onclick=dismiss;head.append(h,close);root.append(head);
     const note=document.createElement('p');note.textContent='Это сопоставление изображений из товарных каталогов, иногда обработанных для витрин. Не является примеркой: размеры, пропорции и посадка не прогнозируются.';root.append(note);
-    const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent=notice;root.append(status);
+    const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent=notice||store.message();root.append(status);
+    const saveForm=document.createElement('form');saveForm.className='photo-look-save';
+    const label=document.createElement('label');label.textContent='Название образа';label.htmlFor='photo-look-name';
+    const name=document.createElement('input');name.id='photo-look-name';name.maxLength=80;name.required=true;name.placeholder='Например, прогулка осенью';
+    const save=document.createElement('button');save.type='submit';save.textContent='Сохранить образ';save.disabled=!items.length;
+    saveForm.append(label,name,save);saveForm.onsubmit=e=>{e.preventDefault();
+      if(!savePhotoLook(name.value)){status.textContent=store.message();return;}
+      render(null,null,'Образ сохранён в этом браузере.');root.querySelector('#photo-look-name')?.focus();
+    };root.append(saveForm);
+    const saved=document.createElement('section');saved.setAttribute('aria-label','Сохранённые образы');
+    const heading=document.createElement('h3');heading.textContent='Сохранённые образы';saved.append(heading);
+    const privacy=document.createElement('p');privacy.textContent='Хранятся только в этом браузере. Очистка данных браузера удалит образы. Это снимки каталога: товары, фото и ссылки могли измениться; проверьте актуальность у продавца.';saved.append(privacy);
+    for(const look of store.looks()){
+      const row=document.createElement('div');row.className='photo-look-saved-row';
+      const title=document.createElement('span');title.textContent=look.name+' · '+look.items.length+' шт. · '+new Date(look.createdAt).toLocaleDateString('ru-RU');
+      const load=document.createElement('button');load.textContent='Открыть';load.setAttribute('aria-label','Открыть образ «'+look.name+'»');
+      load.onclick=()=>{if(!loadPhotoLook(look.id)){status.textContent=store.message();return;}render(null,null,'Образ открыт. Текущая композиция заменена сохранённой.');root.querySelector('[data-close-photo-look]')?.focus();};
+      const remove=document.createElement('button');remove.textContent='Удалить';remove.setAttribute('aria-label','Удалить сохранённый образ «'+look.name+'»');
+      remove.onclick=()=>{if(!deletePhotoLook(look.id)){status.textContent=store.message();return;}render(null,null,'Сохранённый образ удалён.');root.querySelector('#photo-look-name')?.focus();};
+      row.append(title,load,remove);saved.append(row);
+    }
     if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';root.append(empty);}
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
     for(const [index,it] of items.entries()){
@@ -70,7 +98,7 @@ export function openPhotoLook(){
         b.setAttribute('aria-label',action==='left'?'Переместить «'+it.title+'» влево':action==='right'?'Переместить «'+it.title+'» вправо':'Удалить «'+it.title+'»');
         b.onclick=()=>{
           const neighbor=items[index+1]||items[index-1];
-          if(fn()===false){status.textContent='Не удалось сохранить изменения. Проверьте настройки браузера.';return;}
+          if(fn()===false){status.textContent=store.message();return;}
           const focusId=action==='remove'?neighbor?.id:it.id;
           const focusAction=action==='remove'?'remove':action==='left'?(index===1?'right':'left'):(index===items.length-2?'left':'right');
           render(focusId,focusAction,action==='remove'?'Товар удалён из образа.':'Порядок товаров изменён.');
@@ -78,10 +106,11 @@ export function openPhotoLook(){
         controls.append(b);
       }
       card.append(img,title,shop,controls);
+      if(it.demo){const demo=document.createElement('p');demo.textContent='Демонстрационный товар';card.append(demo);}
       if(it.sourceUrl){const link=document.createElement('a');link.href=it.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';card.append(link);}
       grid.append(card);
     }
-    root.append(grid);
+    root.append(grid,saved);
     if(focusId){
       const target=[...root.querySelectorAll('button')].find(b=>b.dataset.photoLookId===focusId&&b.dataset.photoLookAction===focusAction&&!b.disabled);
       (target||root.querySelector('[data-close-photo-look]'))?.focus();

@@ -36,9 +36,11 @@ function frameBody(now){
   if(lockFailed&&mouse.in&&!coarse&&!ptrs.size&&panelsClosed()){const ox=(mouse.x/innerWidth-0.5)*2,oy=(mouse.y/innerHeight-0.5)*2;const dz=0.18;
    const ax=Math.abs(ox)>dz?(Math.abs(ox)-dz)/(1-dz)*Math.sign(ox):0;turn-=ax*Math.abs(ax)*1.4;
    const tp=-oy*0.6;player.pitch+=(tp-player.pitch)*Math.min(1,dt*3);}
+  if(!document.getElementById('maxi-photo-look')){
   if(keys.KeyW||keys.ArrowUp)f+=1;if(keys.KeyS||keys.ArrowDown)f-=1;if(keys.KeyD)r+=1;if(keys.KeyA)r-=1;
   if(keys.ArrowLeft||keys.KeyQ)turn+=1;if(keys.ArrowRight||keys.KeyE)turn-=1;
   f+=-app.joyV.y;r+=app.joyV.x;player.yaw+=turn*1.9*dt;
+  }
   // плавный разгон и торможение (без анимации — сразу)
   const runK=(keys.ShiftLeft||keys.ShiftRight)?1:(app.joyV.run||0);const maxV=(7+9*runK)*(coarse?1.1:1);const l=Math.hypot(f,r);let tx=0,tz=0;
   if(l>0.05){const k=Math.min(1,l)/l;f*=k;r*=k;const fx=-Math.sin(player.yaw),fz=-Math.cos(player.yaw),rx=Math.cos(player.yaw),rz=-Math.sin(player.yaw);tx=(fx*f+rx*r)*maxV;tz=(fz*f+rz*r)*maxV;hideHint();}

@@ -1,0 +1,62 @@
+// FR-SAVE-002: versioned, transactional browser-only look snapshots.
+import {safeHttpUrl} from '../catalog-evidence.js';
+export const LEGACY_KEY='maxi-photo-looks-v1';
+export const STORAGE_KEY='maxi-photo-looks-v2';
+export const MAX_ITEMS=24, MAX_LOOKS=30;
+export function imageUrl(input){
+  return typeof input==='string' && input.startsWith('/') && !input.startsWith('//') && !/[\\\s\u0000-\u001f]/.test(input) ? input : safeHttpUrl(input);
+}
+function normalizeItems(input){
+  if(!Array.isArray(input))return [];
+  const seen=new Set();
+  return input.filter(x=>x && typeof x.id==='string' && typeof x.title==='string' && imageUrl(x.image))
+    .filter(x=>!seen.has(x.id)&&seen.add(x.id)).slice(0,MAX_ITEMS).map(x=>({
+      id:x.id,title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:imageUrl(x.image),
+      sourceUrl:x.demo===true?null:safeHttpUrl(x.sourceUrl),demo:x.demo===true,
+    }));
+}
+const copy=x=>JSON.parse(JSON.stringify(x));
+export function createLookStore(storage, {now=()=>new Date().toISOString(),newId=()=>crypto.randomUUID()}={}){
+  let state={version:2,draft:[],looks:[]}, raw=null, blocked=false, warning='';
+  try{
+    raw=storage.getItem(STORAGE_KEY);
+    if(raw!==null){
+      const data=JSON.parse(raw);
+      if(data?.version!==2||!Array.isArray(data.draft)||!Array.isArray(data.looks))throw Error('Unsupported storage');
+      const ids=new Set();
+      state={version:2,draft:normalizeItems(data.draft),looks:data.looks.filter(x=>x && typeof x.id==='string' &&
+        typeof x.name==='string' && typeof x.createdAt==='string' && Number.isFinite(Date.parse(x.createdAt)) &&
+        Array.isArray(x.items) && !ids.has(x.id) && ids.add(x.id)).slice(0,MAX_LOOKS)
+        .map(x=>({id:x.id,name:x.name.slice(0,80),createdAt:x.createdAt,items:normalizeItems(x.items)}))};
+    }else{
+      const legacy=JSON.parse(storage.getItem(LEGACY_KEY)||'[]');
+      if(!Array.isArray(legacy))throw Error('Invalid legacy storage');
+      state.draft=normalizeItems(legacy);
+    }
+  }catch{
+    blocked=true;
+    warning='Не удалось прочитать сохранённые образы. Исходные данные сохранены; запись отключена, чтобы их не потерять.';
+  }
+  function commit(next){
+    if(blocked)return false;
+    try{
+      // Refuse stale-tab edits instead of overwriting another tab's saved work.
+      if(storage.getItem(STORAGE_KEY)!==raw){warning='Образы изменены в другой вкладке. Перезагрузите страницу перед изменениями.';return false;}
+      const encoded=JSON.stringify(next);
+      storage.setItem(STORAGE_KEY,encoded);raw=encoded;state=next;warning='';return true;
+    }catch{warning='Не удалось сохранить изменения. Проверьте настройки браузера.';return false;}
+  }
+  return {
+    items:()=>copy(state.draft),looks:()=>copy(state.looks),message:()=>warning,
+    setDraft(items){return commit({...state,draft:normalizeItems(items)});},
+    save(name){
+      name=typeof name==='string'?name.trim().slice(0,80):'';
+      if(!name||!state.draft.length){warning='Добавьте товары и укажите название образа.';return false;}
+      if(state.looks.length>=MAX_LOOKS){warning='Сохранено 30 образов. Удалите ненужный перед сохранением нового.';return false;}
+      const look={id:newId(),name,createdAt:now(),items:copy(state.draft)};
+      return commit({...state,looks:[...state.looks,look]});
+    },
+    load(id){const look=state.looks.find(x=>x.id===id);return !!look&&commit({...state,draft:copy(look.items)});},
+    remove(id){return commit({...state,looks:state.looks.filter(x=>x.id!==id)});},
+  };
+}

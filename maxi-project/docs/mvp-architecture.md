@@ -58,7 +58,8 @@ This is intentionally more conservative than legacy imported size labels.
 - [x] Introduce pure `catalog-evidence` module and unit tests.
 - [x] Attach evidence to imported products.
 - [x] GitHub Actions syntax checks, Node tests, production build, and isolated Playwright desktop/mobile smoke pass (run #11, 22 Oct 2026). This does not certify the full mall.
-- [x] Product cards avoid unverified local stock, pickup, and demo purchase claims.\n- [ ] Full keyboard/screen-reader audit and integrated mall browser E2E remain open.
+- [x] Product cards avoid unverified local stock, pickup, and demo purchase claims.
+- [ ] Full keyboard/screen-reader audit and integrated mall browser E2E remain open.
 
 ### M1 real-data pilot (P0)
 - [ ] Choose real permitted product feeds across at least two categories; record rights and source terms.
@@ -67,10 +68,10 @@ This is intentionally more conservative than legacy imported size labels.
 - [ ] Preserve original image immutably; remove generated imagery from source-image fields.
 
 ### M2 photo-first outfit board (P0)
-- [ ] New standalone route reachable from product card and quick catalogue.
-- [x] Isolated outfit board adds, removes, reorders and browser-saves images across stores without 3D/AI; independently smoke-tested.\n- [ ] Add independent named look collections and storage migration.
+- [x] Photo board reachable from feed product cards and the mall toolbar; quick catalogue remains a separate follow-up.
+- [x] Isolated outfit board adds, removes, reorders and browser-saves images across stores without 3D/AI; independently smoke-tested.\n- [x] Independent named look collections, versioned storage and conservative v1 migration (24 Oct 2026).
 - [ ] Side-by-side unmodified images with consistent frames and clear “not fit simulation” disclaimer.
-- [ ] Accessible mobile flow, image loading/empty states and storage version migration.
+- [x] Focused mobile/desktop browser checks for image failure, empty states, focus, named save/reload, quota failure and migration; full screen-reader audit remains open.
 
 ### M3 investment demo quality gate (P0)
 - [ ] E2E: open mall -> distinct categories -> product -> original-photo board -> save -> merchant link.
@@ -84,7 +85,7 @@ This is intentionally more conservative than legacy imported size labels.
 
 ## Risks and non-claims
 
-This branch has not passed independent browser, lint or production-build checks.
+For current verified checks and remaining blockers, see `mvp-progress.md` and `review-2026-10-24/README.md`. Earlier isolated checks are not a release certification.
 The reports in PR #17 are self-reported test outcomes for stage18, not acceptance of this branch.
 Never merge PR #17 and this branch directly to main before reconciliation of the entire PR chain.
 

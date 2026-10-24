@@ -26,7 +26,7 @@ function lockError(){lockErrors++;if(lockErrors>=3)lockFailed=true;updateCross()
 export function requestLock(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(lockError);}catch(e){lockError();}}
 export function releaseLock(){if(document.pointerLockElement)document.exitPointerLock();}
 export function isFP(){return app.mode==='walk'||app.mode==='store';}
-export function panelsClosed(){return $('card').hidden&&$('shop').hidden&&$('lift').hidden&&$('cartBox').hidden&&$('bigmap').hidden&&$('info').hidden&&!fitOpen();}
+export function panelsClosed(){return !document.getElementById('maxi-photo-look')&&$('card').hidden&&$('shop').hidden&&$('lift').hidden&&$('cartBox').hidden&&$('bigmap').hidden&&$('info').hidden&&!fitOpen();}
 export function updateCross(){$('cross').hidden=!(locked&&isFP());$('aim').hidden=!(locked&&isFP());$('lockTip').hidden=!(!coarse&&!locked&&isFP()&&panelsClosed()&&!app.ride);}
 function endPtr(e){ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=0;
  if(ptrs.size===0&&downInfo){if(downInfo.moved<8&&performance.now()-downInfo.t<450)pick(e.clientX,e.clientY);downInfo=null;}}

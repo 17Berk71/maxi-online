@@ -22,3 +22,16 @@ Updated: 2026-10-24. Scope: experimental branch `codex/mvp-prd-architecture`, dr
 - No deployment, PR merge, or change to `main` has been performed.
 
 Next safe steps: strengthen storage validation and error-state tests, add independent saved-look versioning, then run full integrated mall-to-product-to-photo-board browser journeys before any release decision.
+
+## Continuation — 24 October 2026 (Work)
+
+Recovery started from actual branch HEAD `ad6076f`, preserving all ten commits after the supplied `4e4c1ee` checkpoint.
+
+Implemented against FR-LOOK-001/002, FR-SAVE-002 and NFR-001/003/006:
+- Separate versioned persistence module `photo-looks/storage.js`, with independent named snapshots (IDs, ordered product references, capture time), load and deletion. Limits: 24 products per draft, 30 saved looks; exceeding limits never silently evicts earlier work.
+- Legacy v1 drafts migrate on first successful v2 write. The legacy key remains untouched as a backup. Corrupt or unsupported versions block writes; quota/read failures and stale-tab writes cannot overwrite the loaded data.
+- Public access from the mall toolbar. Product add failures now have a visible status message. Modal background is inert; board keyboard events cannot trigger mall shortcuts; movement inputs are suppressed while it is open.
+- Saved entries are catalogue snapshots, not proof of current availability. Images failing later have a text fallback; demo merchant links remain suppressed.
+- Actual application-entry browser journey added: two store scenes/catalogues -> product -> source-image board -> named save -> page reload -> restore -> new merchant tab. Debug API positions the visitor; UI performs catalogue/product/save actions. Feeds and merchant responses are intercepted synthetic fixtures, **not live stores or verified partnerships**. This does not validate physical walking, all store categories, full WebGL fallback, all devices or actual feed rights.
+
+Verification results and screenshot notes are recorded in `docs/review-2026-10-24/README.md`.

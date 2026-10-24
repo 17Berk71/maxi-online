@@ -1,6 +1,6 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
+const browser = await chromium.launch({executablePath:process.env.CHROME_PATH||undefined,headless:true,args:['--no-sandbox']});
 try {
   for(const width of [390,1280]){
     const page=await browser.newPage({viewport:{width,height:800}});
@@ -48,14 +48,28 @@ try {
     assert.equal(await page.getByRole('status').textContent(),'Товар удалён из образа.');
 
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
-    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v1')).length),1);
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v2')).draft.length),1);
+    await page.getByLabel('Название образа',{exact:true}).fill('Осенний образ');
+    await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
+    assert.equal(await page.getByRole('status').textContent(),'Образ сохранён в этом браузере.');
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.evaluate(async()=>{(await import('/src/shop/photo-looks.js')).openPhotoLook();});
+    assert.equal(await page.locator('#maxi-photo-look article').count(),1);
+    await page.getByRole('button',{name:'Удалить «Jacket»',exact:true}).click();
+    assert.equal(await page.locator('#maxi-photo-look article').count(),0);
+    await page.getByRole('button',{name:'Открыть образ «Осенний образ»',exact:true}).click();
+    assert.equal(await page.locator('#maxi-photo-look article h3').textContent(),'Jacket');
+    await page.getByRole('button',{name:'Удалить сохранённый образ «Осенний образ»',exact:true}).click();
+    assert.equal(await page.getByRole('button',{name:'Открыть образ «Осенний образ»',exact:true}).count(),0);
     const horizontal=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
+    assert.equal(await page.locator('#maxi-photo-look').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
     assert.equal(horizontal,false,`Unexpected horizontal page overflow at ${width}px`);
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#maxi-photo-look').count(),0);
     assert.deepEqual(errors,[]);
     // Treat browser storage as untrusted: reject malformed image URLs and strip unsafe merchant links.
     await page.evaluate(()=>{
+      localStorage.removeItem('maxi-photo-looks-v2');
       localStorage.setItem('maxi-photo-looks-v1',JSON.stringify([
         {id:'safe',title:'Safe item',shop:'Test',image:'/tools/test/fixtures/product.svg',sourceUrl:'javascript:alert(1)'},
         {id:'bad',title:'Bad item',image:'/'+String.fromCharCode(92)+'evil.example/image.jpg'}

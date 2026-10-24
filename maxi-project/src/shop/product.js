@@ -5,7 +5,7 @@ import {iconURL} from './icons.js';
 import {describe} from './describe.js';
 import {cart} from './cart.js';
 import {feedInfo} from './feeds.js';
-import {addToPhotoLook, openPhotoLook} from './photo-looks.js';
+import {addToPhotoLook, openPhotoLook, photoLookMessage} from './photo-looks.js';
 import {inventoryEvidence, AVAILABILITY, safeHttpUrl} from './catalog-evidence.js';
 import {onlineKind, onlineActions, onlineText, ACTIONS} from './online.js';
 import {$, LIN, V3} from '../core/helpers.js';
@@ -98,7 +98,8 @@ export function renderProduct(p,onMan,size){const s=app.PS.s,el=$('shop'),fi=p.f
  const boardImage = evidence?.originalImage || (evidence?.demo ? photo : null);
  if(boardImage && p.feed){
    const photos=el_('div','sh-row sh-fit'), addPhoto=el_('button','btn pri','Добавить изображение в образ'), viewPhotos=el_('button','btn','Открыть образ');
-   addPhoto.onclick=()=>{if(addToPhotoLook(p,s,boardImage)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}};
+   const photoStatus=el_('p','sh-note');photoStatus.setAttribute('role','status');w.appendChild(photoStatus);
+   addPhoto.onclick=()=>{if(addToPhotoLook(p,s,boardImage)){addPhoto.textContent='Добавлено ✓';openPhotoLook();}else photoStatus.textContent=photoLookMessage()||'Не удалось добавить товар. В образе может быть не больше 24 вещей.';};
    viewPhotos.onclick=()=>openPhotoLook();
    photos.append(addPhoto,viewPhotos);w.appendChild(photos);
    if(evidence?.demo)w.appendChild(el_('p','sh-note','Демонстрационный образ из тестовых фотографий; исходные изображения не подтверждены.'));
