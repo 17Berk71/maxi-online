@@ -155,3 +155,13 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `282de8f` updates the real keyboard navigation test to use the supported Shift+W sprint for the second store, and a fixed polling interval for entry detection; it does not mutate player coordinates or call the store-entry function directly. Re-run the complete CI and retain the failure as a known flake until repeated browser evidence is available.
 
 - Follow-up [GitHub Actions #71](https://github.com/17Berk71/maxi-online/actions/runs/40087277040) was triggered by `282de8f`; syntax, unit tests, importer checks, demo audit and production build passed, while the full Chromium suite was still running at the latest check. Its result must be verified before the navigation mitigation can be accepted.
+
+
+### Catalogue visibility and real-pilot classification — 24 October 2026
+
+- Verified [GitHub Actions #71](https://github.com/17Berk71/maxi-online/actions/runs/40087277040): **passed**, including the previously intermittent two-store pedestrian navigation browser suite. One successful run does not establish that the historical SwiftShader navigation flake is permanently eliminated.
+- Aligned hidden-department handling across both catalogue adapters: quick catalogue and the 3D feed now exclude products in departments marked `hidden: true`, not just individually hidden products. The offline publication audit uses the same visibility rule so hidden departments cannot inflate the visible SKU count.
+- The offline real-pilot gate now rejects products individually marked `demo: true` inside an otherwise real feed and excludes such stores from the real multicategory count. A demo SKU must not help qualify an unverified assortment as a real pilot. This does not validate any actual supplier or licence.
+- Added Node regressions for hidden departments and mixed real/demo products, plus mobile/desktop browser coverage for hidden departments in the existing catalogue visibility scenario.
+- Code/test commits: `2deb92f`, `c6091e7`, `b5fbc8d`, `28f267e`, `71aa0dc`, `0481c12`. CI status for the final browser-test commit must be checked independently; do not describe this batch as passed before the final run completes.
+- No real catalogue, photo licence, local inventory proof, deployment, main-branch change or PR merge was introduced.
