@@ -174,3 +174,30 @@ test('restored ambiguous demo flags are labeled demo and never expose merchant U
   assert.deepEqual(f.reload().items().map(x=>x.sourceUrl),[null,null,null]);
  }
 });
+
+
+test('legacy tuple IDs in drafts and named looks recover without changing raw storage',()=>{
+ const parts=['Shop|East','SKU','Red'],oldId='tuple:'+JSON.stringify(parts);
+ const newId='tuple:'+encodeURIComponent(JSON.stringify(parts));
+ const entry={...item(1),id:oldId,shop:parts[0]};
+ const raw=JSON.stringify({version:2,draft:[entry],looks:[{id:'look-1',name:'Saved',createdAt:'2026-10-24T08:00:00.000Z',items:[entry]}]});
+ const f=fixture({[STORAGE_KEY]:raw});
+ assert.equal(f.store.items()[0].id,newId);
+ assert.equal(f.store.looks()[0].items[0].id,newId);
+ assert.equal(f.data.get(STORAGE_KEY),raw,'read-only migration preserves original bytes');
+ assert.equal(f.store.load('look-1'),true);
+ assert.equal(f.reload().items()[0].id,newId);
+});
+
+test('legacy tuple and current ID collision blocks v2 writes without dropping saved items',()=>{
+ const parts=['Shop|East','SKU','Red'],oldId='tuple:'+JSON.stringify(parts);
+ const newId='tuple:'+encodeURIComponent(JSON.stringify(parts));
+ const raw=JSON.stringify({version:2,draft:[
+  {...item(1),id:oldId,shop:parts[0]},
+  {...item(2),id:newId,shop:parts[0]},
+ ],looks:[]});
+ const f=fixture({[STORAGE_KEY]:raw});
+ assert.equal(f.store.setDraft([item(3)]),false);
+ assert.match(f.store.message(),/запись отключена/);
+ assert.equal(f.data.get(STORAGE_KEY),raw,'both conflicting entries remain recoverable');
+});
