@@ -173,3 +173,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Truthy non-boolean `demo` flags from the catalogue index or feed now remain demo in the WebGL-independent route: product notices and cards identify synthetic data and outbound merchant links stay suppressed, matching the 3D feed policy.
 - Keyboard focus returns to the selected store after Back; the Back control takes focus during loading and Retry takes focus after a failed store fetch. The existing desktop/mobile WebGL-fallback browser suite covers both demo-flag sources, error recovery and keyboard focus.
 - [GitHub Actions #86](https://github.com/17Berk71/maxi-online/actions/runs/40095109934) **passed** for code commit `ab9278f`, including syntax, importer/Python tests, Node evidence tests, bundled demo audit, production build and the full configured Chromium desktop/mobile browser suite. This is a synthetic-fixture regression, not a real-store, physical-device or screen-reader certification. Keep the PR draft; no real store, image licence, local inventory, merge or deployment is implied.
+
+
+### 3D catalogue evidence parity — 24 October 2026
+
+- Starting HEAD was `81c70ed`; [Actions #88](https://github.com/17Berk71/maxi-online/actions/runs/40099507393) completed successfully, including configured Chromium smoke.
+- Fixed the remaining 3D feed-adapter mismatch: outbound merchant URLs now come from the same safe, demo-aware `catalogEvidence` result as the quick catalogue. The adapter also exposes only sanitized source-photo URLs and preserves missing/invalid prices as unknown rather than carrying unvalidated raw values.
+- Added Node regression tests for credential-bearing merchant and image URLs, zero versus missing prices, demo link suppression, and source-record immutability.
+- Code commits: `9a225a5`, `5925200`. [Actions #90](https://github.com/17Berk71/maxi-online/actions/runs/40103443906) was queued when this note was written; **do not claim the new batch passed until it completes**.
+- No real catalogue, image licence, merchant agreement, stock proof, PR merge or deployment was added.
