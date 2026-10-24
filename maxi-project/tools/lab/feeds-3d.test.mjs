@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {feedCatalog,feedIndexReady,feedPhotoKey,loadFeed,winKeys} from '../../src/shop/feeds.js';
 import {PHOTOS} from '../../src/shop/photos.js';
+import {catalogueProducts} from '../../src/shop/catalog-feed.js';
+import {productSnapshot} from '../../src/shop/product-snapshot.js';
 
 const DEPT={generic:{icon:'box',model:'box',lay:'wall'}};
 test('3D feed catalogue rejects unsafe preview/fit paths and matches normalized visible items',()=>{
@@ -75,4 +77,21 @@ test('3D feed photo IDs are isolated per shop even when product IDs overlap',()=
  assert.equal(first.pic,second.pic,'the preview URL remains unchanged');
  assert.notEqual(feedPhotoKey('A:B','C'),feedPhotoKey('A','B:C'),'punctuation must not cause collisions');
  assert.doesNotThrow(()=>feedPhotoKey('Malformed',String.fromCharCode(0xD800)),'unpaired Unicode must not crash catalogue loading');
+});
+
+
+test('3D and quick cards save the same source SKU without conflating f-prefixed SKUs',()=>{
+ const feed={demo:true,depts:[{key:'tops',type:'generic',items:[
+  {id:'f-42',name:'Synthetic top',color:'#345678'},
+  {id:'42',name:'Another synthetic top',color:'#345678'},
+ ]}]};
+ const shop={name:'Store A'};
+ const quick=catalogueProducts(feed);
+ const scene=feedCatalog({...shop,_feed:feed},DEPT)[0].items;
+ assert.deepEqual(scene.map(p=>p.id),['f-f-42','f-42'],'internal scene IDs remain unchanged');
+ assert.deepEqual(scene.map(p=>p.sourceProductId),['f-42','42']);
+ assert.deepEqual(scene.map(p=>productSnapshot(p,shop,null).id),quick.map(p=>productSnapshot(p,shop,null).id));
+ assert.deepEqual(scene.map(p=>productSnapshot(p,shop,null).id),['Store A|f-42|#345678','Store A|42|#345678']);
+ assert.notEqual(productSnapshot(scene[0],shop,null).id,productSnapshot(scene[0],{name:'Store B'},null).id);
+ assert.equal(productSnapshot({id:'legacy',name:'Standalone'},shop,null).id,'Store A|legacy|','non-feed IDs retain their previous format');
 });

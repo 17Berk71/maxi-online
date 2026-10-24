@@ -255,3 +255,13 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Node's URL parser silently strips raw newlines and surrounding whitespace, and normalizes backslashes into path separators. Such input could change the apparent merchant, original-photo or stock-evidence URL. Shared `safeHttpUrl` now rejects whitespace, control characters, DEL and backslashes in raw URLs rather than silently rewriting them.
 - Added focused regression tests for outbound merchant links, source-photo links and time-bounded inventory evidence. Properly percent-encoded URL paths remain supported. Code/test commits: `c0229e1`, `7bdc315`.
 - The full CI/browser result for the **newest** branch HEAD must be checked independently. No live feeds, image permissions, stock proof, main-branch changes, PR merge or deployment were introduced.
+
+
+### 25 October 2026 — align saved feed identities between 3D and quick catalogue
+
+- Verified branch HEAD `064f37f` and [GitHub Actions #139](https://github.com/17Berk71/maxi-online/actions/runs/40139487954): complete success, including configured Chromium desktop/mobile browser checks, before this change.
+- Found a cross-view duplicate: the 3D feed adapter prefixes internal scene product IDs with `f-`, while the WebGL-independent quick catalogue uses the upstream SKU. Saving one feed product from both views therefore produced two favorite/photo-board identities.
+- 3D feed items now carry `sourceProductId` while retaining their existing scene `id`. The shared product snapshot uses the source SKU when present, matching quick-catalogue snapshots without changing the 3D scene/cart ID contract.
+- Added a Node regression covering both views, an upstream SKU already beginning with `f-`, distinct SKUs and distinct stores. Extended the synthetic Chromium investor journey to re-add a 3D-saved item from quick mode and check that favorite and photo-board counts do not increase.
+- Existing saved records created from the old 3D-only `f-` identity remain untouched. A universal migration would be ambiguous when a legitimate upstream SKU begins with `f-`; legacy duplicates may require user removal. No destructive rewriting was attempted.
+- **CI/browser result for this new commit is not yet confirmed at writing.** All fixtures remain synthetic. No real feed, image licence, verified local stock, deployment, merge or `main` change.

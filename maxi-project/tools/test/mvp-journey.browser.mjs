@@ -62,7 +62,21 @@ try{
   assert.equal(await link.getAttribute('rel'),'noopener noreferrer');
   const popupPromise=page.waitForEvent('popup');await link.click();const popup=await popupPromise;
   await popup.waitForLoadState();assert.equal(popup.url(),'https://example.org/product-jacket');await popup.close();
-  assert.deepEqual(errors,[]);await page.close();console.log(`PASS integrated mall -> two store catalogues -> photo look -> save/reload -> synthetic merchant (${width}px)`);
+  // Re-add the same feed item from the WebGL-independent view. It must update the
+  // saved snapshot, not create a duplicate under the 3D-only f- scene prefix.
+  await page.keyboard.press('Escape');
+  await page.goto(base+'/?catalog=1',{waitUntil:'domcontentloaded'});
+  const quick=page.locator('#quick-catalog');
+  await quick.getByRole('button',{name:'Gloria Jeans',exact:true}).click();
+  await quick.getByRole('heading',{name:'Тестовая куртка',exact:true}).waitFor();
+  await quick.getByRole('button',{name:'Сохранить товар в избранное',exact:true}).click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-favorites-v2')).draft.length),2,
+    '3D and quick cards must share one favorite identity for the same source SKU');
+  await quick.getByRole('button',{name:'Добавить изображение в образ',exact:true}).click();
+  assert.equal(await page.locator('#maxi-photo-look article').count(),2,
+    '3D and quick cards must share one photo-board identity for the same source SKU');
+  await page.keyboard.press('Escape');
+  assert.deepEqual(errors,[]);await page.close();console.log(`PASS integrated mall -> two store catalogues -> photo look -> save/reload -> synthetic merchant -> quick catalogue identity (${width}px)`);
  }
 }finally{await browser.close();}
 function feed(id,name,type){return {demo:false,source:'Synthetic test fixture, not a real catalogue',updated:'2026-10-24',depts:[{key:type,title:'Тестовый отдел',type,who:'adult',items:[{id,name,price:id==='pants'?null:100,color:'#345678',sizes:['M'],pic:'../tools/test/fixtures/product.svg',cut:false,url:`https://example.org/product-${id}`,original_image_url:'http://127.0.0.1:5173/tools/test/fixtures/product.svg'}]}]};}

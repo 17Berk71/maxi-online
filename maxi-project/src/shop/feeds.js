@@ -65,7 +65,7 @@ export function feedCatalog(s, DEPT) {
       return ({
       name: it.name, price: typeof it.price === 'number' && Number.isFinite(it.price) && it.price >= 0 ? it.price : null, oldPrice: it.oldPrice, color: it.color, colorName: it.colorName, icon: base.icon, dept: d.key, deptTitle: d.title,
       model: base.model, scale: d.who === 'kids' ? 0.72 : 1, photo: preview && it.cut ? feedPhotoKey(s.name, it.id) : null, pic: preview,
-      sizes: it.sizes, url: evidence.demo ? null : evidence.sourceUrl, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id,
+      sizes: it.sizes, url: evidence.demo ? null : evidence.sourceUrl, desc: it.desc || '', pickup: !!it.pickup, feed: true, id: 'f-' + it.id, sourceProductId: it.id,
       evidence,
       originalImageUrl: evidence.originalImage,
       stockEvidence: {availability_status: it.availability_status, availability_scope: it.availability_scope,
