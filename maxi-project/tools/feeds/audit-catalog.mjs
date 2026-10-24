@@ -13,7 +13,9 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const demo=!!(index.demo||feed.demo),approval=manifest?.stores?.[name];
   const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
   const products=feed.depts.flatMap(d=>d?.hidden!==true&&Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
-  const hasDemoProducts=!demo&&products.some(p=>p?.demo===true);\n  const summary={name,demo,category,products:products.length};stores.push(summary);\n  if(hasDemoProducts)report('demo_product_in_real_catalogue',name);
+  const hasDemoProducts=!demo&&products.some(p=>p?.demo===true);
+  const summary={name,demo,category,products:products.length,containsDemoProducts:hasDemoProducts};stores.push(summary);
+  if(hasDemoProducts)report('demo_product_in_real_catalogue',name);
   if(!products.length&&feed.catalogue_status!=='withdrawn')report('empty_catalogue',name);
   if(products.length&&feed.catalogue_status==='withdrawn')report('withdrawn_catalogue_has_visible_products',name);
   if(!demo){
@@ -39,7 +41,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   }
  }
  if(!stores.length)report('no_catalogue_stores',null);
- const real=stores.filter(s=>!s.demo&&s.products>0&&!feeds[index.shops[s.name].file].depts.some(d=>d?.hidden!==true&&Array.isArray(d?.items)&&d.items.some(p=>p?.hidden!==true&&p?.demo===true))),categories=new Set(real.map(s=>s.category).filter(Boolean));
+ const real=stores.filter(s=>!s.demo&&s.products>0&&!s.containsDemoProducts),categories=new Set(real.map(s=>s.category).filter(Boolean));
  if(requireReal&&(real.length<2||categories.size<2))report('real_multicategory_pilot_missing',null);
  return {technicalGatePassed:issues.length===0,checkedAt:new Date(now).toISOString(),mode:requireReal?'real-pilot':'fixture-audit',
   limitations:['Offline validation only; source URLs, contracts, image identity and live stock need human/network verification.','No source freshness TTL is assumed; a recorded check date does not establish current availability.'],stores,issues};
