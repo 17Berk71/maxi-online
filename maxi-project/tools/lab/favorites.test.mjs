@@ -24,3 +24,16 @@ test('demo URLs stay suppressed and favorite capacity never silently evicts earl
  for(let n=2;n<=MAX_FAVORITES;n++)assert.equal(f.favorites.add({id:String(n),name:'Product '+n},shop,null),true);
  assert.equal(f.favorites.add({id:'extra'},shop,null),false);assert.equal(f.favorites.items().length,MAX_FAVORITES);assert.equal(f.favorites.items()[0].title,'Jacket');
 });
+
+test('ambiguous demo flags in product and evidence never expose merchant URLs',()=>{
+ const f=setup();
+ for(const [n,flag] of [['2','true'],['3',1],['4','false']]){
+  assert.equal(f.favorites.add({...product,id:n,demo:flag},shop,null),true);
+ }
+ assert.equal(f.favorites.add({...product,id:'5',evidence:{demo:'true'}},shop,null),true);
+ const restored=createFavorites(f.storage).items();
+ assert.equal(restored.length,4);
+ for(const entry of restored){assert.equal(entry.demo,true);assert.equal(entry.sourceUrl,null);}
+ assert.equal(f.favorites.add({...product,id:'6',demo:false,evidence:{demo:false}},shop,null),true);
+ assert.equal(createFavorites(f.storage).items().at(-1).sourceUrl,product.url);
+});
