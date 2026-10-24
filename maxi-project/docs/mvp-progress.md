@@ -267,3 +267,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - **CI/browser result for this new commit is not yet confirmed at writing.** All fixtures remain synthetic. No real feed, image licence, verified local stock, deployment, merge or `main` change.
 
 - Follow-up safety guard: quick-catalogue normalization explicitly resets any upstream `sourceProductId` field to the actual validated item ID. An adversarial fixture checks that untrusted metadata cannot impersonate another saved SKU. This follow-up supersedes the earlier pending CI; validate the newest HEAD only.
+
+
+### 25 October 2026 — Chromium viewport isolation after CI #141
+
+- [Actions #141](https://github.com/17Berk71/maxi-online/actions/runs/40144001842) **failed** at the 1280px integrated journey: Playwright timed out waiting for the static `#shopCat` control. The same updated journey passed at 390px; Node tests, Python tests, catalogue audit and production build passed. This is not evidence that the full browser suite passed.
+- The integrated journey now launches a fresh Chromium process for each viewport, preventing accumulated software-WebGL resources from the previous 3D scene from affecting the next viewport. A missing store HUD produces explicit URL/mode/fallback diagnostics instead of a generic locator timeout.
+- This is a test-environment isolation attempt, not proof of the underlying cause. Validate the new CI on its exact HEAD; if the 1280px journey still fails, investigate startup/DOM state using the new diagnostics. No product data or deployment was changed in this follow-up.

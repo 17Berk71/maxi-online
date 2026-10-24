@@ -2,9 +2,11 @@
 // Does not validate rights, live inventory, human device performance or photorealism.
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||undefined,headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
-try{
- for(const width of [390,1280]){
+// Each viewport gets its own Chromium process: a 3D/WebGL scene can retain GPU
+// resources after a page closes, especially under software SwiftShader in CI.
+for(const width of [390,1280]){
+ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||undefined,headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+ try{
   const page=await browser.newPage({viewport:{width,height:844},isMobile:width<600,hasTouch:width<600});
   page.setDefaultTimeout(45000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const base=(process.env.MAXI_URL||'http://127.0.0.1:5173').replace(/\/$/,'');
@@ -29,6 +31,12 @@ try{
    // This fixture validates the store UI handlers, not pointer hit-testing in slow software WebGL.
    // Dispatch the same button events without waiting for a compositor acknowledgement;
    // pedestrian input and real entry/exit remain covered by mall-navigation.browser.mjs.
+   // Fail with a direct startup diagnostic instead of waiting 45 seconds for
+   // a missing HUD element after a software-WebGL failure.
+   if(await page.locator('#shopCat').count()!==1){
+    const diagnostic=await page.evaluate(()=>({url:location.href,mode:window.__maxi?.mode,quick:!!document.querySelector('#quick-catalog'),hud:!!document.querySelector('#shopHud')}));
+    throw Error('Store HUD unavailable: '+JSON.stringify({width,name,...diagnostic}));
+   }
    await page.locator('#shopCat').dispatchEvent('click');
    await page.locator('#shop .sh-card').first().dispatchEvent('click');
    assert.equal(await page.locator('#shop .sh-name').textContent(),name==='Ostin'?'Тестовые брюки':'Тестовая куртка');
@@ -77,6 +85,6 @@ try{
     '3D and quick cards must share one photo-board identity for the same source SKU');
   await page.keyboard.press('Escape');
   assert.deepEqual(errors,[]);await page.close();console.log(`PASS integrated mall -> two store catalogues -> photo look -> save/reload -> synthetic merchant -> quick catalogue identity (${width}px)`);
- }
-}finally{await browser.close();}
+ }finally{await browser.close();}
+}
 function feed(id,name,type){return {demo:false,source:'Synthetic test fixture, not a real catalogue',updated:'2026-10-24',depts:[{key:type,title:'Тестовый отдел',type,who:'adult',items:[{id,name,price:id==='pants'?null:100,color:'#345678',sizes:['M'],pic:'../tools/test/fixtures/product.svg',cut:false,url:`https://example.org/product-${id}`,original_image_url:'http://127.0.0.1:5173/tools/test/fixtures/product.svg'}]}]};}
