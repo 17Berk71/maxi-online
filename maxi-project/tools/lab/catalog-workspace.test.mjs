@@ -82,3 +82,13 @@ test('CLI review -> inspect -> guarded activation works and rejects omitted revi
  const activated=run('activate','--candidate',f.candidate(1),'--target',f.target,'--expected','missing','--revision',revision);assert.equal(activated.status,0,activated.stderr);
  assert.equal(JSON.parse(run('inspect','--target',f.target).stdout).indexHash,JSON.parse(activated.stdout).indexHash);
 });
+
+test('activation reevaluates current approval rather than trusting a previously passing candidate report',t=>{
+ const f=fixture(t),stamp=new Date(Date.now()-60000).toISOString();
+ write(join(f.source,'index.json'),{demo:false,shops:{A:{file:'a.json',win:[]}}});
+ write(join(f.source,'a.json'),{depts:[{items:[{id:'1',name:'Synthetic reviewed contract',source_url:'https://merchant.example/1',original_image_url:'https://photos.example/1.jpg',last_checked_at:stamp}]}]});
+ const manifest={stores:{A:{approved_for_publication:true,permission_reference:'synthetic test record only',reviewed_at:stamp,category:'clothing',allowed_source_hosts:['merchant.example'],allowed_image_hosts:['photos.example']}}};
+ const prepared=prepareCandidate({source:f.source,candidate:f.candidate(1),manifest});assert.equal(prepared.audit.technicalGatePassed,true);
+ manifest.stores.A.approved_for_publication=false;
+ assert.throws(()=>activate({candidate:f.candidate(1),target:f.target,expectedIndexHash:'missing',expectedCandidateHash:prepared.fingerprint,manifest}),/rights_review_missing/);assert.equal(indexHash(f.target),'missing');
+});

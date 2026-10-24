@@ -39,3 +39,5 @@ For each visible real product the gate requires a stable ID, title, safe source 
 ## Baseline, 24 October 2026
 
 The bundled index contains **3 demonstration store catalogues and 125 demonstration products**. They are not connected real stores. Fixture audit passes; the real-pilot gate correctly fails with `real_multicategory_pilot_missing`. See [baseline report](review-2026-10-24/catalogue-real-gate.json).
+
+Verification/permission timestamps also undergo calendar validation: impossible dates, invalid leap days and timezone-less timestamps are rejected rather than normalized. Only legacy **import** dates may use YYYY-MM-DD; they are calendar-validated and remain distinct from actual catalogue/stock verification.

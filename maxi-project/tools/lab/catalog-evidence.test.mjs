@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {inventoryEvidence, catalogEvidence, safeHttpUrl, AVAILABILITY} from '../../src/shop/catalog-evidence.js';
+import {inventoryEvidence, catalogEvidence, safeHttpUrl, AVAILABILITY, parseIsoTimestamp} from '../../src/shop/catalog-evidence.js';
 const NOW = Date.parse('2026-10-22T12:00:00Z');
 const valid = {availability_status: AVAILABILITY.IN_STOCK, availability_scope:'physical_store_tula',
  availability_checked_at:'2026-10-22T11:00:00Z', availability_expires_at:'2026-10-22T13:00:00Z',
@@ -37,4 +37,14 @@ test('verified original image URL is distinct from processed preview', () => {
 });
 test('demo products cannot claim stock even with complete-looking evidence', () => {
  assert.equal(inventoryEvidence({...valid,demo:true},NOW).status, AVAILABILITY.UNKNOWN);
+});
+
+test('verification timestamps reject impossible dates and timezone ambiguity, with leap years and offsets preserved',()=>{
+ for(const value of ['2026-02-30T12:00:00Z','2025-02-29T12:00:00Z','2100-02-29T12:00:00Z','2026-04-31T12:00:00Z','2026-10-22','2026-10-22T12:00:00','2026-10-22T24:00:00Z','2026-10-22T12:60:00Z','2026-10-22T12:00:00+24:00'])assert(Number.isNaN(parseIsoTimestamp(value)),value);
+ for(const value of ['2024-02-29T12:00:00Z','2000-02-29T12:00:00Z','2026-10-22T15:00:00+03:00'])assert.equal(parseIsoTimestamp(value),Date.parse(value));
+ assert.equal(catalogEvidence({last_checked_at:'2026-02-30T12:00:00Z'},{},NOW).lastCheckedAt,null);
+ assert.equal(inventoryEvidence({...valid,availability_checked_at:'2026-02-30T12:00:00Z'},NOW).status,AVAILABILITY.UNKNOWN);
+ assert.equal(inventoryEvidence(valid,NaN).status,AVAILABILITY.UNKNOWN);
+ assert.equal(catalogEvidence({},{updated:'2026-02-30'},NOW).importedAt,null);
+ assert.equal(catalogEvidence({},{updated:'2026-10-21'},NOW).importedAt,'2026-10-21T00:00:00.000Z');
 });

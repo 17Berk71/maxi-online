@@ -108,3 +108,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Complete withdrawal is represented explicitly and does not count toward the real-pilot store minimum. Window previews are suppressed on withdrawal because legacy records lack product references.
 - All activation/rollback tests wrote **temporary synthetic directories only**. The active project feed files, published site and main branch were not changed. Rights are not authenticated by this offline tool, and historical assets are retained rather than privately erased.
 - Local verification: 41 Node tests and 2 Python pricing tests passed; generated versioned-media -> withdrawal -> rollback browser tests passed at 390px/1280px. Actual 3D/quick hidden-product and all-hidden-shop checks passed at both widths. Build and existing two-store product/save/reload/outbound browser regression passed at both widths. CI is checked separately after publication.
+
+### Calendar-valid evidence timestamps
+
+- Added shared calendar validation for catalogue verification, stock checks/expiry and permission reviews. Nonexistent dates such as 30 February, invalid leap days, missing timezones and invalid time components cannot become confirmation evidence through Date.parse normalization.
+- Legacy import-only YYYY-MM-DD dates remain supported, but they are separately calendar-validated and never become a verification timestamp. An invalid reference clock also makes inventory unknown.
+- Activation regression now verifies that a formerly passing candidate is rejected if approval is withdrawn before activation; stored reports are not authorization.
+- Local verification: 44 Node tests, 2 Python pricing tests, production build and bundled demo audit passed. No real stock, permission or source date was invented.

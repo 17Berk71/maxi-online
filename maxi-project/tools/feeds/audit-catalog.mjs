@@ -1,5 +1,5 @@
 // Offline publication gate. Validates evidence records, never authenticates contracts or live stock.
-import {catalogEvidence,AVAILABILITY} from '../../src/shop/catalog-evidence.js';
+import {catalogEvidence,AVAILABILITY,parseIsoTimestamp} from '../../src/shop/catalog-evidence.js';
 import {feedPath} from '../../src/shop/catalog-feed.js';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -12,16 +12,15 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const feed=feeds[entry.file];if(!feed||!Array.isArray(feed.depts)){report('feed_unreadable',name);continue;}
   const demo=!!(index.demo||feed.demo),approval=manifest?.stores?.[name];
   const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
-  const isoDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)?Date.parse(value):NaN;
   const products=feed.depts.flatMap(d=>Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
   const summary={name,demo,category,products:products.length};stores.push(summary);
   if(!products.length&&feed.catalogue_status!=='withdrawn')report('empty_catalogue',name);
   if(products.length&&feed.catalogue_status==='withdrawn')report('withdrawn_catalogue_has_visible_products',name);
   if(!demo){
-   const stamp=isoDate(approval?.reviewed_at);
+   const stamp=parseIsoTimestamp(approval?.reviewed_at);
    if(approval?.approved_for_publication!==true||typeof approval?.permission_reference!=='string'||!approval.permission_reference.trim()||!Number.isFinite(stamp)||stamp>now)report('rights_review_missing',name);
    if(!category)report('store_category_missing',name);
-   if(approval&&Object.hasOwn(approval,'expires_at')&&approval.expires_at!==null && !(isoDate(approval.expires_at)>now))report('rights_review_expired',name);
+   if(approval&&Object.hasOwn(approval,'expires_at')&&approval.expires_at!==null && !(parseIsoTimestamp(approval.expires_at)>now))report('rights_review_expired',name);
   }
   const ids=new Set();
   for(const product of products){

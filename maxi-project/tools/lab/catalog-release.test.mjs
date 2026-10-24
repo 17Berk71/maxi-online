@@ -61,3 +61,10 @@ test('intentional withdrawn catalogues may be empty but do not satisfy real-pilo
  f.feeds['a.json'].depts[0].items[0].hidden=false;
  assert(auditCatalogue(f.index,f.feeds,f.manifest,{now}).issues.some(x=>x.code==='withdrawn_catalogue_has_visible_products'));
 });
+
+test('calendar-invalid rights review/expiry dates fail even when JavaScript normalizes them',()=>{
+ const f=fixture();f.manifest.stores.A.reviewed_at='2026-02-30T12:00:00Z';
+ assert(auditCatalogue(f.index,f.feeds,f.manifest,{now}).issues.some(x=>x.code==='rights_review_missing'));
+ f.manifest.stores.A.reviewed_at='2026-10-24T08:00:00Z';f.manifest.stores.A.expires_at='2027-02-30T12:00:00Z';
+ assert(auditCatalogue(f.index,f.feeds,f.manifest,{now}).issues.some(x=>x.code==='rights_review_expired'));
+});
