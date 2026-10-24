@@ -7,9 +7,9 @@ try{
   let withdraw=false;
   await page.route('**/feeds/index.json',r=>r.fulfill({json:{demo:true,shops:{'Gloria Jeans':{file:'fixture.json',win:[]}}}}));
   await page.route('**/feeds/fixture.json',r=>r.fulfill({json:{demo:false,depts:[{key:'tshirts',type:'tshirts',title:'Test',items:[
-   {id:'shown',name:'Visible synthetic item',hidden:withdraw,pic:'../tools/test/fixtures/product.svg',url:'https://example.org/fake'},
-   {id:'hidden',name:'WITHDRAWN ITEM',hidden:true,pic:'../tools/test/fixtures/product.svg'}
-  ]},{key:'paused',type:'tshirts',title:'Paused',hidden:true,items:[{id:'paused-product',name:'PAUSED DEPARTMENT ITEM'}]}]}}));
+   {id:'shown',name:'Visible synthetic item',hidden:withdraw?'true':false,pic:'../tools/test/fixtures/product.svg',url:'https://example.org/fake'},
+   {id:'hidden',name:'WITHDRAWN ITEM',hidden:'true',pic:'../tools/test/fixtures/product.svg'}
+  ]},{key:'paused',type:'tshirts',title:'Paused',hidden:'true',items:[{id:'paused-product',name:'PAUSED DEPARTMENT ITEM'}]}]}}));
   const base=process.env.MAXI_URL||'http://127.0.0.1:5173';
   async function openStore(){
    await page.goto(base+'/?debug&calm=1&fx=0',{waitUntil:'domcontentloaded',timeout:120000});
