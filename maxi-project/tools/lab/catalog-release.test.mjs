@@ -33,3 +33,23 @@ test('import time is distinct from manual catalogue verification',async()=>{
 });
 
 test('empty or malformed indexes cannot pass even the fixture audit',()=>{assert.equal(auditCatalogue({},{}).technicalGatePassed,false);assert.equal(auditCatalogue({shops:{}},{}).technicalGatePassed,false);});
+
+
+test('malformed categories and non-timestamp review dates never pass the real pilot gate',()=>{
+ for(const category of [{label:'clothing'},42,'  ']){
+   const f=fixture();f.manifest.stores.A.category=category;
+   const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+   assert.equal(report.technicalGatePassed,false);
+   assert(report.issues.some(x=>x.code==='store_category_missing'));
+ }
+ for(const reviewedAt of ['2026-10-24','tomorrow','2026-10-24T08:00:00']){
+   const f=fixture();f.manifest.stores.A.reviewed_at=reviewedAt;
+   const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+   assert(report.issues.some(x=>x.code==='rights_review_missing'),reviewedAt);
+ }
+ for(const expiresAt of ['', '2026-10-25', '2026-10-23T08:00:00Z']){
+   const f=fixture();f.manifest.stores.A.expires_at=expiresAt;
+   const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+   assert(report.issues.some(x=>x.code==='rights_review_expired'),expiresAt);
+ }
+});
