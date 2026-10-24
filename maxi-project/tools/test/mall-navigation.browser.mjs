@@ -30,7 +30,11 @@ try{
    }else{
     // The browser's pointer-lock transition may blur the page and clear held keys.
     await page.waitForFunction(()=>window.__maxi.locked);
-    await page.keyboard.down('w');try{await page.waitForFunction(()=>window.__maxi.mode==='store',null,{timeout:45000});}catch(error){console.log('Navigation failure',name,await page.evaluate(()=>({mode:window.__maxi.mode,floor:window.__maxi.floor,player:window.__maxi.player,keys:window.__maxi.keys,anim:window.__maxi.anim})));throw error;}finally{await page.keyboard.up('w');}
+    // SwiftShader can advance movement at very few frames per second. Use the real
+    // sprint control for the second door, not debug-position writes or direct enterShop.
+    const sprint=name==='Синема Парк';
+    if(sprint)await page.keyboard.down('Shift');
+    await page.keyboard.down('w');try{await page.waitForFunction(()=>window.__maxi.mode==='store',null,{timeout:60000,polling:100});}catch(error){console.log('Navigation failure',name,await page.evaluate(()=>({mode:window.__maxi.mode,floor:window.__maxi.floor,player:window.__maxi.player,keys:window.__maxi.keys,anim:window.__maxi.anim})));throw error;}finally{await page.keyboard.up('w');if(sprint)await page.keyboard.up('Shift');}
    }
    const entered=await page.locator('#shopHudName').textContent();
    assert.equal(entered.startsWith(name),true,`Expected ${name}, got ${entered}`);
