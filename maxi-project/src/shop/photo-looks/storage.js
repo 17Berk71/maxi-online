@@ -1,5 +1,6 @@
 // FR-SAVE-002: versioned, transactional browser-only look snapshots.
 import {parseIsoTimestamp, safeHttpUrl} from '../catalog-evidence.js';
+import {migrateLegacyProductId} from '../product-identity.js';
 export const LEGACY_KEY='maxi-photo-looks-v1';
 export const STORAGE_KEY='maxi-photo-looks-v2';
 export const MAX_ITEMS=24, MAX_LOOKS=30;
@@ -28,10 +29,14 @@ function normalizeItems(input,maxItems=MAX_ITEMS,allowMissingImages=false){
   if(!Array.isArray(input))return [];
   const seen=new Set();
   return input.filter(x=>x && typeof x.id==='string' && typeof x.title==='string' && (imageUrl(x.image)||(allowMissingImages&&x.image===null)))
-    .filter(x=>!seen.has(x.id)&&seen.add(x.id)).slice(0,maxItems).map(x=>({
-      id:x.id,title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:imageUrl(x.image),
+    .map(x=>({
+      id:migrateLegacyProductId(x.id,typeof x.shop==='string'?x.shop:''),
+      title:x.title,shop:typeof x.shop==='string'?x.shop:'',image:imageUrl(x.image),
       sourceUrl:x.demo?null:safeHttpUrl(x.sourceUrl),demo:Boolean(x.demo),
-    }));
+    }))
+    // Detect collisions after migration, not just between the raw saved IDs.
+    // v2 length checks then disable writes instead of silently dropping data.
+    .filter(x=>!seen.has(x.id)&&seen.add(x.id)).slice(0,maxItems);
 }
 const copy=x=>JSON.parse(JSON.stringify(x));
 export function createLookStore(storage, {now=()=>new Date().toISOString(),newId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),key=STORAGE_KEY,legacyKey=LEGACY_KEY,maxItems=MAX_ITEMS,allowMissingImages=false}={}){
