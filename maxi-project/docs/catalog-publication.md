@@ -18,9 +18,9 @@ The top-level `stores` object is keyed by the exact feed-index store name. Each 
 |---|---|
 | `approved_for_publication` | Explicit boolean approval from an authorized reviewer |
 | `permission_reference` | Nonempty reference to the actual rights/source permission record; keep private agreements outside the public repository |
-| `reviewed_at` | ISO date/time of review, never a future date |
-| `expires_at` | Optional rights expiry; an expired or invalid value blocks the gate |
-| `category` | Actual store category; never infer partnership from a mall sign |
+| `reviewed_at` | ISO timestamp with explicit timezone (e.g. `2026-10-24T08:00:00Z`), never a future date |
+| `expires_at` | Optional ISO timestamp with timezone; when supplied, an empty, malformed or expired value blocks the gate |
+| `category` | Nonempty category string for the reviewed store; objects/numbers do not qualify as categories |
 | `allowed_source_hosts` | Exact reviewed merchant hostnames |
 | `allowed_image_hosts` | Exact reviewed original-photo hostnames |
 
