@@ -30,7 +30,8 @@ export function inventoryEvidence(raw = {}, now = Date.now()) {
   const stamp = parseIsoTimestamp(e.availability_checked_at);
   const expires = parseIsoTimestamp(e.availability_expires_at);
   const source = safeHttpUrl(e.availability_source);
-  const demo = e.demo === true;
+  // Any non-empty demo marker is a conservative block on stock claims.
+  const demo = Boolean(e.demo);
   // Only a time-bounded direct stock claim may be confirmed; catalogue presence is NOT store stock.
   if (!Number.isFinite(now) || demo || !source || !Number.isFinite(stamp) || !Number.isFinite(expires) ||
       stamp > now || expires <= now || expires <= stamp || scope === 'unspecified') status = AVAILABILITY.UNKNOWN;
