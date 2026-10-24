@@ -12,7 +12,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const feed=feeds[entry.file];if(!feed||!Array.isArray(feed.depts)){report('feed_unreadable',name);continue;}
   const demo=!!(index.demo||feed.demo),approval=manifest?.stores?.[name];
   const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
-  const isoDate=value=>typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value)?Date.parse(value):NaN;
+  const isoDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)?Date.parse(value):NaN;
   const products=feed.depts.flatMap(d=>Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
   const summary={name,demo,category,products:products.length};stores.push(summary);
   if(!products.length)report('empty_catalogue',name);
