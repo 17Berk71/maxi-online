@@ -73,7 +73,13 @@ export function createLookStore(storage, {now=()=>new Date().toISOString(),newId
       name=typeof name==='string'?name.trim().slice(0,80):'';
       if(!name||!state.draft.length){warning='Добавьте товары и укажите название образа.';return false;}
       if(state.looks.length>=MAX_LOOKS){warning='Сохранено 30 образов. Удалите ненужный перед сохранением нового.';return false;}
-      const look={id:newId(),name,createdAt:now(),items:copy(state.draft)};
+      const id=newId(),createdAt=now();
+      if(typeof id!=='string'||!id||state.looks.some(x=>x.id===id)||
+         typeof createdAt!=='string'||!Number.isFinite(Date.parse(createdAt))){
+        warning='Не удалось сохранить образ: ошибка идентификатора или даты. Повторите попытку.';
+        return false;
+      }
+      const look={id,name,createdAt,items:copy(state.draft)};
       return commit({...state,looks:[...state.looks,look]});
     },
     load(id){const look=state.looks.find(x=>x.id===id);return !!look&&commit({...state,draft:copy(look.items)});},
