@@ -182,3 +182,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regression tests for credential-bearing merchant and image URLs, zero versus missing prices, demo link suppression, and source-record immutability.
 - Code commits: `9a225a5`, `5925200`. [Actions #90](https://github.com/17Berk71/maxi-online/actions/runs/40103443906) was queued when this note was written; **do not claim the new batch passed until it completes**.
 - No real catalogue, image licence, merchant agreement, stock proof, PR merge or deployment was added.
+
+
+### 24 October 2026 — cross-store feed photo identity
+
+- Confirmed **GitHub Actions #91 passed** for prior head `40d7c3b`, including the configured browser suite: https://github.com/17Berk71/maxi-online/actions/runs/40103480599
+- Fixed a shared-photo registry collision: previously `PHOTOS['feed:' + productId]` allowed a later store's image to overwrite another store's photo when both feeds reused the same SKU. Both photo registration and 3D product references now use `feedPhotoKey(shopName, productId)`, with component encoding to avoid delimiter collisions.
+- Added Node regression coverage for duplicate IDs across stores, actual registration of two different preview URLs, and punctuation in store/SKU keys. Changes: `f107ba6`, `e1e8851`, `0761da1`.
+- New CI was started for the changes; **do not mark this batch passed until the final head's run completes**. #92 was superseded/cancelled; #93 was still running at the initial check. Check the current head `0761da1` for its own workflow run.
+- This fix does not certify image licensing, original-photo rights, real assortment, or stock availability. No merge or deployment.
