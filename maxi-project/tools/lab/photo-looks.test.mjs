@@ -161,3 +161,16 @@ test('root-relative images reject traversal, encoded separators and malformed es
  assert.equal(f.store.setDraft([item(3)]),false,'damaged saved data must remain read-only');
  assert.equal(f.data.get(STORAGE_KEY),raw,'original damaged snapshot is preserved');
 });
+
+test('restored ambiguous demo flags are labeled demo and never expose merchant URLs',()=>{
+ for(const key of [LEGACY_KEY,STORAGE_KEY]){
+  const entries=[{...item(1),demo:'true'},{...item(2),demo:1},{...item(3),demo:'false'}];
+  const initial=key===LEGACY_KEY?JSON.stringify(entries):JSON.stringify({version:2,draft:entries,looks:[]});
+  const f=fixture({[key]:initial});
+  assert.deepEqual(f.store.items().map(x=>x.demo),[true,true,true]);
+  assert.deepEqual(f.store.items().map(x=>x.sourceUrl),[null,null,null]);
+  assert.equal(f.store.setDraft(f.store.items()),true);
+  assert.equal(f.data.get(key),initial,'the original snapshot stays available');
+  assert.deepEqual(f.reload().items().map(x=>x.sourceUrl),[null,null,null]);
+ }
+});
