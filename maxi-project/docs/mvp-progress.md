@@ -207,3 +207,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `02b1155` and `f0b66c3`: the bounded catalogue paginator now applies the same conservative `isHidden` withdrawal policy as both feed adapters, including raw string/numeric markers. Added unit regressions for direct paging and filtered searches; a focused four-test Node reproduction passed locally. This is defensive parity, not proof of real stock.
 - `423b400` and `7a9588d`: quick-catalogue cards explicitly distinguish processed demo previews from source-linked photos and state that image-use rights are unverified. The 1,000-product Chromium fixture now checks the caption at both 390px and 1280px.
 - Full CI and browser checks for this new batch must be read from the latest workflow run; do not claim they passed until completed. All new browser data remain synthetic. No real feeds, rights approvals, deployment or main-branch changes were introduced.
+
+### 24 October 2026 — root-relative saved-image path validation
+
+- Before this batch, branch HEAD `127aba0` passed [GitHub Actions #110](https://github.com/17Berk71/maxi-online/actions/runs/40117664394), including the configured Chromium checks. This does **not** certify the new changes.
+- The photo-look/favorites image validator previously accepted root-relative paths with literal or percent-encoded `..` components, encoded separators and malformed percent escapes. Browsers/proxies can normalize those paths before requesting an image. `imageUrl()` now rejects these ambiguous root-relative paths while preserving normal local paths, ordinary percent-encoded filenames, safe HTTP(S) originals and existing relative demo previews.
+- Added a Node regression covering accepted images, literal/encoded path escapes, and read-only recovery of a damaged saved v2 collection. Code/test commits: `93640fd`, `d8495d6`.
+- Final CI for this batch must be checked against the newest branch HEAD; **do not claim success based on #110**. No real merchant catalogue, photo rights, local inventory proof, deployment, PR merge or main-branch changes were introduced.
