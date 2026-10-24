@@ -75,6 +75,18 @@ try {
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
     assert.equal(await page.locator('#maxi-photo-look a[href]').count(),0);
     await page.keyboard.press('Escape');
+    // Demo catalogues must not expose pretend merchant destinations.
+    const demo=await page.evaluate(async ()=>{
+      const mod=await import('/src/shop/photo-looks.js');
+      mod.addToPhotoLook({id:'demo',name:'Demo item',url:'https://example.org/not-real',evidence:{demo:true}},
+        {name:'Demo shop'},'/tools/test/fixtures/product.svg');
+      mod.openPhotoLook();
+      return mod.photoLookItems().find(x=>x.id==='Demo shop|demo|');
+    });
+    assert.equal(demo.sourceUrl,null);
+    assert.equal(await page.locator('#maxi-photo-look article').count(),2);
+    assert.equal(await page.locator('#maxi-photo-look a[href]').count(),0);
+    await page.keyboard.press('Escape');
     await page.close();
   }
 } finally {await browser.close();}
