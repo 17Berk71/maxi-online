@@ -5,7 +5,11 @@ export function productSnapshot(product,shop,image){
  // Keep existing IDs for ordinary catalogue records, so previously saved
  // favorites/looks continue to match. Pipe-containing values need a tuple
  // encoding: naive joining can make different stores/products share one ID.
- const id=parts.some(part=>part.includes('|'))?'tuple:'+JSON.stringify(parts):parts.join('|');
+ // Encode the tuple so it cannot impersonate a legacy pipe-joined ID. A raw
+ // JSON tuple can contain pipes and collide with a different ordinary record
+ // whose store/SKU/color happen to spell the tuple text.
+ // JSON.stringify escapes lone surrogates before encodeURIComponent runs.
+ const id=parts.some(part=>part.includes('|'))?'tuple:'+encodeURIComponent(JSON.stringify(parts)):parts.join('|');
  // Untrusted feeds may serialize flags as strings or numbers. An ambiguous demo
  // marker must never expose an unverified outbound merchant link.
  const demo=Boolean(product?.demo||product?.evidence?.demo);
