@@ -22,7 +22,7 @@ try {
     // Focus cannot escape a modal dialog through either direction of Tab navigation.
     await page.locator('#maxi-photo-look [data-close-photo-look]').focus();
     await page.keyboard.press('Shift+Tab');
-    assert.equal(await page.evaluate(()=>document.activeElement?.textContent?.includes('Страница товара')),true);
+    assert.equal(await page.evaluate(()=>{const a=[...document.querySelectorAll('#maxi-photo-look button,#maxi-photo-look a[href]')];return document.activeElement===a[a.length-1];}),true);
     await page.keyboard.press('Tab');
     assert.equal(await page.locator('#maxi-photo-look [data-close-photo-look]').evaluate(e=>e===document.activeElement),true);
     // Missing catalogue images must show a textual fallback rather than a blank item.
