@@ -59,7 +59,16 @@ export function createLookStore(storage, {now=()=>new Date().toISOString(),newId
   }
   return {
     items:()=>copy(state.draft),looks:()=>copy(state.looks),message:()=>warning,
-    setDraft(items){return commit({...state,draft:normalizeItems(items,maxItems,allowMissingImages)});},
+    setDraft(items){
+      // Do not report success after silently discarding invalid, duplicate or excess items.
+      // Callers must resolve the problem rather than losing products on the next write.
+      const normalized=normalizeItems(items,maxItems,allowMissingImages);
+      if(!Array.isArray(items)||normalized.length!==items.length){
+        warning='Не удалось сохранить образ: список содержит повреждённые, повторяющиеся или лишние товары.';
+        return false;
+      }
+      return commit({...state,draft:normalized});
+    },
     save(name){
       name=typeof name==='string'?name.trim().slice(0,80):'';
       if(!name||!state.draft.length){warning='Добавьте товары и укажите название образа.';return false;}
