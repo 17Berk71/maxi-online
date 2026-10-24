@@ -70,3 +70,14 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - New `mall-navigation.browser.mjs` uses public search and door controls followed by real W-key movement (1280px) or Chromium-dispatched touch-joystick input (390px). Debug state is read for assertions, but coordinates are never written and enterShop is never called by the test.
 - Local results: **all four entry/exit routes passed** — Gloria Jeans (floor 1) and Синема Парк (floor 2), each at 1280px and 390px. The historical cinema-entry timeout did not reproduce in this focused path. The older exhaustive cinema/movie/cart script is not thereby certified.
 - Module syntax, production build and diff whitespace checks passed. Navigation suite is included in the next CI run; current run state must be checked on GitHub.
+
+
+### Storage recovery and publication-review validation — 24 October 2026
+
+- Recovery started from actual remote HEAD `d0cdac5`; no previous commits were reset or overwritten.
+- `photo-looks/storage.js` now refuses to write if restoring a v2 collection would silently discard draft products, saved looks, duplicate entries or entries beyond the configured limit. Valid recoverable entries remain visible, the original raw browser data stays intact, and the modal announces that editing is disabled.
+- Added Node regressions for malformed product images, invalid look timestamps, duplicate saved IDs and over-limit drafts. Added Chromium desktop/mobile coverage for the read-only warning and refusal to overwrite a damaged local snapshot.
+- Strengthened the **offline** catalogue publication audit: a real store category must be a nonempty string, and rights-review/expiry dates must be ISO timestamps with explicit timezones. Empty or malformed supplied expiry dates fail the gate. These checks do **not** authenticate rights, source URLs or inventory.
+- Code commits: `c46f81d`, `d3575f0`, `3ee6008`, `c5ed37f`, `f2c297b`, `f707c02`, `fa37ad3`. Documentation: `5658196`.
+- Verification: [GitHub Actions #47](https://github.com/17Berk71/maxi-online/actions/runs/40079054857) checks the latest code; record its final status before claiming this batch is fully validated. Previous #40 was still running when this work began.
+- Boundaries unchanged: no authorized real feed, rights-cleared photo collection, local-stock proof, full screen-reader certification or physical-device benchmark. No merge, deployment or main-branch edit.
