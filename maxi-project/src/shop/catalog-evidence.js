@@ -9,7 +9,7 @@ const confirmed = new Set([AVAILABILITY.IN_STOCK, AVAILABILITY.OUT_OF_STOCK]);
 const scopes = new Set(['physical_store_tula', 'online_store', 'unspecified']);
 export function safeHttpUrl(input) {
   if (typeof input !== 'string') return null;
-  try { const u = new URL(input); return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : null; }
+  try { const u = new URL(input); return (u.protocol === 'https:' || u.protocol === 'http:') && !u.username && !u.password ? u.href : null; }
   catch { return null; }
 }
 // Verification records require a real calendar date and an explicit timezone.
