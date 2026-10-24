@@ -88,7 +88,7 @@ export function openPhotoLook(){
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
     for(const [index,it] of items.entries()){
       const card=document.createElement('article');Object.assign(card.style,{border:'1px solid #ddd',borderRadius:'12px',padding:'12px',background:'white'});
-      const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';img.onerror=()=>{img.replaceWith(Object.assign(document.createElement('p'),{textContent:'Изображение недоступно. Откройте страницу товара.'}));};Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
+      const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';img.onerror=()=>{img.replaceWith(Object.assign(document.createElement('p'),{textContent:it.sourceUrl?'Изображение недоступно. Откройте страницу товара.':'Изображение недоступно. Ссылка на товар не подтверждена.'}));};Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
       const title=document.createElement('h3');title.textContent=it.title;const shop=document.createElement('p');shop.textContent=it.shop;
       const controls=document.createElement('div');Object.assign(controls.style,{display:'flex',gap:'8px',flexWrap:'wrap'});
       for(const [action,label,fn] of [['left','←',()=>movePhotoLook(it.id,-1)],['right','→',()=>movePhotoLook(it.id,1)],['remove','Удалить',()=>removeFromPhotoLook(it.id)]]){
