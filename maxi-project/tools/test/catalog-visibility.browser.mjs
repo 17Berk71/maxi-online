@@ -9,7 +9,7 @@ try{
   await page.route('**/feeds/fixture.json',r=>r.fulfill({json:{demo:false,depts:[{key:'tshirts',type:'tshirts',title:'Test',items:[
    {id:'shown',name:'Visible synthetic item',hidden:withdraw,pic:'../tools/test/fixtures/product.svg',url:'https://example.org/fake'},
    {id:'hidden',name:'WITHDRAWN ITEM',hidden:true,pic:'../tools/test/fixtures/product.svg'}
-  ]}]}}));
+  ]},{key:'paused',type:'tshirts',title:'Paused',hidden:true,items:[{id:'paused-product',name:'PAUSED DEPARTMENT ITEM'}]}]}}));
   const base=process.env.MAXI_URL||'http://127.0.0.1:5173';
   async function openStore(){
    await page.goto(base+'/?debug&calm=1&fx=0',{waitUntil:'domcontentloaded',timeout:120000});
@@ -19,6 +19,7 @@ try{
   }
   await openStore();assert.equal(await page.locator('#shop .sh-card').count(),1);
   assert.equal(await page.getByText('WITHDRAWN ITEM',{exact:true}).count(),0);
+  assert.equal(await page.getByText('PAUSED DEPARTMENT ITEM',{exact:true}).count(),0);
   await page.locator('#shop .sh-card').click();
   assert.equal(await page.locator('#shop .sh-buy a').count(),0,'index demo flag must suppress fabricated product links');
   withdraw=true;await openStore();
@@ -28,7 +29,8 @@ try{
   await page.goto(base+'/?catalog=1',{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:'Gloria Jeans · демонстрация',exact:true}).click();
   await page.getByText('В каталоге нет доступных товаров.',{exact:true}).waitFor();
-  assert.equal(await page.locator('#quick-catalog article').count(),0);assert.deepEqual(errors,[]);
+  assert.equal(await page.locator('#quick-catalog article').count(),0);
+  assert.equal(await page.getByText('PAUSED DEPARTMENT ITEM',{exact:true}).count(),0);assert.deepEqual(errors,[]);
   await page.close();console.log(`PASS hidden products and fully withdrawn shop stay empty in 3D/quick catalogues (${width}px)`);
  }
 }finally{await browser.close();}
