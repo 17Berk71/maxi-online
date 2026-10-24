@@ -1,6 +1,6 @@
 // Offline publication gate. Validates evidence records, never authenticates contracts or live stock.
 import {catalogEvidence,AVAILABILITY,parseIsoTimestamp} from '../../src/shop/catalog-evidence.js';
-import {feedPath} from '../../src/shop/catalog-feed.js';
+import {feedPath,isHidden} from '../../src/shop/catalog-feed.js';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -12,7 +12,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const feed=feeds[entry.file];if(!feed||!Array.isArray(feed.depts)){report('feed_unreadable',name);continue;}
   const demo=!!(index.demo||feed.demo),approval=manifest?.stores?.[name];
   const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
-  const products=feed.depts.flatMap(d=>d?.hidden!==true&&Array.isArray(d?.items)?d.items:[]).filter(p=>p?.hidden!==true);
+  const products=feed.depts.flatMap(d=>!isHidden(d)&&Array.isArray(d?.items)?d.items:[]).filter(p=>!isHidden(p));
   const hasDemoProducts=!demo&&products.some(p=>Boolean(p?.demo));
   const summary={name,demo,category,products:products.length,containsDemoProducts:hasDemoProducts};stores.push(summary);
   if(hasDemoProducts)report('demo_product_in_real_catalogue',name);
