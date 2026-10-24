@@ -58,3 +58,26 @@ test('saved product identity distinguishes delimiter-bearing store names and SKU
  assert.equal(restored.remove(items[0].id),true);
  assert.deepEqual(createFavorites(f.storage).items().map(x=>x.title),['Jeans','Shirt','Plain']);
 });
+
+test('encoded tuple identities cannot collide with ordinary legacy pipe IDs',()=>{
+ const f=setup();
+ // Prior raw JSON tuple IDs collided with the second, pipe-joined record.
+ const tupleShop={name:'Store|North|Item'};
+ const tupleProduct={id:'X',name:'Tuple item'};
+ const plainShop={name:'tuple:["Store'};
+ const plainProduct={id:'North',color:'Item","X",""]',name:'Plain item'};
+ assert.equal(f.favorites.add(tupleProduct,tupleShop,null),true);
+ assert.equal(f.favorites.add(plainProduct,plainShop,null),true);
+ const items=createFavorites(f.storage).items();
+ assert.equal(items.length,2);
+ assert.notEqual(items[0].id,items[1].id);
+ assert.equal(items[0].id.includes('|'),false,'encoded tuples cannot mimic pipe-joined IDs');
+ assert.equal(items[1].id,'tuple:["Store|North|Item","X",""]');
+ assert.equal(f.favorites.has(tupleProduct,tupleShop),true);
+ assert.equal(f.favorites.has(plainProduct,plainShop),true);
+ assert.equal(createFavorites(f.storage).remove(items[0].id),true);
+ assert.deepEqual(createFavorites(f.storage).items().map(x=>x.title),['Plain item']);
+ const malformed={name:'Bad\\uD800|Shop'};
+ assert.equal(f.favorites.add({id:'X',name:'Malformed Unicode'},malformed,null),true);
+ assert.equal(f.favorites.has({id:'X'},malformed),true);
+});
