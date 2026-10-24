@@ -237,3 +237,14 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Encoded the JSON tuple using `encodeURIComponent`, making its identifier pipe-free while leaving existing ordinary `shop|sku|color` IDs unchanged. The encoding also safely handles malformed Unicode after JSON escaping. Added a persisted-favorites regression with the previously colliding tuple pair and an unpaired-surrogate case.
 - Code/test commits: `2312766`, `247f1fa`, `1860edc`. This changes the IDs of delimiter-bearing products saved by the earlier experimental implementation; existing saved entries remain stored, but matching/re-adding such products may create a second entry until a safe migration is designed. No silent migration or destructive rewriting was attempted.
 - Full CI for the new HEAD must be checked before reporting success. No real feeds, image rights, physical-store stock evidence, deployment, PR merge, or `main` modification.
+
+
+### 25 October 2026 — conservative migration of experimental saved-product IDs
+
+- Verified branch HEAD `9d82eef` before edits and confirmed [Actions #129](https://github.com/17Berk71/maxi-online/actions/runs/40130744660) **passed** for that exact SHA, including the configured Chromium smoke suite. This does not validate the changes below.
+- Earlier experimental builds used `tuple:` plus unencoded JSON for separator-bearing product identities. The later encoded format fixed collisions, but old favorites and photo looks would no longer match a re-added product. Added a small pure identity helper shared by snapshot creation and storage recovery.
+- Existing raw tuple IDs are upgraded **in memory only** when the JSON is canonical, contains a separator, and its store name matches the stored record. Ordinary pipe IDs and ambiguous/malformed records remain unchanged. No automatic storage rewrite occurs on read.
+- For v2 collections, if a migrated old ID would collide with a current ID, the existing loss-detection gate blocks writes and preserves the original raw storage instead of silently dropping either entry. The same recovery applies to named photo looks.
+- Added Node regressions for favorites re-add/reload, raw-byte preservation, mismatched store names, named looks and collision blocking. Included the new helper in CI syntax checks.
+- Code/test/CI commits: `1bb5503`, `5f8da60`, `944a142`, `9ab827a`, `77f4210`, `6e1d44f`. **The full CI/browser result for these new commits must be checked independently**; do not infer success from #129.
+- This is a conservative recovery of a short-lived experimental ID format, not a universal migration of arbitrary historical snapshots. No real catalogues, rights to original images, live inventory, merge, deployment, or main-branch changes were introduced.
