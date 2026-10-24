@@ -48,3 +48,14 @@ test('verification timestamps reject impossible dates and timezone ambiguity, wi
  assert.equal(catalogEvidence({},{updated:'2026-02-30'},NOW).importedAt,null);
  assert.equal(catalogEvidence({},{updated:'2026-10-21'},NOW).importedAt,'2026-10-21T00:00:00.000Z');
 });
+
+test('credential-bearing URLs are never exposed as product links, original images or stock sources',()=>{
+ for(const url of ['https://user:secret@partner.example/item','https://user@partner.example/item','http://:password@partner.example/item']){
+  assert.equal(safeHttpUrl(url),null);
+  const e=catalogEvidence({url,original_image_url:url},{},NOW);
+  assert.equal(e.sourceUrl,null);
+  assert.equal(e.originalImage,null);
+  assert.equal(inventoryEvidence({...valid,availability_source:url},NOW).status,AVAILABILITY.UNKNOWN);
+ }
+ assert.equal(safeHttpUrl('https://partner.example/item'),'https://partner.example/item');
+});
