@@ -41,7 +41,14 @@ export function openPhotoLook(){
   Object.assign(root.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#f8f8fa',overflowY:'auto',padding:'20px',color:'#222',fontFamily:'system-ui,sans-serif'});
   const previousFocus=document.activeElement;
   const dismiss=()=>{document.removeEventListener('keydown',handleEscape,true);root.remove();if(previousFocus?.isConnected)previousFocus.focus();};
-  const handleEscape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dismiss();}};
+  const handleEscape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dismiss();return;}
+    if(e.key==='Tab') {const controls=[...root.querySelectorAll('button,a[href]')].filter(x=>!x.disabled);
+      if(!controls.length)return;
+      const first=controls[0],last=controls[controls.length-1];
+      if(e.shiftKey&&(document.activeElement===first||!root.contains(document.activeElement))){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&(document.activeElement===last||!root.contains(document.activeElement))){e.preventDefault();first.focus();}
+    }
+  };
   document.addEventListener('keydown',handleEscape,true);
   const render=()=>{
     root.replaceChildren();
@@ -52,10 +59,10 @@ export function openPhotoLook(){
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
     for(const it of items){
       const card=document.createElement('article');Object.assign(card.style,{border:'1px solid #ddd',borderRadius:'12px',padding:'12px',background:'white'});
-      const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
+      const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';img.onerror=()=>{img.replaceWith(Object.assign(document.createElement('p'),{textContent:'Изображение недоступно. Откройте страницу товара.'}));};Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
       const title=document.createElement('h3');title.textContent=it.title;const shop=document.createElement('p');shop.textContent=it.shop;
       const controls=document.createElement('div');Object.assign(controls.style,{display:'flex',gap:'8px',flexWrap:'wrap'});
-      for(const [label,fn] of [['←',()=>movePhotoLook(it.id,-1)],['→',()=>movePhotoLook(it.id,1)],['Удалить',()=>removeFromPhotoLook(it.id)]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{fn();render();};controls.append(b);}
+      for(const [label,fn] of [['←',()=>movePhotoLook(it.id,-1)],['→',()=>movePhotoLook(it.id,1)],['Удалить',()=>removeFromPhotoLook(it.id)]]){const b=document.createElement('button');b.textContent=label;b.setAttribute('aria-label',label==='←'?'Переместить «'+it.title+'» влево':label==='→'?'Переместить «'+it.title+'» вправо':'Удалить «'+it.title+'»');b.onclick=()=>{if(fn()===false)return;render();root.querySelector('[data-close-photo-look]')?.focus();};controls.append(b);}
       card.append(img,title,shop,controls);
       if(it.sourceUrl){const link=document.createElement('a');link.href=it.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';card.append(link);}
       grid.append(card);
