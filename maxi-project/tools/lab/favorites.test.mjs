@@ -77,7 +77,7 @@ test('encoded tuple identities cannot collide with ordinary legacy pipe IDs',()=
  assert.equal(f.favorites.has(plainProduct,plainShop),true);
  assert.equal(createFavorites(f.storage).remove(items[0].id),true);
  assert.deepEqual(createFavorites(f.storage).items().map(x=>x.title),['Plain item']);
- const malformed={name:'Bad\\uD800|Shop'};
+ const malformed={name:'Bad'+String.fromCharCode(0xD800)+'|Shop'};
  assert.equal(f.favorites.add({id:'X',name:'Malformed Unicode'},malformed,null),true);
  assert.equal(f.favorites.has({id:'X'},malformed),true);
 });
