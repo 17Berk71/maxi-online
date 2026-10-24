@@ -34,6 +34,11 @@ export function createLookStore(storage, {now=()=>new Date().toISOString(),newId
         typeof x.name==='string' && typeof x.createdAt==='string' && Number.isFinite(Date.parse(x.createdAt)) &&
         Array.isArray(x.items) && !ids.has(x.id) && ids.add(x.id)).slice(0,MAX_LOOKS)
         .map(x=>({id:x.id,name:x.name.slice(0,80),createdAt:x.createdAt,items:normalizeItems(x.items,maxItems,allowMissingImages)}))};
+      // Never overwrite a partly recovered v2 snapshot: dropped entries, duplicate IDs or
+      // truncated collections must remain recoverable from the untouched raw storage.
+      if(state.draft.length!==data.draft.length||state.looks.length!==data.looks.length||
+        state.looks.some((look,i)=>look.items.length!==data.looks[i].items.length))
+        throw Error('Stored collection would lose entries during normalization');
     }else{
       const legacy=JSON.parse((legacyKey?storage.getItem(legacyKey):null)||'[]');
       if(!Array.isArray(legacy))throw Error('Invalid legacy storage');
