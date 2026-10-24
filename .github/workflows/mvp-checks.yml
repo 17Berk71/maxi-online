@@ -14,6 +14,7 @@ on:
       - 'maxi-project/src/style.css'
       - 'maxi-project/src/shop/quick-catalog.js'
       - 'maxi-project/src/shop/catalog-feed.js'
+      - 'maxi-project/tools/lab/feeds-3d.test.mjs'
       - 'maxi-project/src/shop/catalog-page.js'
       - 'maxi-project/tools/lab/catalog-page.test.mjs'
       - 'maxi-project/src/shop/catalog.js'
@@ -81,6 +82,7 @@ jobs:
           node --check src/main.js
           node --check src/shop/quick-catalog.js
           node --check src/shop/catalog-feed.js
+          node --check src/shop/feeds.js
           node --check src/shop/catalog-page.js
           node --check src/shop/favorites.js
           node --check src/shop/product-snapshot.js
@@ -94,7 +96,7 @@ jobs:
           python3 -m py_compile tools/feeds/import_feed.py
           python3 -m unittest discover -s tools/feeds -p test_pricing.py
       - name: Evidence policy tests
-        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs tools/lab/favorites.test.mjs tools/lab/catalog-workspace.test.mjs tools/lab/catalog-page.test.mjs tools/lab/inventory-watch.test.mjs
+        run: node --test tools/lab/catalog-evidence.test.mjs tools/lab/photo-looks.test.mjs tools/lab/catalog-feed.test.mjs tools/lab/catalog-release.test.mjs tools/lab/favorites.test.mjs tools/lab/catalog-workspace.test.mjs tools/lab/catalog-page.test.mjs tools/lab/inventory-watch.test.mjs tools/lab/feeds-3d.test.mjs
       - name: Audit bundled demonstration catalogue
         run: node tools/feeds/audit-catalog.mjs
       - name: Production build

@@ -30,3 +30,17 @@ test('a hidden department never exposes its products in either catalogue adapter
  assert.deepEqual(visibleDepartments(feed).map(d=>d.key),['visible']);
  assert.equal(feed.depts[0].items[0],concealed,'source records are not mutated');
 });
+
+test('hidden or malformed duplicates cannot suppress a valid later product in either view',()=>{
+ const hidden={id:'same',name:'Hidden',hidden:true};
+ const valid={id:'same',name:'Visible',pic:'img/visible.webp'};
+ const feed={demo:true,depts:[
+  {key:'concealed',hidden:true,items:[{id:'private',name:'Private'}]},
+  {key:'first',items:[hidden,{id:'',name:'Empty ID'},{id:'bad',name:' '}]},
+  {key:'second',items:[valid,{...valid,name:'Duplicate'},null,{id:'last',name:'Last'}]},
+ ]};
+ assert.deepEqual(catalogueProducts(feed).map(p=>p.name),['Visible','Last']);
+ assert.deepEqual(visibleDepartments(feed).map(d=>[d.key,...d.items.map(p=>p.name)]),[['second','Visible','Last']]);
+ assert.equal(feed.depts[1].items[0],hidden,'normalization must not mutate source data');
+ assert.equal(feed.depts[2].items.length,4);
+});
