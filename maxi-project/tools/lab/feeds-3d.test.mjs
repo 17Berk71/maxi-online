@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {feedCatalog,feedIndexReady,loadFeed,winKeys} from '../../src/shop/feeds.js';
+import {feedCatalog,feedIndexReady,feedPhotoKey,loadFeed,winKeys} from '../../src/shop/feeds.js';
 
 const DEPT={generic:{icon:'box',model:'box',lay:'wall'}};
 test('3D feed catalogue rejects unsafe preview/fit paths and matches normalized visible items',()=>{
@@ -52,4 +52,15 @@ test('3D feed product links, original photos and prices obey the same evidence p
  const [demo]=feedCatalog({_feed:{...feed,demo:true}},DEPT)[0].items;
  assert.equal(demo.url,null,'demo products never expose outbound purchase links');
  assert.equal(source.source_url,'https://user:secret@merchant.example/item','source data stays untouched');
+});
+
+test('3D feed photo IDs are isolated per shop even when product IDs overlap',()=>{
+ const feed={demo:true,depts:[{key:'tops',type:'generic',items:[{id:'sku-1',name:'Test top',pic:'img/top.webp',cut:true}]}]};
+ const first=feedCatalog({name:'Store A',_feed:feed},DEPT)[0].items[0];
+ const second=feedCatalog({name:'Store B',_feed:feed},DEPT)[0].items[0];
+ assert.equal(first.photo,feedPhotoKey('Store A','sku-1'));
+ assert.equal(second.photo,feedPhotoKey('Store B','sku-1'));
+ assert.notEqual(first.photo,second.photo,'one shop must not overwrite another shop photo');
+ assert.equal(first.pic,second.pic,'the preview URL remains unchanged');
+ assert.notEqual(feedPhotoKey('A:B','C'),feedPhotoKey('A','B:C'),'punctuation must not cause collisions');
 });
