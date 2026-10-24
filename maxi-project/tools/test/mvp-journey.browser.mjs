@@ -26,8 +26,11 @@ try{
     await T.loadFeed(s);T.setFloor(s.floor);T.enterShop(s);
    },name);
    assert.equal(await page.evaluate(()=>window.__maxi.mode),'store');
-   await page.locator('#shopCat').click();
-   await page.locator('#shop .sh-card').first().click();
+   // This fixture validates the store UI handlers, not pointer hit-testing in slow software WebGL.
+   // Dispatch the same button events without waiting for a compositor acknowledgement;
+   // pedestrian input and real entry/exit remain covered by mall-navigation.browser.mjs.
+   await page.locator('#shopCat').dispatchEvent('click');
+   await page.locator('#shop .sh-card').first().dispatchEvent('click');
    assert.equal(await page.locator('#shop .sh-name').textContent(),name==='Ostin'?'Тестовые брюки':'Тестовая куртка');
    assert.equal(await page.getByText('Наличие именно в ТРЦ «Макси» не подтверждено.',{exact:false}).count()>0,true);
    assert.equal(await page.locator('#shop .pv-photo').getAttribute('src'),'http://127.0.0.1:5173/tools/test/fixtures/product.svg');
