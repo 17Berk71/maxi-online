@@ -130,3 +130,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Quick catalogue recomputes evidence from raw fields instead of trusting a cached evidence snapshot. Status text updates in place, preserving card nodes and focus; expired online proof still never becomes local stock.
 - Actual product viewer updates its live stock text and hides the physical-pickup action when its proof expires. If that action had focus, focus moves to the ordinary merchant link. Returning to the catalogue also stops the prior product viewer and stock observer.
 - Local verification: 50 Node tests and build passed. New 390px/1280px browser checks cover natural timer expiry for in/out stock, background-tab clock advance, online/local separation, source-image preservation, pickup removal, focus preservation and saving after expiry. All proof URLs and timestamps in this test are synthetic fixtures; no live inventory is asserted.
+
+### Data-loss prevention and URL hygiene — 24 October 2026
+
+- Continued from the actual remote PR #18 HEAD; changes remain isolated to `codex/mvp-prd-architecture`.
+- `4098296` and `20bb624`: draft writes now refuse duplicate, invalid or over-limit entries instead of returning success after silently dropping products. Node regression checks unchanged persisted bytes and an intact draft after failed writes.
+- `1cf0139` and `78a15d5`: saving a named look now rejects generated ID collisions and invalid timestamps rather than persisting a collection that becomes read-only on reload. Node regressions check atomic refusal and valid retry.
+- `7b0107c` and `f5e2553`: shared HTTP(S) URL validation rejects embedded usernames/passwords in merchant links, source-image URLs and stock-evidence links. Tests ensure credential-bearing stock sources cannot confirm availability.
+- Verification: CI for the final code checkpoint `f5e2553` must finish before this batch is marked passed. Earlier successful CI does not certify these new commits.
+- No real merchant feed, image licence, local inventory confirmation, deployment or merge has been added.
