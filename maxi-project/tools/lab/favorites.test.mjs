@@ -37,3 +37,24 @@ test('ambiguous demo flags in product and evidence never expose merchant URLs',(
  assert.equal(f.favorites.add({...product,id:'6',demo:false,evidence:{demo:false}},shop,null),true);
  assert.equal(createFavorites(f.storage).items().at(-1).sourceUrl,product.url);
 });
+
+test('saved product identity distinguishes delimiter-bearing store names and SKUs without changing ordinary IDs',()=>{
+ const f=setup();
+ const a={name:'Store|North'},b={name:'Store'},c={name:'Store|North|Item'};
+ const first={id:'Item',name:'Jacket'},second={id:'North|Item',name:'Jeans'},third={id:'X',name:'Shirt'};
+ assert.equal(f.favorites.add(first,a,null),true);
+ assert.equal(f.favorites.add(second,b,null),true);
+ assert.equal(f.favorites.add(third,c,null),true);
+ const items=createFavorites(f.storage).items();
+ assert.equal(items.length,3);
+ assert.equal(new Set(items.map(x=>x.id)).size,3,'different store/SKU tuples cannot overwrite each other');
+ assert.deepEqual(items.map(x=>x.title),['Jacket','Jeans','Shirt']);
+ assert.equal(f.favorites.has(first,a),true);
+ assert.equal(f.favorites.has(second,b),true);
+ assert.equal(f.favorites.has(third,c),true);
+ assert.equal(f.favorites.add({id:'simple',name:'Plain'},{name:'Store'},null),true);
+ assert.equal(f.favorites.items().at(-1).id,'Store|simple|','legacy identity stays stable for ordinary products');
+ const restored=createFavorites(f.storage);
+ assert.equal(restored.remove(items[0].id),true);
+ assert.deepEqual(createFavorites(f.storage).items().map(x=>x.title),['Jeans','Shirt','Plain']);
+});
