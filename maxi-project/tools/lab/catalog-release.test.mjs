@@ -92,3 +92,17 @@ test('a real-pilot catalogue cannot count demo-labelled products as verified ass
  f.feeds['a.json'].depts[0].items[0].demo='true';
  assert(auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true}).issues.some(x=>x.code==='demo_product_in_real_catalogue'));
 });
+
+test('publication audit excludes truthy hidden departments and products',()=>{
+ const f=fixture();
+ f.feeds['a.json'].depts.unshift({hidden:'true',items:[{id:'private',name:'Private',price:-10}]});
+ f.feeds['a.json'].depts[1].items.push({id:'also-private',name:'Private',hidden:'true',price:-10});
+ const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert.equal(report.technicalGatePassed,true);
+ assert.equal(report.stores.find(s=>s.name==='A').products,1);
+ assert(!report.issues.some(x=>x.item==='private'||x.item==='also-private'));
+ f.feeds['a.json'].depts[1].hidden=1;
+ const withdrawn=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert(withdrawn.issues.some(x=>x.code==='empty_catalogue'&&x.store==='A'));
+ assert(withdrawn.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
+});
