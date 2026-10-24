@@ -315,3 +315,7 @@ html.calm *,html.calm *::before,html.calm *::after{transition:none!important;ani
 }
 .fit-states{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px}
 .fit-states small{font-size:12px;color:var(--muted);font-weight:700;margin-right:2px}
+
+/* Keep quick catalogue reachable without crowding the mall toolbar. */
+#quickCatalogLink{position:fixed;left:16px;top:110px;pointer-events:auto;min-height:44px;display:flex;align-items:center}
+@media(max-width:720px){#quickCatalogLink{left:10px;top:108px}}

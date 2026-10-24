@@ -1,0 +1,17 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {catalogueProducts,feedPath} from '../../src/shop/catalog-feed.js';
+test('feed resources remain relative to the catalogue directory',()=>{
+ assert.equal(feedPath('store.json'),'feeds/store.json');assert.equal(feedPath('img/a.webp'),'feeds/img/a.webp');
+ for(const path of ['https://evil.test/f.json','//evil.test/a','../private.json','/x','a\\b','x?y','%2e%2e/x'])assert.equal(feedPath(path),null,path);
+});
+test('feed normalization rejects hidden, malformed and duplicate products without inventing prices or originals',()=>{
+ const p={id:'1',name:'Test',pic:'img/1.webp',url:'https://example.org/1'};
+ const products=catalogueProducts({depts:[{title:'Test',items:[p,p,{...p,id:'hidden',hidden:true},{...p,id:'2',price:'999'},null]}]});
+ assert.equal(products.length,2);assert.equal(products[0].price,null);assert.equal(products[1].price,null);assert.equal(products[0].image,null);
+});
+test('demo links are suppressed; real originals are distinct from processed previews',()=>{
+ const p={id:'1',name:'Test',pic:'img/1.webp',url:'https://example.org/1',original_image_url:'https://example.org/original.jpg'};
+ const feed={depts:[{items:[p]}]};const real=catalogueProducts(feed)[0];assert.equal(real.image,p.original_image_url);assert.equal(real.url,p.url);
+ const demo=catalogueProducts({...feed,demo:true})[0];assert.equal(demo.url,null);assert.equal(demo.evidence.availability.status,'unknown');
+ assert.equal(catalogueProducts({demo:true,depts:[{items:[{...p,original_image_url:null}]}]})[0].image,'feeds/img/1.webp');
+});

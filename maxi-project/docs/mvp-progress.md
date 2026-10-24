@@ -35,3 +35,11 @@ Implemented against FR-LOOK-001/002, FR-SAVE-002 and NFR-001/003/006:
 - Actual application-entry browser journey added: two store scenes/catalogues -> product -> source-image board -> named save -> page reload -> restore -> new merchant tab. Debug API positions the visitor; UI performs catalogue/product/save actions. Feeds and merchant responses are intercepted synthetic fixtures, **not live stores or verified partnerships**. This does not validate physical walking, all store categories, full WebGL fallback, all devices or actual feed rights.
 
 Verification results and screenshot notes are recorded in `docs/review-2026-10-24/README.md`.
+
+### WebGL-independent catalogue
+
+- Named-look batch published as `3a1ab08`; GitHub Actions #36 **passed**, including integrated desktop/mobile journeys: https://github.com/17Berk71/maxi-online/actions/runs/40076888917
+- `?catalog=1` opens a lightweight feed-based catalogue without importing `app.js`. The same catalogue opens automatically when WebGL is unavailable or asynchronous 3D initialization fails. Existing 3D launch remains the default.
+- Catalogue fetch failures expose retry and store-back controls. Unknown prices stay unknown; demo URLs stay suppressed; processed previews cannot become real original photos. Bad feed paths and hidden/duplicate products are rejected.
+- Found and fixed an inherited integration error: importer preview paths such as `feeds/img/example.webp` were rejected by the photo board. Safe relative paths now work without weakening scheme/backslash/traversal rejection.
+- Local checks: 17 Node tests passed; quick catalogue six browser cases passed (390px/1280px × direct/WebGL unavailable/async 3D failure); production build passed. Full integrated mall regression also passed at 390px and 1280px after the lazy-launch changes.

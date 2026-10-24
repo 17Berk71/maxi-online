@@ -17,3 +17,9 @@ Checks performed locally:
 - Integrated journey: passing at 390px (touch/mobile emulation) and 1280px, including actual store scenes/catalogues, named save/reload/restore and an intercepted merchant popup.
 
 Local Chromium: 153.0.8010.0, headless; 3D integration uses SwiftShader. These are browser checks, not a physical-device or performance certification. CI status is reported separately after publishing the branch commit.
+
+## Catalogue fallback
+
+[390px screenshot](catalog-390.png) · [1280px screenshot](catalog-1280.png)
+
+Synthetic browser fixture with WebGL explicitly unavailable. The normal route, quick route and asynchronous startup rejection are tested separately. Index and store feed requests each fail once, then recover through the visible retry controls. A demo item is added and named-saved without 3D; unknown prices and stock are labelled, fabricated merchant links are absent. No app module is requested on direct quick/WebGL-unavailable paths.

@@ -58,6 +58,8 @@ test('public board API preserves reorder semantics and refuses overflow without 
  assert.equal(mod.photoLookItems()[0].title,'Item 2');
  const snapshot=mod.photoLookItems();snapshot[0].title='mutated';assert.equal(mod.photoLookItems()[0].title,'Item 2');
  for(let n=3;n<=24;n++)assert.equal(add(n),true);
+ assert.equal(mod.addToPhotoLook({id:'1',name:'Item 1'},{name:'Shop'},'feeds/img/1.webp'),true);
+ assert.equal(mod.photoLookItems().at(-1).image,'feeds/img/1.webp');
  assert.equal(add(25),false);assert.equal(mod.photoLookItems().length,24);assert.equal(mod.photoLookItems()[0].title,'Item 2');
  assert.equal(mod.addToPhotoLook({id:'bad'},{name:'Shop'},'javascript:alert(1)'),false);
 });

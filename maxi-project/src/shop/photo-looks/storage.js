@@ -4,7 +4,13 @@ export const LEGACY_KEY='maxi-photo-looks-v1';
 export const STORAGE_KEY='maxi-photo-looks-v2';
 export const MAX_ITEMS=24, MAX_LOOKS=30;
 export function imageUrl(input){
-  return typeof input==='string' && input.startsWith('/') && !input.startsWith('//') && !/[\\\s\u0000-\u001f]/.test(input) ? input : safeHttpUrl(input);
+  if(typeof input!=='string')return null;
+  if(!/[\\\s\u0000-\u001f]/.test(input)){
+    if(input.startsWith('/')&&!input.startsWith('//'))return input;
+    // Imported previews are relative to the app root (including subdirectory deployments).
+    if(/^[a-zA-Z0-9][a-zA-Z0-9_./-]*$/.test(input)&&!input.split('/').some(x=>x==='..'||x==='.'))return input;
+  }
+  return safeHttpUrl(input);
 }
 function normalizeItems(input){
   if(!Array.isArray(input))return [];

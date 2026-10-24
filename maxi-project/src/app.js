@@ -86,5 +86,5 @@ export function startApp(_D, _D2) {
   init_render_style_apply();
   init_core_debug();
   document.getElementById('bPhotoLooks').onclick=()=>{releaseLock();openPhotoLook();};
-  init_core_launch();
+  return init_core_launch();
 }
