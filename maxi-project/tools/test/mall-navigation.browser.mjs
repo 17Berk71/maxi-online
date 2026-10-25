@@ -34,7 +34,17 @@ try{
     // sprint control for the second door, not debug-position writes or direct enterShop.
     const sprint=name==='Синема Парк';
     if(sprint)await page.keyboard.down('Shift');
-    await page.keyboard.down('w');try{await page.waitForFunction(()=>window.__maxi.mode==='store',null,{timeout:60000,polling:100});}catch(error){console.log('Navigation failure',name,await page.evaluate(()=>({mode:window.__maxi.mode,floor:window.__maxi.floor,player:window.__maxi.player,keys:window.__maxi.keys,anim:window.__maxi.anim})));throw error;}finally{await page.keyboard.up('w');if(sprint)await page.keyboard.up('Shift');}
+    await page.keyboard.down('w');
+    try{
+     await page.waitForFunction(()=>window.__maxi.mode==='store',null,{timeout:60000,polling:100});
+    }catch(error){
+     // Under SwiftShader, page scripts can be starved until the timeout fires.
+     // CI #212 timed out while the debug snapshot already showed mode='store'.
+     // Recheck actual application state; never turn a genuine failed entry green.
+     const snapshot=await page.evaluate(()=>({mode:window.__maxi.mode,floor:window.__maxi.floor,player:window.__maxi.player,keys:window.__maxi.keys,anim:window.__maxi.anim}));
+     if(snapshot.mode!=='store'){console.error('Navigation failure',name,snapshot);throw error;}
+     console.warn('Store entry confirmed on timeout recheck:',name);
+    }finally{await page.keyboard.up('w');if(sprint)await page.keyboard.up('Shift');}
    }
    const entered=await page.locator('#shopHudName').textContent();
    assert.equal(entered.startsWith(name),true,`Expected ${name}, got ${entered}`);
