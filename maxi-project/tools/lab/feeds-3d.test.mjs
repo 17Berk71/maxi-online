@@ -31,8 +31,10 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
   if(url==='feeds/index.json')return {ok:true,json:async()=>({shops:{
    Fixture:{file:'../private.json',win:[{pic:'../private.webp'},{pic:'img/safe.webp'}]},
    Hidden:{file:'hidden.json',hidden:'true',win:[{pic:'img/hidden.webp'}]},
+   Broken:{file:'broken.json'},
    'Store A':{file:'a.json'},'Store B':{file:'b.json'}
   }})};
+  if(url==='feeds/broken.json')return {ok:false,status:503};
   if(url==='feeds/a.json'||url==='feeds/b.json')return {ok:true,json:async()=>({demo:true,depts:[{key:'tops',type:'generic',items:[{
    id:'same-sku',name:'Synthetic top',pic:url==='feeds/a.json'?'img/a.webp':'img/b.webp',cut:true
   }]}]})};
@@ -46,13 +48,18 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
   assert.equal(await loadFeed(store),false);
   const hiddenStore={name:'Hidden',id:123,cat:'wear'};
   assert.equal(await loadFeed(hiddenStore),false,'hidden index stores must not request their feed');
-  assert.equal(hiddenStore._catalogueHidden,true);
+  assert.equal(hiddenStore._catalogueUnavailable,true);
   assert.deepEqual(catalogOf(hiddenStore),[],'a hidden feed must not be replaced with generated legacy demo products');
+  assert.deepEqual(catalogOf(store),[],'an unsafe index feed must not be replaced with generated demo products');
+  const broken={name:'Broken',id:125,cat:'wear'};
+  assert.equal(await loadFeed(broken),false);
+  assert.equal(broken._catalogueUnavailable,true);
+  assert.deepEqual(catalogOf(broken),[],'failed configured feeds must not silently show synthetic goods');
   assert.equal(await loadFeed({name:'Store A'}),true);
   assert.equal(await loadFeed({name:'Store B'}),true);
   assert.equal(PHOTOS[feedPhotoKey('Store A','same-sku')].url,'feeds/img/a.webp');
   assert.equal(PHOTOS[feedPhotoKey('Store B','same-sku')].url,'feeds/img/b.webp');
-  assert.deepEqual(requests,['feeds/index.json','feeds/a.json','feeds/b.json']);
+  assert.deepEqual(requests,['feeds/index.json','feeds/broken.json','feeds/a.json','feeds/b.json']);
  }finally{globalThis.fetch=original;}
 });
 
