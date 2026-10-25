@@ -103,7 +103,7 @@ export function renderProduct(p,onMan,size){stopInventory();stopInventory=()=>{}
   now.onclick=()=>{if(!put())return;closeShopPanel(false);openCart(true);};
   buy.append(add,now);w.appendChild(buy);}
  // MVP: source-photo board, separate from physical fitting.
- const boardImage = evidence?.originalImage || (evidence?.demo ? photo : null);
+ const boardImage = evidence?.demo ? photo : evidence?.originalImage;
  if(p.feed){
   const favorite=el_('button','btn','Сохранить товар в избранное'),favoriteStatus=el_('p','sh-note');favoriteStatus.setAttribute('role','status');
   favorite.onclick=()=>{if(favorites.add(p,s,boardImage)){favorite.textContent='Сохранено в избранное ✓';favoriteStatus.textContent='Товар сохранён в этом браузере. Избранное доступно в «Мои фотообразы».';}else favoriteStatus.textContent=favorites.message();};
