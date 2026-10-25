@@ -319,3 +319,5 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regression coverage for HTTP failure, invalid JSON, absent/array `shops` and valid empty index; extended the 390px/1280px Chromium visibility test to open a store during an index HTTP 503 and verify its catalogue remains empty.
 - Implementation commits: `5ef5c90`, `c446611`, `1a102d1`. CI for the newest HEAD must be checked before claiming browser success. A 3D index failure still requires a page reload to retry; a retry UI is not implemented.
 - No real catalogue, image licence or stock proof was introduced. No changes to `main`, PR merge or deployment.
+
+- Follow-up: the WebGL-independent quick catalogue also treats an absent/malformed `index.shops` (including an array) as a recoverable loading error rather than claiming that no catalogues exist. The visible retry action is preserved; the existing 390px/1280px browser fixture now exercises HTTP 503 → malformed index → successful retry. Commits: `2c09778`, `acb75f3`. Recheck CI for the latest code HEAD.
