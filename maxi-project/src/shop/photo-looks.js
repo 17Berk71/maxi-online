@@ -135,6 +135,10 @@ export function openPhotoLook(){
     if(focusId){
       const target=[...root.querySelectorAll('button')].find(b=>b.dataset.photoLookId===focusId&&b.dataset.photoLookAction===focusAction&&!b.disabled);
       (target||root.querySelector('[data-close-photo-look]'))?.focus();
+    }else if(focusAction==='remove'){
+      // Removing the last draft item destroys the focused button. Keep keyboard
+      // focus inside the dialog instead of dropping it onto the inert page.
+      root.querySelector('[data-close-photo-look]')?.focus();
     }
   };
 
