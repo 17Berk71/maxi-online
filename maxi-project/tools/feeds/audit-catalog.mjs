@@ -29,7 +29,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   }
   const ids=new Set();
   for(const product of products){
-   if(!product||typeof product.id!=='string'||!product.id||typeof product.name!=='string'||!product.name.trim()){report('product_identity_missing',name,product?.id);continue;}
+   if(!product||typeof product.id!=='string'||!product.id.trim()||typeof product.name!=='string'||!product.name.trim()){report('product_identity_missing',name,product?.id);continue;}
    if(ids.has(product.id))report('duplicate_product_id',name,product.id);ids.add(product.id);
    if(product.price!==null&&product.price!==undefined&&(typeof product.price!=='number'||!Number.isFinite(product.price)||product.price<0))report('invalid_price',name,product.id);
    if(demo)continue;
