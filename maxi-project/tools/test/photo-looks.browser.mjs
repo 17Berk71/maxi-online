@@ -30,8 +30,13 @@ try {
     assert.equal(await page.getByText('Изображение недоступно. Откройте страницу товара.').count(),1);
     await page.locator('#maxi-photo-look article img').first().evaluate(img=>img.dispatchEvent(new Event('error')));
     assert.equal(await page.getByText('Изображение недоступно. Ссылка на товар не подтверждена.').count(),1);
+    // The status node must remain in the DOM so assistive technology can
+    // observe text updates rather than newly inserted, pre-filled live regions.
+    await page.evaluate(()=>{window.__photoStatusNode=document.querySelector('#maxi-photo-look [role="status"]');});
     // Reordering keeps focus on the moved item's available control.
     await page.getByRole('button',{name:'Переместить «Jacket» вправо'}).click();
+    assert.equal(await page.evaluate(()=>window.__photoStatusNode===document.querySelector('#maxi-photo-look [role="status"]')),true,
+      'reordering must update the existing live status node');
     assert.equal(await page.locator('#maxi-photo-look article h3').first().textContent(),'Trousers');
     assert.equal(await page.getByRole('button',{name:'Переместить «Jacket» влево'}).evaluate(e=>e===document.activeElement),true);
     assert.equal(await page.getByRole('status').textContent(),'Порядок товаров изменён.');
@@ -48,6 +53,8 @@ try {
     await page.getByRole('button',{name:'Удалить «Trousers»'}).click();
     assert.equal(await page.getByRole('button',{name:'Удалить «Jacket»'}).evaluate(e=>e===document.activeElement),true);
     assert.equal(await page.getByRole('status').textContent(),'Товар удалён из образа.');
+    assert.equal(await page.evaluate(()=>window.__photoStatusNode===document.querySelector('#maxi-photo-look [role="status"]')),true,
+      'removing a product must preserve the mounted live status node');
 
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v2')).draft.length),1);
