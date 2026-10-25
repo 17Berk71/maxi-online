@@ -80,13 +80,22 @@ export function openPhotoLook(){
     const saved=document.createElement('section');saved.setAttribute('aria-label','Сохранённые образы');
     const heading=document.createElement('h3');heading.textContent='Сохранённые образы';saved.append(heading);
     const privacy=document.createElement('p');privacy.textContent='Хранятся только в этом браузере. Очистка данных браузера удалит образы. Это снимки каталога: товары, фото и ссылки могли измениться; проверьте актуальность у продавца.';saved.append(privacy);
-    for(const look of store.looks()){
+    const savedLooks=store.looks();
+    for(const [lookIndex,look] of savedLooks.entries()){
       const row=document.createElement('div');row.className='photo-look-saved-row';
       const title=document.createElement('span');title.textContent=look.name+' · '+look.items.length+' шт. · '+new Date(look.createdAt).toLocaleDateString('ru-RU');
       const load=document.createElement('button');load.textContent='Открыть';load.setAttribute('aria-label','Открыть образ «'+look.name+'»');
       load.onclick=()=>{if(!loadPhotoLook(look.id)){status.textContent=store.message();return;}render(null,null,'Образ открыт. Текущая композиция заменена сохранённой.');root.querySelector('[data-close-photo-look]')?.focus();};
       const remove=document.createElement('button');remove.textContent='Удалить';remove.setAttribute('aria-label','Удалить сохранённый образ «'+look.name+'»');
-      remove.onclick=()=>{if(!deletePhotoLook(look.id)){status.textContent=store.message();return;}render(null,null,'Сохранённый образ удалён.');root.querySelector('#photo-look-name')?.focus();};
+      remove.dataset.savedLookId=look.id;
+      remove.onclick=()=>{
+        const neighbor=savedLooks[lookIndex+1]||savedLooks[lookIndex-1];
+        if(!deletePhotoLook(look.id)){status.textContent=store.message();return;}
+        render(null,null,'Сохранённый образ удалён.');
+        // Keep focus in the saved-look list when another entry remains.
+        const target=neighbor?[...root.querySelectorAll('button[data-saved-look-id]')].find(b=>b.dataset.savedLookId===neighbor.id):null;
+        (target||root.querySelector('#photo-look-name'))?.focus();
+      };
       row.append(title,load,remove);saved.append(row);
     }
     if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';body.append(empty);}
