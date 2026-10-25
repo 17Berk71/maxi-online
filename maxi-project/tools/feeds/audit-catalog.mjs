@@ -1,6 +1,6 @@
 // Offline publication gate. Validates evidence records, never authenticates contracts or live stock.
 import {catalogEvidence,AVAILABILITY,parseIsoTimestamp} from '../../src/shop/catalog-evidence.js';
-import {feedPath,isHidden} from '../../src/shop/catalog-feed.js';
+import {feedPath,isHidden,validFeedDocument} from '../../src/shop/catalog-feed.js';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -9,7 +9,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
  if(!index?.shops||typeof index.shops!=='object'||Array.isArray(index.shops))report('catalogue_index_invalid',null);
  for(const [name,entry] of Object.entries(index?.shops||{})){
   if(!entry||!feedPath(entry.file)){report('unsafe_feed_path',name);continue;}
-  const feed=feeds[entry.file];if(!feed||!Array.isArray(feed.depts)){report('feed_unreadable',name);continue;}
+  const feed=feeds[entry.file];if(!validFeedDocument(feed)){report('feed_unreadable',name);continue;}
   const status=feed.catalogue_status,active=status===undefined||status==='active';
   // Staged/unknown states are not publishable even with visible item flags.
   if(!active&&status!=='withdrawn')report('catalogue_status_invalid',name);
