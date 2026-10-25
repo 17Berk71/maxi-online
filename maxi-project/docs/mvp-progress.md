@@ -332,9 +332,14 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - [Actions #178](https://github.com/17Berk71/maxi-online/actions/runs/40166298521) was started for the code commit. Its final result must be verified separately; do not infer browser success from the earlier run.
 - No real catalogues, image rights, partnerships or local inventory were invented. The PR stays draft; no `main` update, merge or deployment.
 
-## Continuation — 25 October 2026: 3D feed retry (pending CI)
+## Continuation — 25 October 2026: 3D feed retry (CI verified)
 
 - Added an explicit, keyboard-accessible retry action when the 3D store's feed/index is unavailable. A cached failed index can now be re-fetched in the same browser session, without refreshing the entire mall.
 - On recovery, the active store room and catalogue panel are rebuilt together so product pick targets cannot remain stale. A genuinely empty feed remains empty; an explicitly unconfigured store can retain the labeled legacy demo mode. Failed or malformed configured feeds never receive invented fallback products.
 - A retried index clears derived storefront-photo registrations before replacing them, so withdrawn/hidden stores do not retain obsolete preview references. No real catalogue, image permissions, or stock evidence were added.
 - Added Node regressions for index recovery and an empty valid index, plus 390/1280px Chromium recovery to the existing visibility suite. CI outcome must be checked against the resulting commit; no local browser execution was available in this run.
+
+### CI confirmation — 25 October 2026
+
+- [MVP architecture checks #180](https://github.com/17Berk71/maxi-online/actions/runs/40170177832) completed successfully for code commit `4eb75d351e9a49c742b6f603f13ce4fb3a2c764f`: syntax, importer/Python, Node evidence regressions, demo-catalogue audit, production build and the configured Chromium smoke suite (including 390px and 1280px recovery) all passed.
+- This is a synthetic-fixture CI check, **not** validation of live merchant feeds, photo rights, physical-device performance or screen-reader behavior. The documentation-only follow-up does not change executable code.
