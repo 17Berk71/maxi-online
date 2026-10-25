@@ -1,6 +1,6 @@
 // NFR-006 / FR-MALL-005: a catalogue path that never imports the 3D application.
 import {cataloguePage} from './catalog-page.js';
-import {catalogueProducts,feedPath} from './catalog-feed.js';
+import {catalogueProducts,visibleStoreEntry} from './catalog-feed.js';
 import {addToPhotoLook,openPhotoLook,photoLookMessage} from './photo-looks.js';
 import {favorites} from './favorites.js';
 import {watchInventory,physicalStockText} from './inventory-watch.js';
@@ -45,7 +45,7 @@ export async function openQuickCatalog(reason=''){
   if(focusName)title.focus();
   try{
    const index=await read('feeds/index.json');if(token!==request)return;
-   const stores=Object.entries(index?.shops||{}).filter(([,entry])=>entry&&feedPath(entry.file));
+   const stores=Object.entries(index?.shops||{}).filter(([,entry])=>visibleStoreEntry(entry));
    status.textContent=stores.length?'Выберите магазин.':'Нет доступных каталогов.';
    for(const [name,entry] of stores){
     const button=el('button',name+(Boolean(index.demo)?' · демонстрация':''));button.className='quick-store';button.onclick=()=>showStore(name,entry,index);content.append(button);

@@ -17,7 +17,7 @@ export function auditCatalogue(index,feeds,manifest={}, {now=Date.now(),requireR
   const category=typeof approval?.category==='string'&&approval.category.trim()?approval.category.trim():null;
   const products=feed.depts.flatMap(d=>!isHidden(d)&&Array.isArray(d?.items)?d.items:[]).filter(p=>!isHidden(p));
   const hasDemoProducts=!demo&&products.some(p=>Boolean(p?.demo));
-  const summary={name,demo,category,products:active?products.length:0,containsDemoProducts:hasDemoProducts};stores.push(summary);
+  const summary={name,demo,category,hidden:isHidden(entry),products:active&&!isHidden(entry)?products.length:0,containsDemoProducts:hasDemoProducts};stores.push(summary);
   if(hasDemoProducts)report('demo_product_in_real_catalogue',name);
   if(!products.length&&feed.catalogue_status!=='withdrawn')report('empty_catalogue',name);
   if(products.length&&feed.catalogue_status==='withdrawn')report('withdrawn_catalogue_has_visible_products',name);

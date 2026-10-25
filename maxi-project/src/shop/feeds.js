@@ -1,7 +1,7 @@
 // Товары из выгрузок магазинов (готовит tools/feeds/import_feed.py → feeds/index.json и feeds/<магазин>.json).
 // Если выгрузки у магазина нет или файлы недоступны, остаётся демо-каталог из catalog.js.
 import {PHOTOS} from './photos.js';
-import {visibleDepartments,feedPath} from './catalog-feed.js';
+import {visibleDepartments,feedPath,visibleStoreEntry} from './catalog-feed.js';
 import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
@@ -16,6 +16,7 @@ function loadIndex() {
   if (!indexP) indexP = fetch(FEED_BASE + 'index.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : null).catch(() => null).then(idx => {
     // несколько вещей на магазин — для витрин в галерее (они собираются сразу при запуске)
     if (idx && idx.shops && typeof idx.shops === 'object') Object.entries(idx.shops).forEach(([name, e]) => {
+      if (!visibleStoreEntry(e)) return;
       WIN[name] = (Array.isArray(e?.win) ? e.win : []).flatMap((w, i) => {
         const path = feedPath(w?.pic);
         if (!path) return [];
@@ -36,7 +37,7 @@ export async function loadFeed(s) {
   if (s._feedP) return s._feedP;
   s._feedP = (async () => {
     const idx = await loadIndex(); const e = idx && idx.shops && idx.shops[s.name];
-    const path = feedPath(e?.file);
+    const path = visibleStoreEntry(e) ? feedPath(e.file) : null;
     if (!path) { s._feedTried = true; return false; }
     try {
       const r = await fetch(path, {cache: 'no-cache'}); if (!r.ok) throw new Error(r.status);

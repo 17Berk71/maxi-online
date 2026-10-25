@@ -29,6 +29,7 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
   requests.push(url);
   if(url==='feeds/index.json')return {ok:true,json:async()=>({shops:{
    Fixture:{file:'../private.json',win:[{pic:'../private.webp'},{pic:'img/safe.webp'}]},
+   Hidden:{file:'hidden.json',hidden:'true',win:[{pic:'img/hidden.webp'}]},
    'Store A':{file:'a.json'},'Store B':{file:'b.json'}
   }})};
   if(url==='feeds/a.json'||url==='feeds/b.json')return {ok:true,json:async()=>({demo:true,depts:[{key:'tops',type:'generic',items:[{
@@ -39,8 +40,10 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
  try{
   await feedIndexReady();
   assert.equal(winKeys('Fixture').length,1);
+  assert.equal(winKeys('Hidden').length,0,'a hidden index store must not register window photos');
   const store={name:'Fixture'};
   assert.equal(await loadFeed(store),false);
+  assert.equal(await loadFeed({name:'Hidden'}),false,'hidden index stores must not request their feed');
   assert.equal(await loadFeed({name:'Store A'}),true);
   assert.equal(await loadFeed({name:'Store B'}),true);
   assert.equal(PHOTOS[feedPhotoKey('Store A','same-sku')].url,'feeds/img/a.webp');

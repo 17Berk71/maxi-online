@@ -8,6 +8,9 @@ export function feedPath(input){
 // A hidden or malformed record must not reserve an ID ahead of a valid product.
 // Treat ambiguous truthy hide markers as hidden rather than accidentally publishing them.
 export const isHidden = record => Boolean(record?.hidden);
+// An index-level hidden store must not be advertised or fetched by either UI.
+// Treat ambiguous truthy flags as hidden, preserving legacy entries without a flag.
+export const visibleStoreEntry = entry => Boolean(entry && !isHidden(entry) && feedPath(entry.file));
 // A withdrawn feed is not publishable even if stale or malformed input still
 // contains unhidden items. This applies to both 3D and lightweight catalogues.
 export function visibleDepartments(feed){

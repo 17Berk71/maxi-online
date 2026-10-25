@@ -11,7 +11,7 @@ try{
   let brokenIndex=true,brokenFeed=true;
   // Index-only and feed-only truthy demo markers must both suppress merchant links.
   const indexDemo=fallback===true?false:'true',feedDemo=fallback===true?'true':false;
-  await page.route('**/feeds/index.json',r=>brokenIndex?r.fulfill({status:503,body:'unavailable'}):r.fulfill({json:{demo:indexDemo,shops:{'Тестовый магазин':{file:'test.json'},'Unsafe':{file:'../secret.json'}}}}));
+  await page.route('**/feeds/index.json',r=>brokenIndex?r.fulfill({status:503,body:'unavailable'}):r.fulfill({json:{demo:indexDemo,shops:{'Тестовый магазин':{file:'test.json'},'Unsafe':{file:'../secret.json'},'Hidden store':{file:'hidden.json',hidden:'true'}}}}));
   await page.route('**/feeds/img/test.svg',r=>r.fulfill({path:'tools/test/fixtures/product.svg',contentType:'image/svg+xml'}));
   await page.route('**/feeds/test.json',r=>brokenFeed?r.fulfill({status:503,body:'unavailable'}):r.fulfill({json:{demo:feedDemo,updated:'2026-10-24',depts:[{title:'Тестовые товары',items:[{id:'1',name:'Тестовый товар',pic:'img/test.svg',url:'https://example.org/fake',original_image_url:'https://images.example.org/unreviewed.jpg'},{id:'2',name:'Товар без исходного фото',price:null}]}]}}));
   await page.goto((process.env.MAXI_URL||'http://127.0.0.1:5173')+(fallback?'/':'/?catalog=1'),{waitUntil:'domcontentloaded'});
@@ -19,6 +19,7 @@ try{
   await root.getByRole('button',{name:'Повторить загрузку',exact:true}).waitFor();
   brokenIndex=false;await root.getByRole('button',{name:'Повторить загрузку',exact:true}).click();
   assert.equal(await root.getByRole('button',{name:'Unsafe',exact:false}).count(),0);
+  assert.equal(await root.getByRole('button',{name:'Hidden store',exact:false}).count(),0,'index-hidden stores must not appear in quick catalogue');
   await root.getByRole('button',{name:'Тестовый магазин'+(indexDemo?' · демонстрация':''),exact:true}).click();
   const retryFeed=root.getByRole('button',{name:'Повторить загрузку каталога',exact:true});await retryFeed.waitFor();
   assert.equal(await retryFeed.evaluate(e=>e===document.activeElement),true,'failed store load should focus retry');
@@ -47,6 +48,7 @@ try{
   await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
   await page.keyboard.press('Escape');
   assert.equal(requested.some(u=>u.includes('/src/app.js')),fallback==='startup');
+  assert.equal(requested.some(u=>u.includes('/feeds/hidden.json')),false,'hidden store feed must not be fetched');
   assert.equal(await root.evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
   await root.getByRole('button',{name:'Мои фотообразы',exact:true}).click();
   assert.equal(await page.locator('#maxi-photo-look').isVisible(),true);await page.keyboard.press('Escape');

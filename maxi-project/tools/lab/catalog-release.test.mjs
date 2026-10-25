@@ -120,3 +120,14 @@ test('publication audit rejects staged/unknown feed status and excludes it from 
  const active=fixture();active.feeds['a.json'].catalogue_status='active';
  assert.equal(auditCatalogue(active.index,active.feeds,active.manifest,{now,requireReal:true}).technicalGatePassed,true);
 });
+
+test('index-hidden stores never count toward the real multicategory pilot',()=>{
+ const f=fixture();f.index.shops.A.hidden='true';
+ const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert.equal(report.technicalGatePassed,false);
+ assert(report.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
+ assert.equal(report.stores.find(x=>x.name==='A').products,0);
+ assert.equal(report.stores.find(x=>x.name==='A').hidden,true);
+ const restored=fixture();restored.index.shops.A.hidden=false;
+ assert.equal(auditCatalogue(restored.index,restored.feeds,restored.manifest,{now,requireReal:true}).technicalGatePassed,true);
+});

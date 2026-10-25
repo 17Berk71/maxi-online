@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {catalogueProducts,feedPath,visibleDepartments} from '../../src/shop/catalog-feed.js';
+import {catalogueProducts,feedPath,visibleDepartments,visibleStoreEntry} from '../../src/shop/catalog-feed.js';
 test('feed resources remain relative to the catalogue directory',()=>{
  assert.equal(feedPath('store.json'),'feeds/store.json');assert.equal(feedPath('img/a.webp'),'feeds/img/a.webp');
  for(const path of ['https://evil.test/f.json','//evil.test/a','../private.json','/x','a\\b','x?y','%2e%2e/x'])assert.equal(feedPath(path),null,path);
@@ -79,4 +79,13 @@ test('only active or legacy-status feeds may expose products',()=>{
  assert.deepEqual(catalogueProducts(feed).map(p=>p.id),['sku'],'legacy feeds remain readable');
  assert.deepEqual(catalogueProducts({...feed,catalogue_status:'active'}).map(p=>p.id),['sku']);
  assert.equal(item.hidden,undefined,'status gate does not mutate raw items');
+});
+
+test('hidden index stores cannot be advertised or fetched, without changing legacy entries',()=>{
+ assert.equal(visibleStoreEntry({file:'store.json'}),true);
+ assert.equal(visibleStoreEntry({file:'store.json',hidden:false}),true);
+ for(const hidden of [true,'true','false',1,{}])
+  assert.equal(visibleStoreEntry({file:'store.json',hidden}),false,String(hidden));
+ for(const entry of [null,{},'store.json',{file:'../secret.json'},{file:'https://example.org/feed.json'}])
+  assert.equal(visibleStoreEntry(entry),false);
 });
