@@ -57,13 +57,18 @@ export function openPhotoLook(){
     }
   };
   document.addEventListener('keydown',handleEscape,true);
+  // Keep the live region mounted across edits. Replacing an already-populated
+  // status element can prevent screen readers from announcing the update.
+  const head=document.createElement('header');Object.assign(head.style,{display:'flex',justifyContent:'space-between',gap:'12px',alignItems:'center'});
+  const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.dataset.closePhotoLook='true';close.onclick=dismiss;head.append(h,close);
+  const note=document.createElement('p');note.textContent='Это сопоставление изображений из товарных каталогов, иногда обработанных для витрин. Не является примеркой: размеры, пропорции и посадка не прогнозируются.';
+  const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+  const body=document.createElement('div');
+  root.append(head,note,status,body);
   const render=(focusId=null,focusAction=null,notice='')=>{
     const items=store.items();
-    root.replaceChildren();
-    const head=document.createElement('header');Object.assign(head.style,{display:'flex',justifyContent:'space-between',gap:'12px',alignItems:'center'});
-    const h=document.createElement('h2');h.textContent='Мой образ · фотографии товаров';const close=document.createElement('button');close.textContent='Закрыть ×';close.dataset.closePhotoLook='true';close.onclick=dismiss;head.append(h,close);root.append(head);
-    const note=document.createElement('p');note.textContent='Это сопоставление изображений из товарных каталогов, иногда обработанных для витрин. Не является примеркой: размеры, пропорции и посадка не прогнозируются.';root.append(note);
-    const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent=notice||store.message();root.append(status);
+    body.replaceChildren();
+    status.textContent=notice||store.message();
     const saveForm=document.createElement('form');saveForm.className='photo-look-save';
     const label=document.createElement('label');label.textContent='Название образа';label.htmlFor='photo-look-name';
     const name=document.createElement('input');name.id='photo-look-name';name.maxLength=80;name.required=true;name.placeholder='Например, прогулка осенью';
@@ -71,7 +76,7 @@ export function openPhotoLook(){
     saveForm.append(label,name,save);saveForm.onsubmit=e=>{e.preventDefault();
       if(!savePhotoLook(name.value)){status.textContent=store.message();return;}
       render(null,null,'Образ сохранён в этом браузере.');root.querySelector('#photo-look-name')?.focus();
-    };root.append(saveForm);
+    };body.append(saveForm);
     const saved=document.createElement('section');saved.setAttribute('aria-label','Сохранённые образы');
     const heading=document.createElement('h3');heading.textContent='Сохранённые образы';saved.append(heading);
     const privacy=document.createElement('p');privacy.textContent='Хранятся только в этом браузере. Очистка данных браузера удалит образы. Это снимки каталога: товары, фото и ссылки могли измениться; проверьте актуальность у продавца.';saved.append(privacy);
@@ -84,7 +89,7 @@ export function openPhotoLook(){
       remove.onclick=()=>{if(!deletePhotoLook(look.id)){status.textContent=store.message();return;}render(null,null,'Сохранённый образ удалён.');root.querySelector('#photo-look-name')?.focus();};
       row.append(title,load,remove);saved.append(row);
     }
-    if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';root.append(empty);}
+    if(!items.length){const empty=document.createElement('p');empty.textContent='Добавь вещи из карточек разных магазинов.';body.append(empty);}
     const grid=document.createElement('div');Object.assign(grid.style,{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:'14px'});
     for(const [index,it] of items.entries()){
       const card=document.createElement('article');Object.assign(card.style,{border:'1px solid #ddd',borderRadius:'12px',padding:'12px',background:'white'});
@@ -131,7 +136,7 @@ export function openPhotoLook(){
       favoritesSection.append(row);
     }
     if(favorites.message()){const warning=document.createElement('p');warning.textContent=favorites.message();favoritesSection.append(warning);}
-    root.append(grid,saved,favoritesSection);
+    body.append(grid,saved,favoritesSection);
     if(focusId){
       const target=[...root.querySelectorAll('button')].find(b=>b.dataset.photoLookId===focusId&&b.dataset.photoLookAction===focusAction&&!b.disabled);
       (target||root.querySelector('[data-close-photo-look]'))?.focus();
