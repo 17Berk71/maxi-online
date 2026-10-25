@@ -129,7 +129,8 @@ export function openPhotoLook(){
     const favoritesSection=document.createElement('section');favoritesSection.setAttribute('aria-label','Избранные товары');
     const favoritesTitle=document.createElement('h3');favoritesTitle.textContent='Избранные товары';favoritesSection.append(favoritesTitle);
     const favoritesNote=document.createElement('p');favoritesNote.textContent='Сохранённые снимки товаров в этом браузере. Наличие, фото и ссылки могли измениться.';favoritesSection.append(favoritesNote);
-    for(const entry of favorites.items()){
+    const favoriteItems=favorites.items();
+    for(const [favoriteIndex,entry] of favoriteItems.entries()){
       const row=document.createElement('div');row.className='photo-look-saved-row';
       const title=document.createElement('span');title.textContent=entry.title+' · '+entry.shop+(entry.demo?' · демонстрация':'');row.append(title);
       const add=document.createElement('button');add.textContent='В образ';add.disabled=!entry.image;add.setAttribute('aria-label','Добавить «'+entry.title+'» из избранного в образ');
@@ -140,7 +141,16 @@ export function openPhotoLook(){
         render(null,null,'Товар из избранного добавлен в образ.');root.querySelector('[data-close-photo-look]')?.focus();
       };
       const remove=document.createElement('button');remove.textContent='Удалить';remove.setAttribute('aria-label','Удалить «'+entry.title+'» из избранного');
-      remove.onclick=()=>{if(!favorites.remove(entry.id)){status.textContent=favorites.message();return;}render(null,null,'Товар удалён из избранного.');root.querySelector('[data-close-photo-look]')?.focus();};
+      remove.dataset.favoriteId=entry.id;
+      remove.onclick=()=>{
+        const neighbor=favoriteItems[favoriteIndex+1]||favoriteItems[favoriteIndex-1];
+        if(!favorites.remove(entry.id)){status.textContent=favorites.message();return;}
+        render(null,null,'Товар удалён из избранного.');
+        // Prefer the next (or previous) favorite instead of jumping away from
+        // the list after the focused removal button disappears.
+        const target=neighbor?[...root.querySelectorAll('button[data-favorite-id]')].find(b=>b.dataset.favoriteId===neighbor.id):null;
+        (target||root.querySelector('[data-close-photo-look]'))?.focus();
+      };
       row.append(add,remove);
       if(!entry.image){const missing=document.createElement('span');missing.textContent='Исходное фото недоступно.';row.append(missing);}
       if(entry.sourceUrl){const link=document.createElement('a');link.href=entry.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';row.append(link);}
