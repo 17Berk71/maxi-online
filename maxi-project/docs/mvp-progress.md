@@ -283,3 +283,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Changed the 3D product viewer and its photo-board add action to follow the same demo-preview rule and label demo previews correctly. The source URL remains available in provenance metadata for review, not for automatic embedding.
 - Added Node regression assertions for demo/real image selection and a 390px/1280px Chromium quick-catalogue fixture with an intentionally unreviewed external original; the browser test checks the displayed local preview and that no request to the external image host occurs.
 - Baseline GitHub Actions run #142 on `ddeffe9` passed, including Chromium. New tests/changes were committed to the experimental PR #18 branch; latest CI must be checked at the branch HEAD before treating this batch as verified. No real feeds, rights approvals or physical stock evidence were added. No main changes, merge or deployment.
+
+### 25 October 2026 — withdrawn feed status is a hard visibility gate
+
+- Confirmed [Actions #149](https://github.com/17Berk71/maxi-online/actions/runs/40147955604) **passed** on baseline `d16221c`, including the configured Chromium checks at 390px and 1280px.
+- Found a catalogue-consistency gap: both `catalogueProducts` and the 3D `feedCatalog` relied on per-item/per-department `hidden` flags. A feed explicitly marked `catalogue_status: "withdrawn"` could still expose stale, unhidden items if a malformed or partially reverted feed was loaded.
+- Shared `visibleDepartments` now treats the feed-level withdrawn status as an overriding publication block, preserving the source data. Added Node regressions for both 3D and WebGL-independent catalogue adapters, including an active-feed control case.
+- Code/test commits: `5db4862`, `fc9d499`, `4ace77d`. New CI is [Actions #151](https://github.com/17Berk71/maxi-online/actions/runs/40151694546); its final result must be verified on the latest HEAD. This is an offline safety improvement, **not** a rights, merchant-connection or local-inventory approval.
+- No real feed/photo permissions were invented. No changes to `main`, no PR merge and no deployment.
