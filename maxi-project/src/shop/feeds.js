@@ -38,7 +38,9 @@ export async function loadFeed(s) {
   s._feedP = (async () => {
     const idx = await loadIndex(); const e = idx && idx.shops && idx.shops[s.name];
     // A configured but hidden, unsafe or unreachable feed must not fall back to generated demo goods.
-    if (e && !visibleStoreEntry(e)) { s._catalogueUnavailable = true; s._cat = null; s._feedTried = true; return false; }
+    if (idx?.shops && Object.hasOwn(idx.shops,s.name) && !visibleStoreEntry(e)) {
+      s._catalogueUnavailable = true; s._cat = null; s._feedTried = true; return false;
+    }
     const path = visibleStoreEntry(e) ? feedPath(e.file) : null;
     if (!path) { s._feedTried = true; return false; }
     s._catalogueUnavailable = true;
