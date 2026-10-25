@@ -1,7 +1,9 @@
 // Shared lightweight feed contract: no Three.js, photos, or mutable mall state.
+// Reject raw C0/DEL controls in feed-relative paths: URL parsers may encode or
+// normalize them differently from the filesystem, creating ambiguous resources.
 import {catalogEvidence} from './catalog-evidence.js';
 export function feedPath(input){
-  if(typeof input!=='string'||!input||/[\\%?#\s]/.test(input)||input.startsWith('/')||input.split('/').some(x=>x==='.'||x==='..')||/^[a-z]+:/i.test(input))return null;
+  if(typeof input!=='string'||!input||/[\\%?#\s\u0000-\u001f\u007f]/.test(input)||input.startsWith('/')||input.split('/').some(x=>x==='.'||x==='..')||/^[a-z]+:/i.test(input))return null;
   return 'feeds/'+input;
 }
 // One visibility/identity policy for the lightweight catalogue and the 3D shop.
