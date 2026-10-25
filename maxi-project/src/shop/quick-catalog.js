@@ -1,6 +1,6 @@
 // NFR-006 / FR-MALL-005: a catalogue path that never imports the 3D application.
 import {cataloguePage} from './catalog-page.js';
-import {catalogueProducts,visibleStoreEntry} from './catalog-feed.js';
+import {catalogueProducts,feedPath,visibleStoreEntry} from './catalog-feed.js';
 import {addToPhotoLook,openPhotoLook,photoLookMessage} from './photo-looks.js';
 import {favorites} from './favorites.js';
 import {watchInventory,physicalStockText} from './inventory-watch.js';
