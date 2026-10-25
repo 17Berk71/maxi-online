@@ -352,3 +352,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regressions for the shared validator, 3D fail-closed load and offline real-pilot publication gate. Extended the quick-catalogue Chromium retry fixture at 390px/1280px to exercise HTTP failure → malformed feed root → malformed department → successful retry.
 - Code/test commits: `9d4b7c9`, `bf25b32`, `ff475d2`, `5f6f7fa`, `278e8f4`, `efb0dc5`. [Actions #187](https://github.com/17Berk71/maxi-online/actions/runs/40174009761) was queued at report creation; its final result must be checked before claiming CI/browser success for this batch. Earlier intermediate runs were cancelled by the workflow concurrency policy, not accepted as passes.
 - No live catalogue, image licence, local stock proof, deployment, PR merge or `main` changes were introduced. Physical-device and screen-reader verification remain open.
+
+
+### 25 October 2026 — publication identity and feed-path control characters
+
+- Checked draft PR #18 at `cfce7b3` and confirmed [Actions #188](https://github.com/17Berk71/maxi-online/actions/runs/40174031459) passed the configured Node, importer, build and Chromium checks before editing.
+- Found a real publication/view mismatch: the offline catalogue audit accepted a product ID containing only whitespace, while `visibleDepartments` filtered the same product from both quick and 3D views. The audit now rejects whitespace-only SKUs with `product_identity_missing`, preventing a misleading approval. Added a real-pilot fixture regression that also asserts the UI adapter hides the SKU.
+- Hardened the shared `feedPath` relative-asset policy against raw C0 and DEL control characters. URL parsers can normalize these differently from filesystem paths; the shared 3D/quick path validator now rejects them before fetching. Added escaped-control regression inputs, preserving normal relative image/feed paths.
+- Commits: `41efbae` (audit), `b07bf95` (audit test), `2011536` (path guard), `0d40fee` and `2459434` (path regression). The latest code HEAD must pass its own GitHub Actions run before this batch is marked CI-verified; intermediate runs may be cancelled by the workflow concurrency policy.
+- These are offline input-integrity fixes, not real catalogue authorization, original-photo rights verification, live inventory proof or a physical-device/screen-reader audit. No `main` changes, PR merge or deployment.
