@@ -36,9 +36,11 @@ function frameBody(now){
   if(lockFailed&&mouse.in&&!coarse&&!ptrs.size&&panelsClosed()){const ox=(mouse.x/innerWidth-0.5)*2,oy=(mouse.y/innerHeight-0.5)*2;const dz=0.18;
    const ax=Math.abs(ox)>dz?(Math.abs(ox)-dz)/(1-dz)*Math.sign(ox):0;turn-=ax*Math.abs(ax)*1.4;
    const tp=-oy*0.6;player.pitch+=(tp-player.pitch)*Math.min(1,dt*3);}
+  if(!document.getElementById('maxi-photo-look')){
   if(keys.KeyW||keys.ArrowUp)f+=1;if(keys.KeyS||keys.ArrowDown)f-=1;if(keys.KeyD)r+=1;if(keys.KeyA)r-=1;
   if(keys.ArrowLeft||keys.KeyQ)turn+=1;if(keys.ArrowRight||keys.KeyE)turn-=1;
   f+=-app.joyV.y;r+=app.joyV.x;player.yaw+=turn*1.9*dt;
+  }
   // плавный разгон и торможение (без анимации — сразу)
   const runK=(keys.ShiftLeft||keys.ShiftRight)?1:(app.joyV.run||0);const maxV=(7+9*runK)*(coarse?1.1:1);const l=Math.hypot(f,r);let tx=0,tz=0;
   if(l>0.05){const k=Math.min(1,l)/l;f*=k;r*=k;const fx=-Math.sin(player.yaw),fz=-Math.cos(player.yaw),rx=Math.cos(player.yaw),rz=-Math.sin(player.yaw);tx=(fx*f+rx*r)*maxV;tz=(fz*f+rz*r)*maxV;hideHint();}
@@ -54,7 +56,7 @@ function frameBody(now){
  world.pmark.position.set(player.x,topY()+1,player.z);world.pmark.rotation.y=player.yaw;world.pmark.scale.setScalar(app.mode==='top'?Math.max(0.4,(topv.h-topY())/160):1);
  {const pk=app.mode==='top'?'top'+app.curFloor:'walk';if(world.people&&app.mode!=='store'&&(!app.calm||world.people.placed!==pk))updatePeople(app.calm?0:dt,now);}
  if(app.PS&&(app.PS.s.kind==='kiosk'||app.PS.s.island)&&!$('shop').hidden&&(app.mode!=='walk'||app.curFloor!==app.PS.s.floor||Math.hypot(player.x-(app.PS.s.p||app.PS.s.c)[0],player.z-(app.PS.s.p||app.PS.s.c)[1])>8))closeShopPanel(false);
- updateMallDoors(dt);updateLifts(rawDt);updateEscalators(rawDt);if(app.mode==='store'){updateShopExit(dt);if(!app.calm)updateShopPeople(dt,now);}
+ updateMallDoors(dt,rawDt);updateLifts(rawDt);updateEscalators(rawDt);if(app.mode==='store'){updateShopExit(dt);if(!app.calm)updateShopPeople(dt,now);}
  if(!app.calm){world.wheel.rotation.z+=dt*0.04;world.cabins.forEach(c=>{c.rotation.z=-world.wheel.rotation.z;});}
  if(world.target.visible){const b=app.mode==='top'?topY()+3:(world.target.userData.base||GLASS_H+1.4);world.target.position.y=b+(app.calm?0:Math.sin(now/300)*0.3);if(!app.calm)world.target.rotation.y+=dt*1.5;world.target.scale.setScalar(app.mode==='top'?Math.max(1,(topv.h-topY())/50):1);}
  if(locked&&isFP()&&now-(frame.aimAt||0)>120){frame.aimAt=now;const el=$('aim');let txt='';if(app.mode==='store'&&app.SHOP){txt=shopAimText();}else{const t=aimAt();txt=!t?'':t.esc?(app.curFloor===1?'Эскалатор на 2 этаж · нажми или встань на ленту':'Эскалатор на 1 этаж · нажми или встань на ленту'):t.lift?'Лифт · нажми, чтобы выбрать этаж':(t.s.cat==='tbd'?t.s.name:t.s.name+(t.s.door?' · нажми или зайди в дверь':kioskHasGoods(t.s)?' · нажми, чтобы посмотреть товары':' · нажми, чтобы открыть'));}if(el.textContent!==txt)el.textContent=txt;el.style.opacity=txt?1:0;}

@@ -22,6 +22,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..', '..')
 sys.path.insert(0, HERE)
+from pricing import parse_price
 from brands import ALIASES, NOT_ONLINE  # noqa: E402
 
 # ---------- магазины «Макси» ----------
@@ -242,6 +243,7 @@ def main():
     ap.add_argument('feeds', nargs='+'); ap.add_argument('--out', default=os.path.join(ROOT, 'public', 'feeds'))
     ap.add_argument('--per-shop', type=int, default=300); ap.add_argument('--source', default='')
     ap.add_argument('--demo', action='store_true', help='пометить как тестовую выгрузку (ненастоящие товары)')
+    ap.add_argument('--allow-original-image-links', action='store_true', help='разрешено только при документально проверенных правах на исходные фото; не меняет пиксели')
     ap.add_argument('--fit', action='store_true', help='собрать пакеты примерки (выкройка и ткань) для одежды — fitpack.py')
     ap.add_argument('--jobs', type=int, default=max(1, (os.cpu_count() or 2) - 1), help='сколько пакетов примерки собирать одновременно (ядра процессора)')
     a = ap.parse_args()
@@ -270,15 +272,17 @@ def main():
             dk = (w + '-' if w else '') + t
             if dk not in depts:
                 depts[dk] = {'key': dk, 'type': t, 'who': w, 'title': (WHO_TITLE[w] + ' · ' if w else '') + TYPE_TITLE.get(t, 'Товары'), 'items': []}
-            try: price = int(float(of['price']))
-            except ValueError: price = 0
+            price = parse_price(of['price'])
             iid = hashlib.md5((shop + '|' + of['group']).encode()).hexdigest()[:10]
             item = {'id': iid, 'name': of['name'], 'price': price, 'color': color_hex(of['color']), 'colorName': of['color'].lower(),
-                    'sizes': of['sizes'], 'url': of['url'], 'pickup': of['pickup']}
+                    'sizes': of['sizes'], 'url': of['url'], 'source_url': of['url'], 'source_type': 'feed',
+                    'imported_at': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'pickup': of['pickup']}
+            if a.allow_original_image_links and re.match(r'^https?://', of.get('pic') or ''):
+                item['original_image_url'] = of['pic']
             if of.get('desc'): item['desc'] = of['desc']
             if of['oldprice']:
-                try: item['oldPrice'] = int(float(of['oldprice']))
-                except ValueError: pass
+                old_price = parse_price(of['oldprice'])
+                if old_price is not None: item['oldPrice'] = old_price
             if of['pic']:
                 ph = process_picture(of['pic'], of['base'] if not re.match(r'^https?://', of['base']) else '', os.path.join(a.out, 'img'), iid)
                 if ph:

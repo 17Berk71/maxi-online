@@ -1,0 +1,36 @@
+{
+  "technicalGatePassed": false,
+  "checkedAt": "2026-10-24T08:15:57.675Z",
+  "mode": "real-pilot",
+  "limitations": [
+    "Offline validation only; source URLs, contracts, image identity and live stock need human/network verification.",
+    "No source freshness TTL is assumed; a recorded check date does not establish current availability."
+  ],
+  "stores": [
+    {
+      "name": "Gloria Jeans",
+      "demo": true,
+      "category": null,
+      "products": 42
+    },
+    {
+      "name": "Ostin",
+      "demo": true,
+      "category": null,
+      "products": 41
+    },
+    {
+      "name": "Zolla",
+      "demo": true,
+      "category": null,
+      "products": 42
+    }
+  ],
+  "issues": [
+    {
+      "code": "real_multicategory_pilot_missing",
+      "store": null,
+      "item": null
+    }
+  ]
+}

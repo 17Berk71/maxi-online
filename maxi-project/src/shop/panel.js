@@ -1,12 +1,13 @@
 // Панель каталога магазина или островка.
 import {siteOf, mapsOf, catalogOf, fmtPrice} from './catalog.js';
 import {iconURL} from './icons.js';
-import {loadFeed, feedInfo} from './feeds.js';
+import {loadFeed, retryFeed, feedInfo} from './feeds.js';
 import {onlineKind, onlineText} from './online.js';
 import {isFP, locked, releaseLock, requestLock, updateCross} from '../controls/input.js';
 import {$} from '../core/helpers.js';
 import {coarse} from '../render/scene.js';
-import {exitShop} from './enter-exit.js';
+import {exitShop, disposeShop, updateShopDoor} from './enter-exit.js';
+import {buildShop} from './hall.js';
 import {goToDept} from './hall-pick.js';
 import {fmtDate, openProduct, stopViewer, thumbURL} from './product.js';
 import {showHint} from '../ui/hint.js';
@@ -21,7 +22,7 @@ export function requestLockIfNeeded(){if(!coarse&&isFP()&&!locked){requestLock()
 export function kioskHasGoods(s){return (s.kind==='kiosk'||s.island)&&s.cat!=='tbd'&&s.cat!=='wc';}
 export function openKioskPanel(s){if(!s._feedTried){loadFeed(s).then(()=>openKioskPanel(s));return;}app.PS={s,cat:catalogOf(s)};app.shopDept=0;app.shopProd=null;shopShown=24;renderShopPanel();openShopPanel();
  showHint('«'+s.name+'» — товары островка. Нажми на товар, чтобы посмотреть его');}
-function renderShopPanel(){const s=app.PS.s,cat=app.PS.cat;const el=$('shop');
+function renderShopPanel(){stopViewer();const s=app.PS.s,cat=app.PS.cat;const el=$('shop');
  el.querySelector('.sh-name').textContent=s.name;el.querySelector('.sh-what').textContent=(s.what||'')+' · '+floorName(s.floor);
  el.querySelector('.sh-dot').style.background=s.colHex;
  const tabs=el.querySelector('.sh-tabs');tabs.innerHTML='';
@@ -37,7 +38,23 @@ function renderShopPanel(){const s=app.PS.s,cat=app.PS.cat;const el=$('shop');
   if(app.mode==='store'){const show=document.createElement('button');show.className='btn';show.textContent='Показать в зале';show.onclick=()=>{closeShopPanel(true);goToDept(app.shopDept);};row.appendChild(show);}
   const a=document.createElement('a');a.className='btn pri';a.target='_blank';a.rel='noopener';const site=siteOf(s);a.href=site||mapsOf(s);a.textContent=site?'Смотреть на сайте ↗':'Магазин на картах ↗';row.appendChild(a);
   w.appendChild(row);body.appendChild(w);}
- else{const grid=document.createElement('div');grid.className='sh-grid';
+ else if(!cat.length){const empty=document.createElement('p');empty.className='sh-note';empty.setAttribute('role','status');empty.textContent='В каталоге пока нет доступных товаров. Демонстрационные товары не подставляются.';body.appendChild(empty);
+  if(s._catalogueUnavailable){const retry=document.createElement('button');retry.className='btn sh-retry';retry.textContent='Повторить загрузку каталога';
+   retry.onclick=async()=>{retry.disabled=true;empty.textContent='Повторная загрузка каталога…';
+    try{await retryFeed(s);}catch(err){console.warn('Не удалось повторить загрузку каталога',err);}
+    // Do not steal focus or replace a different store's panel after navigation.
+    if(app.PS?.s!==s||$('shop').hidden)return;
+    if(!s._catalogueUnavailable&&app.mode==='store'&&app.SHOP?.s===s){
+     // Rebuild the actual room as well as the panel: its product pick targets
+     // must match the newly loaded feed without a full-page refresh.
+     disposeShop();app.SHOP=buildShop(s);app.SHOP.feedV=!!s._feed;app.SHOP.doorOpen=1;updateShopDoor();app.PS=app.SHOP;
+    }else app.PS={...app.PS,cat:catalogOf(s)};
+    app.shopDept=0;shopShown=24;renderShopPanel();
+    const target=el.querySelector('.sh-retry, .sh-tab, .sh-card, .sh-body [role="status"]');
+    if(target){if(target.tagName==='P')target.tabIndex=-1;target.focus();}
+   };body.appendChild(retry);}
+ }
+ else{const grid=document.createElement('div');grid.className='sh-grid';app.shopDept=Math.max(0,Math.min(app.shopDept,cat.length-1));
   const dep=cat[app.shopDept];const all=dep.items;const shown=Math.min(all.length,shopShown);
   const cnt=document.createElement('p');cnt.className='sh-note';const fi=feedInfo(s);cnt.textContent=fi?'Товары из выгрузки магазина'+(fi.demo?' — тестовой: товары, цены и ссылки ненастоящие':'')+' · обновлено '+fmtDate(fi.updated)+' · в отделе '+all.length:onlineKind(s)!=='shop'?'Примеры позиций. '+onlineText(s):'В отделе '+all.length+' товаров'+(s.kind==='kiosk'?'':' · у каждого своё место в зале');body.appendChild(cnt);
   all.slice(0,shown).forEach(p=>{const c=document.createElement('button');c.className='sh-card';const img=document.createElement('img');img.src=thumbURL(p);img.alt='';img.loading='lazy';

@@ -3,6 +3,8 @@
 // Здесь только запуск: параметры (данные карты обоих этажей) и init() модулей строго по порядку —
 // порядок важен: модуль может использовать то, что подготовили модули выше.
 
+import {openPhotoLook} from './shop/photo-looks.js';
+import {releaseLock} from './controls/input.js';
 import {init as init_core_helpers} from './core/helpers.js';
 import {init as init_mall_categories} from './mall/categories.js';
 import {init as init_nav_walkgrid} from './nav/walkgrid.js';
@@ -83,5 +85,6 @@ export function startApp(_D, _D2) {
   init_shop_cart_ui();
   init_render_style_apply();
   init_core_debug();
-  init_core_launch();
+  document.getElementById('bPhotoLooks').onclick=()=>{releaseLock();openPhotoLook();};
+  return init_core_launch();
 }

@@ -18,7 +18,7 @@ function standPoint(s){
 }
 // перенестись к точке (на любом этаже): плавный перелёт на своём этаже, затемнение — при смене этажа
 export function moveTo(f,x,z,yaw,pitch){const other=f!==app.curFloor;
- const put=()=>{if(other)setFloor(f,{x,z,yaw});player.x=x;player.z=z;player.yaw=yaw;player.pitch=pitch||0;player.vx=player.vz=0;
+ const put=()=>{if(other)setFloor(f,{x,z,yaw});player.x=x;player.z=z;player.yaw=yaw;player.pitch=pitch||0;player.vx=player.vz=0;app.lookDX=app.lookDY=0;
   if(app.mode!=='walk')setMode('walk');else if(other||app.calm){app.anim=null;applyPose(walkPose());}else app.anim={t:0,from:{p:cam.position.clone(),q:cam.quaternion.clone()},m:'walk'};};
  if(other&&!app.calm&&app.mode!=='top')fadeThen(put);else put();}
 export function walkTo(s){const sp=standPoint(s);if(!sp)return;

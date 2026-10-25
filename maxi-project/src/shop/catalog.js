@@ -121,10 +121,11 @@ function makeItem(shopId,key,d,k){const base=d.items,nb=base.length,pal=PAL[d.pa
  // есть фото настоящей вещи — цвет и название берём с фото (пока пример; дальше — свои фото под каждый магазин)
  if(ph){const P=PHOTOS[ph];return{name:b[0]+', '+P.colorName+(round?' · вариант '+(round+1):''),price,color:P.color,colorName:P.colorName,icon:d.icon,dept:key,model:b[2]||d.model,scale:d.scale||1,photo:ph,id:key+'-'+shopId+'-'+k};}
  return{name:nm,price,color:col[0],colorName:col[1],icon:d.icon,dept:key,model:b[2]||d.model,scale:d.scale||1,id:key+'-'+shopId+'-'+k};}
-function catalogOf(s){if(s._cat)return s._cat;if(s._feed){s._cat=feedCatalog(s,DEPT);if(s._cat.length)return s._cat;}const deps=deptsFor(s).map(k=>{const d=DEPT[k];const food=d.lay==='cafe';const N=food?d.items.length:Math.max(48,d.items.length*6);
+function catalogOf(s){if(s._catalogueUnavailable)return [];if(s._cat)return s._cat;if(s._feed){s._cat=feedCatalog(s,DEPT);return s._cat;}const deps=deptsFor(s).map(k=>{const d=DEPT[k];const food=d.lay==='cafe';const N=food?d.items.length:Math.max(48,d.items.length*6);
   const dep={key:k,title:d.t,icon:d.icon,model:d.model,lay:d.lay,items:[],itemAt(i){while(dep.items.length<=i)dep.items.push(makeItem(s.id,k,d,dep.items.length));return dep.items[i];}};
   for(let i=0;i<N;i++)dep.itemAt(i);return dep;});
  s._cat=deps;return deps;}
-const fmtPrice=p=>p?p.toLocaleString('ru-RU')+' ₽':'бесплатно';
+// Re-export the shared optional-price formatter for legacy consumers.
+import {fmtPrice} from './pricing.js';
 
 export {SITES,siteOf,mapsOf,DEPT,deptsFor,PALETTE,catalogOf,fmtPrice,PHOTOS};

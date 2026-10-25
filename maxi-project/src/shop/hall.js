@@ -78,7 +78,7 @@ export function buildShop(s){
  if(s.cat!=='food'){const desk=new THREE.Mesh(B(3,1.05,0.8,0,0.525,0),new THREE.MeshStandardMaterial({color:SX?LIN(ST.desk):brand,roughness:.4}));desk.position.set(W/2-4,0,D/2-3.2);sc.add(desk);colliders.push([W/2-5.6,W/2-2.4,D/2-3.7,D/2-2.7]);
   const top=new THREE.Mesh(B(3.1,0.05,0.9,0,1.07,0),SX?new THREE.MeshStandardMaterial({color:LIN(ST.deskTop),roughness:.35}):MAT.white);top.position.copy(desk.position);sc.add(top);}
  // отделы по сетке
- const cols=nd<=1?1:nd<=4?2:4,rows=Math.ceil(nd/cols);
+ const cols=nd<=1?1:nd<=4?2:4,rows=Math.max(1,Math.ceil(nd/cols));
  const x0=-W/2+1.2,x1=W/2-1.2,z0=-D/2+1.2,z1=D/2-5.5;const zw=(x1-x0)/cols,zd=(z1-z0)/rows;
  const inst={};const addInst=(model,x,y,z,ry,color,prod,scale)=>{(inst[model]=inst[model]||[]).push({x,y,z,ry,color,prod,scale:scale||1});};
  const pinst={};const addPhoto=(p,x,yTop,z,ry)=>{(pinst[p.photo]=pinst[p.photo]||[]).push({x,y:yTop-PHOTOS[p.photo].h/2-0.05,z,ry,prod:p,top:yTop});};
