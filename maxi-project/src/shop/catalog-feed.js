@@ -24,7 +24,9 @@ export function catalogueProducts(feed){
     const evidence=catalogEvidence(item,feed);
     // Do not let an untrusted feed override the canonical SKU used for saved identity.
     return {...item,sourceProductId:item.id,deptTitle:d.title||d.key||'Товары',evidence,
-      image:evidence.originalImage||(evidence.demo?feedPath(item.pic):null),
+      // Demo records are not proof of permission to embed third-party source photos.
+      // Use only the local, explicitly labelled preview; real records keep originals.
+      image:evidence.demo?feedPath(item.pic):evidence.originalImage,
       price:typeof item.price==='number'&&Number.isFinite(item.price)&&item.price>=0?item.price:null,
       url:evidence.demo?null:evidence.sourceUrl,
     };
