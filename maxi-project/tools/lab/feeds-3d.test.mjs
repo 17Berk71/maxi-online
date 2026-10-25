@@ -194,3 +194,46 @@ test('configured 3D feeds reject malformed successful responses without demo fal
   assert.deepEqual(valid.feedCatalog(store,DEPT),[]);
  }finally{globalThis.fetch=original;}
 });
+
+test('3D catalogue retries a failed index without inventing fallback products',async()=>{
+ const original=globalThis.fetch,requests=[];
+ let unavailable=true;
+ globalThis.fetch=async url=>{
+  requests.push(url);
+  if(url==='feeds/index.json')return unavailable
+   ?{ok:false,status:503}
+   :{ok:true,json:async()=>({shops:{'Recovered store':{file:'recovered.json'}}})};
+  if(url==='feeds/recovered.json')return {ok:true,json:async()=>({demo:true,depts:[{key:'tops',type:'generic',items:[{id:'sku',name:'Recovered synthetic item'}]}]})};
+  throw Error('Unexpected request '+url);
+ };
+ try{
+  const fresh=await import('../../src/shop/feeds.js?retry-index-3d');
+  const store={name:'Recovered store',id:501,cat:'wear'};
+  assert.equal(await fresh.loadFeed(store),false);
+  assert.equal(store._catalogueUnavailable,true);
+  assert.deepEqual(catalogOf(store),[],'network failure must not create demo goods');
+  unavailable=false;
+  assert.equal(await fresh.retryFeed(store),true);
+  assert.equal(store._catalogueUnavailable,false);
+  assert.deepEqual(catalogOf(store)[0].items.map(x=>x.name),['Recovered synthetic item']);
+  assert.deepEqual(requests,['feeds/index.json','feeds/index.json','feeds/recovered.json']);
+ }finally{globalThis.fetch=original;}
+});
+
+test('3D retry does not treat a newly valid empty index as a network error',async()=>{
+ const original=globalThis.fetch;
+ let unavailable=true;
+ globalThis.fetch=async url=>{
+  assert.equal(url,'feeds/index.json');
+  return unavailable?{ok:false,status:503}:{ok:true,json:async()=>({shops:{}})};
+ };
+ try{
+  const fresh=await import('../../src/shop/feeds.js?retry-empty-index-3d');
+  const store={name:'Legacy unconfigured store',id:502,cat:'wear'};
+  assert.equal(await fresh.loadFeed(store),false);
+  assert.equal(store._catalogueUnavailable,true);
+  unavailable=false;
+  assert.equal(await fresh.retryFeed(store),false);
+  assert.equal(store._catalogueUnavailable,false,'explicitly unconfigured stores may use legacy demo mode');
+ }finally{globalThis.fetch=original;}
+});

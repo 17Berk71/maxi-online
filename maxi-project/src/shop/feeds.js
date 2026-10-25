@@ -15,7 +15,11 @@ export const winKeys = name => WIN[name] || [];
 function loadIndex() {
   if (!indexP) indexP = fetch(FEED_BASE + 'index.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : null).catch(() => null).then(idx => {
     // несколько вещей на магазин — для витрин в галерее (они собираются сразу при запуске)
-    if (idx && idx.shops && typeof idx.shops === 'object') Object.entries(idx.shops).forEach(([name, e]) => {
+    // A retried index must not leave storefront photos from a now-hidden or
+    // removed feed. Replace the derived registry, never the source records.
+    Object.values(WIN).flat().forEach(key => { delete PHOTOS[key]; });
+    Object.keys(WIN).forEach(name => { delete WIN[name]; });
+    if (idx && idx.shops && typeof idx.shops === 'object' && !Array.isArray(idx.shops)) Object.entries(idx.shops).forEach(([name, e]) => {
       if (!visibleStoreEntry(e)) return;
       WIN[name] = (Array.isArray(e?.win) ? e.win : []).flatMap((w, i) => {
         const path = feedPath(w?.pic);
@@ -49,7 +53,11 @@ export async function loadFeed(s) {
       s._catalogueUnavailable = true; s._cat = null; s._feedTried = true; return false;
     }
     const path = visibleStoreEntry(e) ? feedPath(e.file) : null;
-    if (!path) { s._feedTried = true; return false; }
+    if (!path) {
+      // A successfully read index explicitly has no feed for this store.
+      // Only in that case is the legacy demonstration catalogue allowed.
+      s._catalogueUnavailable = false; s._cat = null; s._feedTried = true; return false;
+    }
     s._catalogueUnavailable = true;
     try {
       const r = await fetch(path, {cache: 'no-cache'}); if (!r.ok) throw new Error(r.status);
@@ -66,6 +74,23 @@ export async function loadFeed(s) {
     s._feedTried = true; return !!s._feed;
   })();
   return s._feedP;
+}
+
+// Explicit user retry: a failed cached index/feed must not require a page reload.
+// In-flight retries are shared, and successful reads never trigger a retry.
+export async function retryFeed(s) {
+  if (!s || !s._catalogueUnavailable) return !!s?._feed;
+  if (s._retryFeedP) return s._retryFeedP;
+  s._retryFeedP = (async () => {
+    if (s._feedP) await s._feedP.catch(() => {});
+    if (!s._catalogueUnavailable) return !!s._feed;
+    indexP = null;
+    s._feedTried = false; s._feedP = null; s._feed = null;
+    s._cat = null; s._ph = null;
+    return loadFeed(s);
+  })();
+  try { return await s._retryFeedP; }
+  finally { s._retryFeedP = null; }
 }
 
 // каталог магазина из выгрузки: отделы «для кого × тип», у каждого товара фото, размеры, ссылка

@@ -331,3 +331,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Added Node regressions for malformed/empty feed roots and 3D fail-closed behavior; extended the Chromium quick-catalogue journey at 390px and 1280px to cover HTTP 503 → malformed HTTP 200 → successful retry. Code/test commit: `f050a64`.
 - [Actions #178](https://github.com/17Berk71/maxi-online/actions/runs/40166298521) was started for the code commit. Its final result must be verified separately; do not infer browser success from the earlier run.
 - No real catalogues, image rights, partnerships or local inventory were invented. The PR stays draft; no `main` update, merge or deployment.
+
+## Continuation — 25 October 2026: 3D feed retry (pending CI)
+
+- Added an explicit, keyboard-accessible retry action when the 3D store's feed/index is unavailable. A cached failed index can now be re-fetched in the same browser session, without refreshing the entire mall.
+- On recovery, the active store room and catalogue panel are rebuilt together so product pick targets cannot remain stale. A genuinely empty feed remains empty; an explicitly unconfigured store can retain the labeled legacy demo mode. Failed or malformed configured feeds never receive invented fallback products.
+- A retried index clears derived storefront-photo registrations before replacing them, so withdrawn/hidden stores do not retain obsolete preview references. No real catalogue, image permissions, or stock evidence were added.
+- Added Node regressions for index recovery and an empty valid index, plus 390/1280px Chromium recovery to the existing visibility suite. CI outcome must be checked against the resulting commit; no local browser execution was available in this run.

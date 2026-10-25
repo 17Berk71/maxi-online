@@ -4,8 +4,8 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||und
 try{
  for(const width of [390,1280]){
   const page=await browser.newPage({viewport:{width,height:844},isMobile:width<600,hasTouch:width<600}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(45000);
-  let withdraw=false,withdrawStatus=false,draftStatus=false;
-  await page.route('**/feeds/index.json',r=>r.fulfill({json:{demo:true,shops:{'Gloria Jeans':{file:'fixture.json',win:[]}}}}));
+  let withdraw=false,withdrawStatus=false,draftStatus=false,indexUnavailable=false;
+  await page.route('**/feeds/index.json',r=>indexUnavailable?r.fulfill({status:503,body:'temporarily unavailable'}):r.fulfill({json:{demo:true,shops:{'Gloria Jeans':{file:'fixture.json',win:[]}}}}));
   await page.route('**/feeds/fixture.json',r=>r.fulfill({json:{demo:false,catalogue_status:withdrawStatus?'withdrawn':draftStatus?'draft':'active',depts:[{key:'tshirts',type:'tshirts',title:'Test',items:[
    {id:'shown',name:'Visible synthetic item',hidden:withdraw?'true':false,pic:'../tools/test/fixtures/product.svg',url:'https://example.org/fake'},
    {id:'hidden',name:'WITHDRAWN ITEM',hidden:'true',pic:'../tools/test/fixtures/product.svg'}
@@ -48,11 +48,19 @@ try{
   assert.equal(await page.getByText('Visible synthetic item',{exact:true}).count(),0);
   // When the index itself is unreachable, a 3D store must not invent a legacy
   // assortment merely because it cannot discover which real feed was configured.
-  await page.route('**/feeds/index.json',route=>route.fulfill({status:503,body:'temporarily unavailable'}));
+  indexUnavailable=true;
   await openStore();
   assert.equal(await page.locator('#shop .sh-card').count(),0);
   await page.getByText('В каталоге пока нет доступных товаров. Демонстрационные товары не подставляются.',{exact:true}).waitFor();
   assert.equal(await page.evaluate(()=>window.__maxi.SHOP.cat.length),0);
+  // Recover in the same 3D session: both the panel and room product picks
+  // must be rebuilt from the restored synthetic feed, without page reload.
+  indexUnavailable=false;withdraw=false;withdrawStatus=false;draftStatus=false;
+  await page.getByRole('button',{name:'Повторить загрузку каталога',exact:true}).click();
+  await page.locator('#shop .sh-card').first().waitFor();
+  assert.equal(await page.locator('#shop .sh-card').count(),1);
+  assert.equal(await page.evaluate(()=>window.__maxi.SHOP.cat.length),1);
+  assert.equal(await page.getByRole('button',{name:'Повторить загрузку каталога',exact:true}).count(),0);
   assert.deepEqual(errors,[]);
   await page.close();console.log(`PASS hidden products and fully withdrawn shop stay empty in 3D/quick catalogues (${width}px)`);
  }
