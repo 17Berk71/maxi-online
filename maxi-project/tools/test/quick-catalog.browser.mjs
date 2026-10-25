@@ -24,7 +24,13 @@ try{
   const retryFeed=root.getByRole('button',{name:'Повторить загрузку каталога',exact:true});await retryFeed.waitFor();
   assert.equal(await retryFeed.evaluate(e=>e===document.activeElement),true,'failed store load should focus retry');
   brokenFeed=false;await root.getByRole('button',{name:'Повторить загрузку каталога',exact:true}).click();
-  await root.getByRole('heading',{name:'Тестовый товар',exact:true}).waitFor();
+  try{await root.getByRole('heading',{name:'Тестовый товар',exact:true}).waitFor({timeout:12000});}
+  catch(error){
+   const diagnostic=await root.evaluate(el=>({status:el.querySelector('[role="status"]')?.textContent,
+    headings:[...el.querySelectorAll('h2,h3')].map(x=>x.textContent),
+    content:el.querySelector('section[aria-label="Магазины и товары"]')?.textContent?.slice(0,700)}));
+   throw new Error('Quick catalogue retry did not render: '+JSON.stringify({diagnostic,errors,feedRequests:requested.filter(x=>x.includes('/feeds/'))}),{cause:error});
+  }
   assert.equal(await root.locator('article').count(),2);
   assert.equal(await root.locator('article img').first().getAttribute('src'),'feeds/img/test.svg',
     'demo card must use local preview even when an external original URL is present');
