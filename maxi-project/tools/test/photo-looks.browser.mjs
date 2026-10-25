@@ -19,6 +19,7 @@ try {
     await page.locator('#maxi-photo-look').waitFor({timeout:15000});
     assert.equal(await page.locator('#maxi-photo-look article').count(),2);
     assert.equal(await page.locator('#maxi-photo-look article img').count(),2);
+    assert.deepEqual(await page.locator('#maxi-photo-look .photo-look-position').allTextContents(),['Позиция 1 из 2','Позиция 2 из 2']);
     // Focus cannot escape a modal dialog through either direction of Tab navigation.
     await page.locator('#maxi-photo-look [data-close-photo-look]').focus();
     await page.keyboard.press('Shift+Tab');
@@ -38,8 +39,9 @@ try {
     assert.equal(await page.evaluate(()=>window.__photoStatusNode===document.querySelector('#maxi-photo-look [role="status"]')),true,
       'reordering must update the existing live status node');
     assert.equal(await page.locator('#maxi-photo-look article h3').first().textContent(),'Trousers');
+    assert.deepEqual(await page.locator('#maxi-photo-look .photo-look-position').allTextContents(),['Позиция 1 из 2','Позиция 2 из 2']);
     assert.equal(await page.getByRole('button',{name:'Переместить «Jacket» влево'}).evaluate(e=>e===document.activeElement),true);
-    assert.equal(await page.getByRole('status').textContent(),'Порядок товаров изменён.');
+    assert.equal(await page.getByRole('status').textContent(),'Позиция товара «Jacket»: 2 из 2.');
     assert.equal(await page.getByRole('button',{name:'Переместить «Trousers» влево'}).isDisabled(),true);
     // A failed localStorage write must leave the board unchanged and announce the failure.
     await page.evaluate(()=>{
@@ -57,6 +59,7 @@ try {
       'removing a product must preserve the mounted live status node');
 
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
+    assert.deepEqual(await page.locator('#maxi-photo-look .photo-look-position').allTextContents(),['Позиция 1 из 1']);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('maxi-photo-looks-v2')).draft.length),1);
     // LAN/mobile HTTP previews may lack the secure-context randomUUID API.
     await page.evaluate(()=>Object.defineProperty(crypto,'randomUUID',{value:undefined,configurable:true}));
