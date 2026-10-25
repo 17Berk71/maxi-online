@@ -65,7 +65,8 @@ export function renderProduct(p,onMan,size){stopInventory();stopInventory=()=>{}
  el.querySelector('.sh-name').textContent=p.name;el.querySelector('.sh-what').textContent=s.name+' · '+(p.deptTitle||(DEPT[p.dept]?DEPT[p.dept].t:''));el.querySelector('.sh-dot').style.background=s.colHex;
  el.querySelector('.sh-tabs').innerHTML='';const body=el.querySelector('.sh-body');body.innerHTML='';body.scrollTop=0;
  const w=el_('div','sh-detail');
- const m=productModel(p);const photo=p.evidence?.originalImage || (p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic);
+ const m=productModel(p);const preview=p.photo&&PHOTOS[p.photo]?PHOTOS[p.photo].url:p.pic;
+ const photo=p.evidence?.demo?preview:(p.evidence?.originalImage||preview);
  if(photo){stopViewer();const im=el_('img','pv pv-photo');im.src=photo;im.alt=p.name;im.onerror=()=>{im.replaceWith(el_('p','sh-note','Фото недоступно. Сведения о товаре и сохранение остаются доступны.'));};w.appendChild(im);w.appendChild(el_('p','sh-note',p.evidence?.originalImage?'Исходное фото из источника товара.':p.feed?'Превью из выгрузки; изображение могло быть обработано.':'Фото вещи. Пока пример — позже у каждого магазина будут свои фото.'));}
  else{const cv=viewerShow(p,onMan);w.appendChild(cv);w.appendChild(el_('p','sh-note',p.feed?'Фото в выгрузке нет — показана похожая модель. Потяни, чтобы повернуть.':'Потяни картинку, чтобы повернуть товар.'));}
  if(WEARABLE[m]&&!photo){const tg=el_('div','sh-seg');['Товар','На манекене'].forEach((t,i)=>{const b=el_('button','sh-tab'+((!!onMan)===(i===1)?' on':''),t);b.onclick=()=>renderProduct(p,i===1,chosen);tg.appendChild(b);});w.appendChild(tg);}
