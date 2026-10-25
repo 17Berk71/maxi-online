@@ -13,7 +13,7 @@ try{
   const indexDemo=fallback===true?false:'true',feedDemo=fallback===true?'true':false;
   await page.route('**/feeds/index.json',r=>brokenIndex===true?r.fulfill({status:503,body:'unavailable'}):brokenIndex==='invalid'?r.fulfill({json:{shops:[]}}):r.fulfill({json:{demo:indexDemo,shops:{'Тестовый магазин':{file:'test.json'},'Unsafe':{file:'../secret.json'},'Hidden store':{file:'hidden.json',hidden:'true'}}}}));
   await page.route('**/feeds/img/test.svg',r=>r.fulfill({path:'tools/test/fixtures/product.svg',contentType:'image/svg+xml'}));
-  await page.route('**/feeds/test.json',r=>brokenFeed===true?r.fulfill({status:503,body:'unavailable'}):brokenFeed==='malformed'?r.fulfill({json:{demo:feedDemo,updated:'2026-10-24'}}):r.fulfill({json:{demo:feedDemo,updated:'2026-10-24',depts:[{title:'Тестовые товары',items:[{id:'1',name:'Тестовый товар',pic:'img/test.svg',url:'https://example.org/fake',original_image_url:'https://images.example.org/unreviewed.jpg'},{id:'2',name:'Товар без исходного фото',price:null}]}]}}));
+  await page.route('**/feeds/test.json',r=>brokenFeed===true?r.fulfill({status:503,body:'unavailable'}):brokenFeed==='malformed'?r.fulfill({json:{demo:feedDemo,updated:'2026-10-24'}}):brokenFeed==='malformed-dept'?r.fulfill({json:{demo:feedDemo,depts:[{title:'Broken department'}]}}):r.fulfill({json:{demo:feedDemo,updated:'2026-10-24',depts:[{title:'Тестовые товары',items:[{id:'1',name:'Тестовый товар',pic:'img/test.svg',url:'https://example.org/fake',original_image_url:'https://images.example.org/unreviewed.jpg'},{id:'2',name:'Товар без исходного фото',price:null}]}]}}));
   await page.goto((process.env.MAXI_URL||'http://127.0.0.1:5173')+(fallback?'/':'/?catalog=1'),{waitUntil:'domcontentloaded'});
   const root=page.locator('#quick-catalog');await root.waitFor();
   await root.getByRole('button',{name:'Повторить загрузку',exact:true}).waitFor();
@@ -31,6 +31,10 @@ try{
   await retryFeed.waitFor();
   assert.equal(await root.getByText('В каталоге нет доступных товаров.',{exact:true}).count(),0,
     'malformed successful feed must offer retry instead of claiming no products');
+  brokenFeed='malformed-dept';await retryFeed.click();
+  await retryFeed.waitFor();
+  assert.equal(await root.getByText('В каталоге нет доступных товаров.',{exact:true}).count(),0,
+    'malformed department must be retryable, not reported as an empty catalogue');
   brokenFeed=false;await retryFeed.click();
   try{await root.getByRole('heading',{name:'Тестовый товар',exact:true}).waitFor({timeout:12000});}
   catch(error){
