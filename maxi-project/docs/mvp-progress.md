@@ -378,3 +378,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `78108d6` adds browser assertions for final-item deletion, retained focus, and Shift+Tab confinement at 390px and 1280px.
 - GitHub Actions [MVP architecture checks #199](https://github.com/17Berk71/maxi-online/actions/runs/40185842824) **passed** on `78108d6`, including syntax, importer tests, catalogue audit, production build, and configured Chromium browser suites. The intermediate run for `7c43b19` was cancelled by the newer commit.
 - No real catalogue, image-rights approval, store-stock assertion, deployment, PR merge, or main-branch change was made. Full screen-reader and physical-device tests remain outstanding.
+
+### 25 October 2026 — persistent photo-board announcements
+
+- Confirmed the previous branch HEAD `7ba159e` and GitHub Actions run [#201](https://github.com/17Berk71/maxi-online/actions/runs/40186761215) completed successfully before starting this batch.
+- `01a5a5f`: keep the photo-board header and its `role="status"` / `aria-live="polite"` node mounted while draft cards and saved collections rerender. Previously the entire modal DOM, including the live region, was replaced on each edit; newly inserted, pre-populated regions are not reliably announced by assistive technology. The change does not alter catalogue data, stored snapshots, image pixels or outbound links.
+- `a1e570e`: Chromium regression checks at 390px and 1280px assert the same live status node survives reorder and removal, alongside the existing focus and persistence checks.
+- Verification: [GitHub Actions run #203](https://github.com/17Berk71/maxi-online/actions/runs/40189954961) was still running when this note was prepared. Do not claim the batch passed until that run (or a later run on the final HEAD) completes successfully.
+- Remaining acceptance gaps: a real screen-reader announcement audit, physical-device testing, rights-cleared original photographs and verified live-store feeds. No deployment or merge authorized.
