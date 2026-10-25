@@ -1,7 +1,7 @@
 // Товары из выгрузок магазинов (готовит tools/feeds/import_feed.py → feeds/index.json и feeds/<магазин>.json).
 // Демо-каталог допустим только когда успешно загруженный индекс не настраивает выгрузку магазина.
 import {PHOTOS} from './photos.js';
-import {visibleDepartments,feedPath,visibleStoreEntry} from './catalog-feed.js';
+import {visibleDepartments,feedPath,visibleStoreEntry,validFeedDocument} from './catalog-feed.js';
 import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
@@ -54,6 +54,7 @@ export async function loadFeed(s) {
     try {
       const r = await fetch(path, {cache: 'no-cache'}); if (!r.ok) throw new Error(r.status);
       const data = await r.json();
+      if (!validFeedDocument(data)) throw new Error('Invalid catalogue document');
       data.demo=!!(idx.demo||data.demo);
       // фото с вырезанным фоном регистрируем как обычные фото товаров: дальше их вешает на вешала тот же код
       visibleDepartments(data).forEach(d => d.items.forEach(it => {

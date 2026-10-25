@@ -1,6 +1,6 @@
 // NFR-006 / FR-MALL-005: a catalogue path that never imports the 3D application.
 import {cataloguePage} from './catalog-page.js';
-import {catalogueProducts,feedPath,visibleStoreEntry} from './catalog-feed.js';
+import {catalogueProducts,feedPath,visibleStoreEntry,validFeedDocument} from './catalog-feed.js';
 import {addToPhotoLook,openPhotoLook,photoLookMessage} from './photo-looks.js';
 import {favorites} from './favorites.js';
 import {watchInventory,physicalStockText} from './inventory-watch.js';
@@ -61,6 +61,7 @@ export async function openQuickCatalog(reason=''){
   const back=el('button','← К магазинам');back.onclick=()=>showStores(name);content.append(back);back.focus();
   try{
    const feed=await read(feedPath(entry.file));if(token!==request)return;
+   if(!validFeedDocument(feed))throw Error('Invalid catalogue document');
    // Index-level demo flag applies even if the individual feed omits it.
    const isDemo=Boolean(feed.demo||index.demo);
    const products=catalogueProducts({...feed,demo:isDemo});

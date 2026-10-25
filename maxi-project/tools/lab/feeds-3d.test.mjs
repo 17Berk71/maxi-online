@@ -163,3 +163,34 @@ test('3D catalogue fails closed when feed index is unreachable or malformed',asy
   assert.notEqual(store._catalogueUnavailable,true,'an available index may explicitly have no feed for a store');
  }finally{globalThis.fetch=original;}
 });
+
+
+test('configured 3D feeds reject malformed successful responses without demo fallback',async()=>{
+ const original=globalThis.fetch;
+ try{
+  const samples=[['missing-depts',{}],['non-array-depts',{depts:{}}],['array-root',[]],['null-root',null]];
+  for(const [label,body] of samples){
+   const requests=[];
+   globalThis.fetch=async url=>{
+    requests.push(url);
+    if(url==='feeds/index.json')return {ok:true,json:async()=>({shops:{'Malformed store':{file:'malformed.json'}}})};
+    if(url==='feeds/malformed.json')return {ok:true,json:async()=>body};
+    throw Error('Unexpected request '+url);
+   };
+   const fresh=await import('../../src/shop/feeds.js?malformed-document='+label);
+   const store={name:'Malformed store',id:400,cat:'wear'};
+   assert.equal(await fresh.loadFeed(store),false,label);
+   assert.equal(store._catalogueUnavailable,true,label);
+   assert.deepEqual(catalogOf(store),[],label+': do not invent demo items');
+   assert.deepEqual(requests,['feeds/index.json','feeds/malformed.json'],label);
+  }
+  globalThis.fetch=async url=>url==='feeds/index.json'
+   ?{ok:true,json:async()=>({shops:{'Empty store':{file:'empty.json'}}})}
+   :{ok:true,json:async()=>({depts:[]})};
+  const valid=await import('../../src/shop/feeds.js?malformed-document=valid-empty');
+  const store={name:'Empty store',id:401,cat:'wear'};
+  assert.equal(await valid.loadFeed(store),true,'an explicitly empty feed is a valid loaded catalogue');
+  assert.equal(store._catalogueUnavailable,false);
+  assert.deepEqual(valid.feedCatalog(store,DEPT),[]);
+ }finally{globalThis.fetch=original;}
+});

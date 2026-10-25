@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {catalogueProducts,feedPath,visibleDepartments,visibleStoreEntry} from '../../src/shop/catalog-feed.js';
+import {catalogueProducts,feedPath,visibleDepartments,visibleStoreEntry,validFeedDocument} from '../../src/shop/catalog-feed.js';
 test('feed resources remain relative to the catalogue directory',()=>{
  assert.equal(feedPath('store.json'),'feeds/store.json');assert.equal(feedPath('img/a.webp'),'feeds/img/a.webp');
  for(const path of ['https://evil.test/f.json','//evil.test/a','../private.json','/x','a\\b','x?y','%2e%2e/x'])assert.equal(feedPath(path),null,path);
@@ -88,4 +88,12 @@ test('hidden index stores cannot be advertised or fetched, without changing lega
   assert.equal(visibleStoreEntry({file:'store.json',hidden}),false,String(hidden));
  for(const entry of [null,{},'store.json',{file:'../secret.json'},{file:'https://example.org/feed.json'}])
   assert.equal(visibleStoreEntry(entry),false);
+});
+
+
+test('a malformed feed root is a loading failure, not an empty approved catalogue',()=>{
+ for(const malformed of [null,[],{},'invalid',{depts:null},{depts:{}},{depts:'[]'}])
+  assert.equal(validFeedDocument(malformed),false,JSON.stringify(malformed));
+ assert.equal(validFeedDocument({depts:[]}),true,'a genuinely empty feed is valid');
+ assert.equal(validFeedDocument({catalogue_status:'withdrawn',depts:[]}),true,'status filtering is independent of structure');
 });
