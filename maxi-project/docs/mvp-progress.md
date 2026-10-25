@@ -418,3 +418,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `d7fea9a`: the existing Playwright suite at 390px and 1280px now checks restored focus, live-status text, retained unsaved look name and the newly added draft item.
 - CI on the final documentation HEAD must be checked before claiming this batch passed. Automated focus assertions do not replace a physical-device or screen-reader audit.
 - Real merchant feeds, rights to source photos and Tula physical inventory remain unverified. Do not merge PR #18, change `main` or deploy.
+
+
+### 25 October 2026 — focus after opening a saved photo look
+
+- Confirmed draft PR #18 and branch HEAD `c23b8c53` before editing; [MVP architecture checks #217](https://github.com/17Berk71/maxi-online/actions/runs/40208311815) passed on that baseline.
+- `eaa34e4`: loading a named photo look no longer sends keyboard focus to the Close button after replacing the saved-list DOM. Focus moves to the first restored product heading (programmatically focusable without entering the normal Tab sequence); an empty saved collection falls back to Close. The existing persistent live status still announces the replacement.
+- `baf9669`: Chromium regression at 390px and 1280px checks the restored product heading receives focus, the status announcement remains, and Tab proceeds to that product's available action.
+- CI for the final HEAD must be checked before claiming success. These automated focus checks do not replace real screen-reader or physical-device acceptance.
+- No real feeds, original-image permissions, physical-store inventory evidence, deployment, PR merge or `main` changes were introduced.
