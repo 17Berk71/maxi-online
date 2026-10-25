@@ -28,6 +28,10 @@ There are no real approval records in this branch. Do not fill these fields with
 
 For each visible real product the gate requires a stable ID, title, safe source URL, original photo URL, a recorded catalogue check date and reviewed source/image hosts. Duplicate IDs and unsupported inventory claims fail. Unknown prices are allowed; invalid prices fail. Individually hidden products and departments marked `hidden: true` are excluded from both catalogue views and the publication audit. A visible demo-labelled product in a purportedly real feed fails the real-pilot gate and disqualifies that store from the multicategory count.
 
+## Feed publication status
+
+Legacy feeds without `catalogue_status` remain readable. Explicit `active` feeds are visible; `withdrawn` feeds are hidden even if stale item flags remain visible. Any other explicit status (including `draft`, `pending_review`, `null` or an unknown value) is hidden by both catalogue adapters and rejected by the offline publication audit. A staged feed cannot count toward the real pilot merely because its individual products are not hidden. This is a fail-closed display rule, not an authorization or rights check.
+
 ## Dates and prices
 
 - Importer writes `imported_at` and `source_type: feed`. Import time is not `last_checked_at`.
