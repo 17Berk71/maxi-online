@@ -92,8 +92,12 @@ test('hidden index stores cannot be advertised or fetched, without changing lega
 
 
 test('a malformed feed root is a loading failure, not an empty approved catalogue',()=>{
- for(const malformed of [null,[],{},'invalid',{depts:null},{depts:{}},{depts:'[]'}])
+ for(const malformed of [null,[],{},'invalid',{depts:null},{depts:{}},{depts:'[]'},
+  {depts:[null]},{depts:[[]]},{depts:[{}]},{depts:[{items:null}]},
+  {depts:[{items:{}}]},{depts:[{items:[]},null]}])
   assert.equal(validFeedDocument(malformed),false,JSON.stringify(malformed));
  assert.equal(validFeedDocument({depts:[]}),true,'a genuinely empty feed is valid');
+ assert.equal(validFeedDocument({depts:[{items:[]}]}),true,'a genuinely empty department is valid');
+ assert.equal(validFeedDocument({depts:[{hidden:true,items:[]}]}),true,'a hidden but well-formed department is valid');
  assert.equal(validFeedDocument({catalogue_status:'withdrawn',depts:[]}),true,'status filtering is independent of structure');
 });
