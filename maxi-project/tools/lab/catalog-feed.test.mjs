@@ -58,3 +58,12 @@ test('ambiguous truthy hide markers cannot leak products or reserve their IDs',(
  assert.deepEqual(catalogueProducts(feed).map(p=>p.name),['Public','Last']);
  assert.equal(feed.depts[0].hidden,'true','source flags remain unchanged');
 });
+
+test('withdrawn feed status suppresses stale visible items without mutating source',()=>{
+ const item={id:'still-visible',name:'Should not be published',pic:'img/old.webp'};
+ const feed={catalogue_status:'withdrawn',depts:[{key:'old',items:[item]}]};
+ assert.deepEqual(visibleDepartments(feed),[]);
+ assert.deepEqual(catalogueProducts(feed),[]);
+ assert.equal(feed.depts[0].items[0],item);
+ assert.deepEqual(catalogueProducts({...feed,catalogue_status:'active'}).map(p=>p.id),['still-visible']);
+});
