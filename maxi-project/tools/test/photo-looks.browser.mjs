@@ -106,6 +106,15 @@ try {
       }
       (await import('/src/shop/photo-looks.js')).openPhotoLook();
     });
+    // Adding a favorite keeps the same action focused after rerendering the
+    // photo board; keyboard users should not be sent to the Close button.
+    await page.getByLabel('Название образа',{exact:true}).fill('Черновик с избранным');
+    await page.getByRole('button',{name:'Добавить «Favorite One» из избранного в образ'}).click();
+    assert.equal(await page.getByRole('button',{name:'Добавить «Favorite One» из избранного в образ'}).evaluate(e=>e===document.activeElement),true,
+      'adding a favorite must preserve keyboard focus on its action');
+    assert.equal(await page.getByRole('status').textContent(),'Товар из избранного добавлен в образ.');
+    assert.equal(await page.getByLabel('Название образа',{exact:true}).inputValue(),'Черновик с избранным');
+    assert.equal(await page.locator('#maxi-photo-look article h3').filter({hasText:'Favorite One'}).count(),1);
     await page.getByRole('button',{name:'Удалить «Favorite Two» из избранного'}).click();
     assert.equal(await page.getByRole('button',{name:'Удалить «Favorite Three» из избранного'}).evaluate(e=>e===document.activeElement),true,
       'removing a middle favorite must focus the next favorite');
