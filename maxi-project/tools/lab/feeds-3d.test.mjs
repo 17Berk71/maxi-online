@@ -96,3 +96,12 @@ test('3D and quick cards save the same source SKU without conflating f-prefixed 
  assert.notEqual(productSnapshot(scene[0],shop,null).id,productSnapshot(scene[0],{name:'Store B'},null).id);
  assert.equal(productSnapshot({id:'legacy',name:'Standalone'},shop,null).id,'Store A|legacy|','non-feed IDs retain their previous format');
 });
+
+test('withdrawn feed cannot resurface stale products in 3D or quick catalogue',()=>{
+ const feed={catalogue_status:'withdrawn',demo:true,depts:[{key:'old',type:'generic',items:[
+  {id:'stale',name:'Withdrawn item',pic:'img/stale.webp',cut:true}
+ ]}]};
+ assert.deepEqual(feedCatalog({name:'Synthetic',_feed:feed},DEPT),[]);
+ assert.deepEqual(catalogueProducts(feed),[]);
+ assert.equal(feed.depts[0].items[0].hidden,undefined,'withdrawal must not mutate source');
+});
