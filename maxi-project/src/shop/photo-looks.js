@@ -95,6 +95,8 @@ export function openPhotoLook(){
       const card=document.createElement('article');Object.assign(card.style,{border:'1px solid #ddd',borderRadius:'12px',padding:'12px',background:'white'});
       const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';img.onerror=()=>{img.replaceWith(Object.assign(document.createElement('p'),{textContent:it.sourceUrl?'Изображение недоступно. Откройте страницу товара.':'Изображение недоступно. Ссылка на товар не подтверждена.'}));};Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
       const title=document.createElement('h3');title.textContent=it.title;const shop=document.createElement('p');shop.textContent=it.shop;
+      // Make the ordering understandable without relying on visual card positions.
+      const position=document.createElement('p');position.className='photo-look-position';position.textContent=`Позиция ${index+1} из ${items.length}`;
       const controls=document.createElement('div');Object.assign(controls.style,{display:'flex',gap:'8px',flexWrap:'wrap'});
       for(const [action,label,fn] of [['left','←',()=>movePhotoLook(it.id,-1)],['right','→',()=>movePhotoLook(it.id,1)],['remove','Удалить',()=>removeFromPhotoLook(it.id)]]){
         const b=document.createElement('button');b.textContent=label;
@@ -106,11 +108,11 @@ export function openPhotoLook(){
           if(fn()===false){status.textContent=store.message();return;}
           const focusId=action==='remove'?neighbor?.id:it.id;
           const focusAction=action==='remove'?'remove':action==='left'?(index===1?'right':'left'):(index===items.length-2?'left':'right');
-          render(focusId,focusAction,action==='remove'?'Товар удалён из образа.':'Порядок товаров изменён.');
+          render(focusId,focusAction,action==='remove'?'Товар удалён из образа.':`Позиция товара «${it.title}»: ${index+(action==='left'?-1:1)+1} из ${items.length}.`);
         };
         controls.append(b);
       }
-      card.append(img,title,shop,controls);
+      card.append(img,title,shop,position,controls);
       if(it.demo){const demo=document.createElement('p');demo.textContent='Демонстрационный товар';card.append(demo);}
       if(it.sourceUrl){const link=document.createElement('a');link.href=it.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Страница товара ↗';card.append(link);}
       grid.append(card);
