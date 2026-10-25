@@ -11,7 +11,11 @@ export const isHidden = record => Boolean(record?.hidden);
 // An HTTP 200 response is not a usable feed unless its root has the expected
 // department array. An empty array is valid; missing or malformed data is not.
 export const validFeedDocument = feed => Boolean(feed && typeof feed === 'object' &&
-  !Array.isArray(feed) && Array.isArray(feed.depts));
+  !Array.isArray(feed) && Array.isArray(feed.depts) &&
+  // A malformed department is not proof of an empty assortment. Both UIs
+  // must offer a retry instead of silently dropping broken supplier sections.
+  feed.depts.every(dept => dept && typeof dept === 'object' &&
+    !Array.isArray(dept) && Array.isArray(dept.items)));
 // An index-level hidden store must not be advertised or fetched by either UI.
 // Treat ambiguous truthy flags as hidden, preserving legacy entries without a flag.
 export const visibleStoreEntry = entry => Boolean(entry && !isHidden(entry) && feedPath(entry.file));
