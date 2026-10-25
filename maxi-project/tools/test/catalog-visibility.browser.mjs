@@ -46,6 +46,13 @@ try{
   await page.getByText('В каталоге нет доступных товаров.',{exact:true}).waitFor();
   assert.equal(await page.locator('#quick-catalog article').count(),0);
   assert.equal(await page.getByText('Visible synthetic item',{exact:true}).count(),0);
+  // When the index itself is unreachable, a 3D store must not invent a legacy
+  // assortment merely because it cannot discover which real feed was configured.
+  await page.route('**/feeds/index.json',route=>route.fulfill({status:503,body:'temporarily unavailable'}));
+  await openStore();
+  assert.equal(await page.locator('#shop .sh-card').count(),0);
+  await page.getByText('В каталоге пока нет доступных товаров. Демонстрационные товары не подставляются.',{exact:true}).waitFor();
+  assert.equal(await page.evaluate(()=>window.__maxi.SHOP.cat.length),0);
   assert.deepEqual(errors,[]);
   await page.close();console.log(`PASS hidden products and fully withdrawn shop stay empty in 3D/quick catalogues (${width}px)`);
  }
