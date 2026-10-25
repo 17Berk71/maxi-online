@@ -106,3 +106,17 @@ test('publication audit excludes truthy hidden departments and products',()=>{
  assert(withdrawn.issues.some(x=>x.code==='empty_catalogue'&&x.store==='A'));
  assert(withdrawn.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
 });
+
+
+test('publication audit rejects staged/unknown feed status and excludes it from real pilot',()=>{
+ for(const status of ['draft','pending_review','withdrawn ',null,false,'ACTIVE']){
+  const f=fixture();f.feeds['a.json'].catalogue_status=status;
+  const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+  assert.equal(report.technicalGatePassed,false,String(status));
+  assert(report.issues.some(x=>x.code==='catalogue_status_invalid'&&x.store==='A'),String(status));
+  assert(report.issues.some(x=>x.code==='real_multicategory_pilot_missing'),String(status));
+  assert.equal(report.stores.find(x=>x.name==='A').products,0,String(status));
+ }
+ const active=fixture();active.feeds['a.json'].catalogue_status='active';
+ assert.equal(auditCatalogue(active.index,active.feeds,active.manifest,{now,requireReal:true}).technicalGatePassed,true);
+});
