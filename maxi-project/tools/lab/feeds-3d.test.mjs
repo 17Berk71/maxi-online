@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {feedCatalog,feedIndexReady,feedPhotoKey,loadFeed,winKeys} from '../../src/shop/feeds.js';
 import {PHOTOS} from '../../src/shop/photos.js';
 import {catalogueProducts} from '../../src/shop/catalog-feed.js';
+import {catalogOf} from '../../src/shop/catalog.js';
 import {productSnapshot} from '../../src/shop/product-snapshot.js';
 
 const DEPT={generic:{icon:'box',model:'box',lay:'wall'}};
@@ -43,7 +44,10 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
   assert.equal(winKeys('Hidden').length,0,'a hidden index store must not register window photos');
   const store={name:'Fixture'};
   assert.equal(await loadFeed(store),false);
-  assert.equal(await loadFeed({name:'Hidden'}),false,'hidden index stores must not request their feed');
+  const hiddenStore={name:'Hidden',id:123,cat:'wear'};
+  assert.equal(await loadFeed(hiddenStore),false,'hidden index stores must not request their feed');
+  assert.equal(hiddenStore._catalogueHidden,true);
+  assert.deepEqual(catalogOf(hiddenStore),[],'a hidden feed must not be replaced with generated legacy demo products');
   assert.equal(await loadFeed({name:'Store A'}),true);
   assert.equal(await loadFeed({name:'Store B'}),true);
   assert.equal(PHOTOS[feedPhotoKey('Store A','same-sku')].url,'feeds/img/a.webp');
