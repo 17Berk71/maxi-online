@@ -39,7 +39,7 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
  };
  try{
   await feedIndexReady();
-  assert.equal(winKeys('Fixture').length,1);
+  assert.equal(winKeys('Fixture').length,0,'unsafe feed entries must not register window photos');
   assert.equal(winKeys('Hidden').length,0,'a hidden index store must not register window photos');
   const store={name:'Fixture'};
   assert.equal(await loadFeed(store),false);
