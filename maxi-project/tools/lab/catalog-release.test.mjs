@@ -131,3 +131,15 @@ test('index-hidden stores never count toward the real multicategory pilot',()=>{
  const restored=fixture();restored.index.shops.A.hidden=false;
  assert.equal(auditCatalogue(restored.index,restored.feeds,restored.manifest,{now,requireReal:true}).technicalGatePassed,true);
 });
+
+test('malformed departments cannot pass offline publication review even beside valid products',()=>{
+ for(const bad of [null,{},[],{title:'Broken'}, {title:'Broken',items:{}}]){
+  const f=fixture();f.feeds['a.json'].depts.push(bad);
+  const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+  assert.equal(report.technicalGatePassed,false,JSON.stringify(bad));
+  assert(report.issues.some(x=>x.code==='feed_unreadable'&&x.store==='A'));
+  assert(report.issues.some(x=>x.code==='real_multicategory_pilot_missing'));
+ }
+ const f=fixture();f.feeds['a.json'].depts.push({title:'Empty but valid',items:[]});
+ assert.equal(auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true}).technicalGatePassed,true);
+});
