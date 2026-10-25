@@ -409,3 +409,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `67a0b81`: the navigation test rechecks actual app mode on timeout. It accepts only a confirmed `store` state, then still verifies the visible shop name and exit; real navigation failures continue to fail.
 - Preserve an unsaved look name when moving/deleting items or rerendering saved/favorite collections. Clear it only after successful save. Chromium checks at 390px and 1280px cover draft-name retention and post-save clearing.
 - Verify the next GitHub Actions run on the final HEAD before claiming this batch passed. Real source rights, stock, screen-reader testing and physical-device testing remain outstanding. No merge or deployment.
+
+
+### 25 October 2026 — focus continuity after adding a favorite to a photo look
+
+- Confirmed the remote PR #18 head was `f62e83a` before edits; [MVP architecture checks #214](https://github.com/17Berk71/maxi-online/actions/runs/40205195054) passed on that exact baseline.
+- `e721fbe`: after adding a favorite to the draft outfit, the photo-board rerender now restores focus to that favorite's still-available “В образ” action instead of jumping to the Close button. This is a keyboard-navigation fix; no catalogue, source image, price, stock, merchant link or saved-data format was changed.
+- `d7fea9a`: the existing Playwright suite at 390px and 1280px now checks restored focus, live-status text, retained unsaved look name and the newly added draft item.
+- CI on the final documentation HEAD must be checked before claiming this batch passed. Automated focus assertions do not replace a physical-device or screen-reader audit.
+- Real merchant feeds, rights to source photos and Tula physical inventory remain unverified. Do not merge PR #18, change `main` or deploy.
