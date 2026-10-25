@@ -1,5 +1,5 @@
 // Товары из выгрузок магазинов (готовит tools/feeds/import_feed.py → feeds/index.json и feeds/<магазин>.json).
-// Если выгрузки у магазина нет или файлы недоступны, остаётся демо-каталог из catalog.js.
+// Демо-каталог допустим только когда успешно загруженный индекс не настраивает выгрузку магазина.
 import {PHOTOS} from './photos.js';
 import {visibleDepartments,feedPath,visibleStoreEntry} from './catalog-feed.js';
 import {catalogEvidence} from './catalog-evidence.js';
@@ -36,7 +36,14 @@ export async function loadFeed(s) {
   if (!s || s._feedTried) return !!(s && s._feed);
   if (s._feedP) return s._feedP;
   s._feedP = (async () => {
-    const idx = await loadIndex(); const e = idx && idx.shops && idx.shops[s.name];
+    const idx = await loadIndex();
+    // An unavailable/malformed index cannot prove that this store has no configured
+    // feed. Fail closed rather than replacing an unknown real assortment with
+    // generated demonstration products during a network or JSON failure.
+    if (!idx || !idx.shops || typeof idx.shops !== 'object' || Array.isArray(idx.shops)) {
+      s._catalogueUnavailable = true; s._cat = null; s._feedTried = true; return false;
+    }
+    const e = idx.shops[s.name];
     // A configured but hidden, unsafe or unreachable feed must not fall back to generated demo goods.
     if (idx?.shops && Object.hasOwn(idx.shops,s.name) && !visibleStoreEntry(e)) {
       s._catalogueUnavailable = true; s._cat = null; s._feedTried = true; return false;
