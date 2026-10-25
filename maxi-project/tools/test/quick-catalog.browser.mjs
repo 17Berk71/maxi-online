@@ -32,6 +32,7 @@ try{
    throw new Error('Quick catalogue retry did not render: '+JSON.stringify({diagnostic,errors,feedRequests:requested.filter(x=>x.includes('/feeds/'))}),{cause:error});
   }
   assert.equal(await root.locator('article').count(),2);
+  assert.equal(requested.filter(u=>u.includes('/feeds/test.json')).length>=2,true,'failed and retried store requests must reach the configured feed');
   assert.equal(await root.locator('article img').first().getAttribute('src'),'feeds/img/test.svg',
     'demo card must use local preview even when an external original URL is present');
   assert.equal(requested.some(url=>url.includes('images.example.org/unreviewed.jpg')),false,
