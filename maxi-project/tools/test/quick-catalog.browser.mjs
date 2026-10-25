@@ -25,6 +25,10 @@ try{
   brokenFeed=false;await root.getByRole('button',{name:'Повторить загрузку каталога',exact:true}).click();
   await root.getByRole('heading',{name:'Тестовый товар',exact:true}).waitFor();
   assert.equal(await root.locator('article').count(),2);
+  assert.equal(await root.locator('article img').first().getAttribute('src'),'feeds/img/test.svg',
+    'demo card must use local preview even when an external original URL is present');
+  assert.equal(requested.some(url=>url.includes('images.example.org/unreviewed.jpg')),false,
+    'demo page must not request an unreviewed third-party original');
   assert.equal(await root.getByText('Демонстрационный каталог: товары, цены и ссылки тестовые.',{exact:true}).count(),1);
   assert.equal(await root.getByText('Демонстрационный товар',{exact:true}).count(),2);
   assert.equal(await root.getByText('Цена не указана',{exact:true}).count(),2);
