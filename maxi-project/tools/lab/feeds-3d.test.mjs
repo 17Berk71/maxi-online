@@ -105,3 +105,12 @@ test('withdrawn feed cannot resurface stale products in 3D or quick catalogue',(
  assert.deepEqual(catalogueProducts(feed),[]);
  assert.equal(feed.depts[0].items[0].hidden,undefined,'withdrawal must not mutate source');
 });
+
+
+test('3D feed adapter does not expose draft or unknown-status catalogue products',()=>{
+ const feed={demo:true,depts:[{key:'tops',type:'generic',items:[{id:'sku',name:'Not approved',pic:'img/sku.webp'}]}]};
+ for(const status of ['draft','pending_review','withdrawn',null,'ACTIVE']){
+  assert.deepEqual(feedCatalog({name:'Synthetic',_feed:{...feed,catalogue_status:status}},DEPT),[],String(status));
+ }
+ assert.equal(feedCatalog({name:'Synthetic',_feed:{...feed,catalogue_status:'active'}},DEPT)[0].items.length,1);
+});
