@@ -41,7 +41,11 @@ export async function openQuickCatalog(reason=''){
  document.body.append(root);title.tabIndex=-1;title.focus();
  let request=0,stopInventory=()=>{};disposePrevious=()=>stopInventory();
  async function showStores(focusName=null){
-  stopInventory();const token=++request;content.replaceChildren();status.textContent='Загрузка магазинов…';
+  stopInventory();const token=++request;
+  // A retry or Back action removes the focused control. Restore keyboard focus
+  // to a usable store button after success instead of leaving it on <body>.
+  const restoreFocus=content.contains(document.activeElement);
+  content.replaceChildren();status.textContent='Загрузка магазинов…';
   if(focusName)title.focus();
   try{
    const index=await read('feeds/index.json');if(token!==request)return;
@@ -50,11 +54,13 @@ export async function openQuickCatalog(reason=''){
    if(!index || !index.shops || typeof index.shops!=='object' || Array.isArray(index.shops))throw Error('Invalid catalogue index');
    const stores=Object.entries(index.shops).filter(([,entry])=>visibleStoreEntry(entry));
    status.textContent=stores.length?'Выберите магазин.':'Нет доступных каталогов.';
+   let focused=false;
    for(const [name,entry] of stores){
     const button=el('button',name+(Boolean(index.demo)?' · демонстрация':''));button.className='quick-store';button.onclick=()=>showStore(name,entry,index);content.append(button);
-    if(focusName===name)button.focus();
+    if(focusName===name || (restoreFocus&&!focusName&&!focused)){button.focus();focused=true;}
    }
-  }catch{if(token!==request)return;status.textContent='Не удалось загрузить список магазинов. Повторите попытку.';const retry=el('button','Повторить загрузку');retry.onclick=()=>showStores(focusName);content.append(retry);}
+   if((restoreFocus||focusName)&&!focused)title.focus();
+  }catch{if(token!==request)return;status.textContent='Не удалось загрузить список магазинов. Повторите попытку.';const retry=el('button','Повторить загрузку');retry.onclick=()=>showStores(focusName);content.append(retry);retry.focus();}
  }
  async function showStore(name,entry,index){
   stopInventory();const token=++request;content.replaceChildren();status.textContent='Загрузка каталога…';
