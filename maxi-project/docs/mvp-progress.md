@@ -274,3 +274,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - [Actions #141](https://github.com/17Berk71/maxi-online/actions/runs/40144001842) **failed** at the 1280px integrated journey: Playwright timed out waiting for the static `#shopCat` control. The same updated journey passed at 390px; Node tests, Python tests, catalogue audit and production build passed. This is not evidence that the full browser suite passed.
 - The integrated journey now launches a fresh Chromium process for each viewport, preventing accumulated software-WebGL resources from the previous 3D scene from affecting the next viewport. A missing store HUD produces explicit URL/mode/fallback diagnostics instead of a generic locator timeout.
 - This is a test-environment isolation attempt, not proof of the underlying cause. Validate the new CI on its exact HEAD; if the 1280px journey still fails, investigate startup/DOM state using the new diagnostics. No product data or deployment was changed in this follow-up.
+
+
+## Continuation — 25 October 2026: demo-image provenance hardening
+
+- Audited the photo-first quick catalogue and 3D product viewer against the rule that a feed URL does not grant image-use rights. Found that a demo product containing both a local processed preview and an external `original_image_url` loaded the external URL first, and could mislabel it as a source original.
+- Changed `catalogueProducts` to use only the local feed preview for demo items; real/non-demo products still prioritize the explicit original image URL. Missing demo previews now remain missing rather than falling back to an unreviewed external image.
+- Changed the 3D product viewer and its photo-board add action to follow the same demo-preview rule and label demo previews correctly. The source URL remains available in provenance metadata for review, not for automatic embedding.
+- Added Node regression assertions for demo/real image selection and a 390px/1280px Chromium quick-catalogue fixture with an intentionally unreviewed external original; the browser test checks the displayed local preview and that no request to the external image host occurs.
+- Baseline GitHub Actions run #142 on `ddeffe9` passed, including Chromium. New tests/changes were committed to the experimental PR #18 branch; latest CI must be checked at the branch HEAD before treating this batch as verified. No real feeds, rights approvals or physical stock evidence were added. No main changes, merge or deployment.
