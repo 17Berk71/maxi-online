@@ -16,12 +16,18 @@ try{
   await page.route('**/feeds/test.json',r=>brokenFeed===true?r.fulfill({status:503,body:'unavailable'}):brokenFeed==='malformed'?r.fulfill({json:{demo:feedDemo,updated:'2026-10-24'}}):brokenFeed==='malformed-dept'?r.fulfill({json:{demo:feedDemo,depts:[{title:'Broken department'}]}}):r.fulfill({json:{demo:feedDemo,updated:'2026-10-24',depts:[{title:'Тестовые товары',items:[{id:'1',name:'Тестовый товар',pic:'img/test.svg',url:'https://example.org/fake',original_image_url:'https://images.example.org/unreviewed.jpg'},{id:'2',name:'Товар без исходного фото',price:null}]}]}}));
   await page.goto((process.env.MAXI_URL||'http://127.0.0.1:5173')+(fallback?'/':'/?catalog=1'),{waitUntil:'domcontentloaded'});
   const root=page.locator('#quick-catalog');await root.waitFor();
-  await root.getByRole('button',{name:'Повторить загрузку',exact:true}).waitFor();
+  const retryIndex=root.getByRole('button',{name:'Повторить загрузку',exact:true});
+  await retryIndex.waitFor();
+  assert.equal(await retryIndex.evaluate(e=>e===document.activeElement),true,'index failure must focus the retry control');
   brokenIndex='invalid';await root.getByRole('button',{name:'Повторить загрузку',exact:true}).click();
-  await root.getByRole('button',{name:'Повторить загрузку',exact:true}).waitFor();
+  await retryIndex.waitFor();
+  assert.equal(await retryIndex.evaluate(e=>e===document.activeElement),true,'malformed index retry must keep keyboard focus');
   assert.equal(await root.getByText('Нет доступных каталогов.',{exact:true}).count(),0,
     'malformed index must show retry rather than claiming an empty catalogue');
-  brokenIndex=false;await root.getByRole('button',{name:'Повторить загрузку',exact:true}).click();
+  brokenIndex=false;await retryIndex.click();
+  const recoveredStore=root.getByRole('button',{name:'Тестовый магазин'+(indexDemo?' · демонстрация':''),exact:true});
+  await recoveredStore.waitFor();
+  assert.equal(await recoveredStore.evaluate(e=>e===document.activeElement),true,'successful index retry must focus the first store');
   assert.equal(await root.getByRole('button',{name:'Unsafe',exact:false}).count(),0);
   assert.equal(await root.getByRole('button',{name:'Hidden store',exact:false}).count(),0,'index-hidden stores must not appear in quick catalogue');
   await root.getByRole('button',{name:'Тестовый магазин'+(indexDemo?' · демонстрация':''),exact:true}).click();
