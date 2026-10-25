@@ -291,3 +291,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Shared `visibleDepartments` now treats the feed-level withdrawn status as an overriding publication block, preserving the source data. Added Node regressions for both 3D and WebGL-independent catalogue adapters, including an active-feed control case.
 - Code/test commits: `5db4862`, `fc9d499`, `4ace77d`. New CI is [Actions #151](https://github.com/17Berk71/maxi-online/actions/runs/40151694546); its final result must be verified on the latest HEAD. This is an offline safety improvement, **not** a rights, merchant-connection or local-inventory approval.
 - No real feed/photo permissions were invented. No changes to `main`, no PR merge and no deployment.
+
+
+### 25 October 2026 — fail-closed staged/unknown catalogue status
+
+- Confirmed [Actions #153](https://github.com/17Berk71/maxi-online/actions/runs/40151734853) **passed** at baseline `a81323c`, including the configured Chromium desktop/mobile browser suite.
+- Audited the feed-level withdrawal rule: the previous viewer blocked only the exact string `withdrawn`. A feed explicitly marked `draft`, `pending_review`, an unknown value, or a malformed withdrawal string could still display unhidden products in both the quick catalogue and the 3D store.
+- Shared catalogue visibility now permits only absent status (legacy compatibility) or explicit `active`. All other explicit states show no products without mutating the source feed. The offline publication audit rejects unrecognized states and does not count their products toward the real multicategory pilot, even if the review manifest is otherwise complete. The recognized `withdrawn` status remains allowed only for intentionally empty/hidden catalogues.
+- Added Node regressions for 3D and quick catalogue adapters and the real-publication audit, plus a synthetic Chromium 390px/1280px draft-catalogue check. CI for the new HEAD must be checked independently before claiming success.
+- This does not validate any real merchant, permission to display source photographs, or live stock. No merge, deployment or `main` changes.
