@@ -386,3 +386,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `a1e570e`: Chromium regression checks at 390px and 1280px assert the same live status node survives reorder and removal, alongside the existing focus and persistence checks.
 - Verification: [GitHub Actions run #203](https://github.com/17Berk71/maxi-online/actions/runs/40189954961) was still running when this note was prepared. Do not claim the batch passed until that run (or a later run on the final HEAD) completes successfully.
 - Remaining acceptance gaps: a real screen-reader announcement audit, physical-device testing, rights-cleared original photographs and verified live-store feeds. No deployment or merge authorized.
+
+### 25 October 2026 — readable photo-board ordering
+
+- Recovered the actual remote branch HEAD `29c6502` before editing. [GitHub Actions #204](https://github.com/17Berk71/maxi-online/actions/runs/40190030854) completed successfully on that baseline (including configured Chromium suites).
+- `abd29eb`: every photo-board item now visibly states its position (for example, «Позиция 1 из 2»). Successful arrow moves announce the specific product and its new position through the existing persistent live region, rather than only saying the order changed. No product data, original images, store links, stock claims, or persisted format were modified.
+- `3be0ab2`: the 390px and 1280px Playwright photo-board suite now checks item positions before and after reordering, the precise announcement, and updated position after removing a card.
+- CI for this batch must be checked against the final branch HEAD before claiming success. Automated DOM/live-region assertions do not replace a real screen-reader or physical-device audit.
+- Real catalogues, original-photo permissions and physical-store inventory remain unverified. No merge, deployment or `main` modification.
