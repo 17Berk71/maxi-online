@@ -370,3 +370,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Code commit: `174c0d3`. Chromium regression commit: `7a638c5`. The existing browser suite asserts focus after HTTP 503, malformed HTTP 200 index and successful recovery across its 390px/1280px direct-catalogue, WebGL-unavailable and 3D-startup-failure paths.
 - [MVP architecture checks #195](https://github.com/17Berk71/maxi-online/actions/runs/40181445634) **passed** on `7a638c5410691e89f39a227d1da08779be134e19`: syntax, Python importer tests, Node policy regressions, demo catalogue audit, production build and configured Chromium browser journeys.
 - These automated focus assertions are not a substitute for real screen-reader or physical-device testing. Real catalogue partnerships, photo rights and local stock remain unverified; no deployment or PR merge was performed.
+
+### Keyboard focus after deleting the final photo-look item — 25 October 2026
+
+- Recovery started from actual remote HEAD `5a12a0a`; previous GitHub Actions run #196 passed.
+- `7c43b19` fixes a keyboard accessibility regression in the photo-look modal: deleting the final draft item previously removed the focused control without choosing a replacement, leaving focus outside the modal. The dialog's Close control now receives focus when no neighboring item remains.
+- `78108d6` adds browser assertions for final-item deletion, retained focus, and Shift+Tab confinement at 390px and 1280px.
+- GitHub Actions [MVP architecture checks #198](https://github.com/17Berk71/maxi-online/actions/runs/40185842824) **passed** on `78108d6`, including syntax, importer tests, catalogue audit, production build, and configured Chromium browser suites. The intermediate run for `7c43b19` was cancelled by the newer commit.
+- No real catalogue, image-rights approval, store-stock assertion, deployment, PR merge, or main-branch change was made. Full screen-reader and physical-device tests remain outstanding.
