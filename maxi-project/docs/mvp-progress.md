@@ -321,3 +321,13 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - No real catalogue, image licence or stock proof was introduced. No changes to `main`, PR merge or deployment.
 
 - Follow-up: the WebGL-independent quick catalogue also treats an absent/malformed `index.shops` (including an array) as a recoverable loading error rather than claiming that no catalogues exist. The visible retry action is preserved; the existing 390px/1280px browser fixture now exercises HTTP 503 → malformed index → successful retry. Commits: `2c09778`, `acb75f3`. Recheck CI for the latest code HEAD.
+
+
+### 25 October 2026 — reject malformed successful feed documents
+
+- Verified the preceding [Actions #177](https://github.com/17Berk71/maxi-online/actions/runs/40162864339) **passed**, including configured browser tests. This result predates the change below.
+- Found that HTTP 200 with JSON `{}` or `depts` of the wrong type could be accepted as a loaded, empty catalogue. This hid a broken supplier response as if a store simply had no products. The 3D loader could mark the feed loaded; the quick catalogue could claim no available products.
+- Both catalogue adapters now share `validFeedDocument`: only a non-array object with an array-valued `depts` is structurally accepted. A legitimate `depts: []` remains valid; malformed documents are treated as load failures. The 3D store fails closed with no fabricated demo assortment, and the quick catalogue offers its existing retry action.
+- Added Node regressions for malformed/empty feed roots and 3D fail-closed behavior; extended the Chromium quick-catalogue journey at 390px and 1280px to cover HTTP 503 → malformed HTTP 200 → successful retry. Code/test commit: `f050a64`.
+- [Actions #178](https://github.com/17Berk71/maxi-online/actions/runs/40166298521) was started for the code commit. Its final result must be verified separately; do not infer browser success from the earlier run.
+- No real catalogues, image rights, partnerships or local inventory were invented. The PR stays draft; no `main` update, merge or deployment.
