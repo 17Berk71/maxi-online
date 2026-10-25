@@ -168,7 +168,9 @@ test('3D catalogue fails closed when feed index is unreachable or malformed',asy
 test('configured 3D feeds reject malformed successful responses without demo fallback',async()=>{
  const original=globalThis.fetch;
  try{
-  const samples=[['missing-depts',{}],['non-array-depts',{depts:{}}],['array-root',[]],['null-root',null]];
+  const samples=[['missing-depts',{}],['non-array-depts',{depts:{}}],['array-root',[]],['null-root',null],
+   ['null-department',{depts:[null]}],['missing-items',{depts:[{title:'Broken'}]}],
+   ['invalid-items',{depts:[{title:'Broken',items:{}}]}]];
   for(const [label,body] of samples){
    const requests=[];
    globalThis.fetch=async url=>{
