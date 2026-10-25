@@ -135,12 +135,16 @@ export function openPhotoLook(){
     for(const [favoriteIndex,entry] of favoriteItems.entries()){
       const row=document.createElement('div');row.className='photo-look-saved-row';
       const title=document.createElement('span');title.textContent=entry.title+' · '+entry.shop+(entry.demo?' · демонстрация':'');row.append(title);
-      const add=document.createElement('button');add.textContent='В образ';add.disabled=!entry.image;add.setAttribute('aria-label','Добавить «'+entry.title+'» из избранного в образ');
+      const add=document.createElement('button');add.textContent='В образ';add.disabled=!entry.image;add.setAttribute('aria-label','Добавить «'+entry.title+'» из избранного в образ');add.dataset.favoriteAddId=entry.id;
       add.onclick=()=>{
         const next=store.items().filter(x=>x.id!==entry.id);
         if(next.length>=MAX_ITEMS){status.textContent='В образе может быть не больше 24 вещей.';return;}
         if(!store.setDraft([...next,entry])){status.textContent=store.message();return;}
-        render(null,null,'Товар из избранного добавлен в образ.');root.querySelector('[data-close-photo-look]')?.focus();
+        render(null,null,'Товар из избранного добавлен в образ.');
+        // Adding a favorite rebuilds the list but does not remove the favorite.
+        // Restore its action instead of unexpectedly jumping to Close.
+        const target=[...root.querySelectorAll('button[data-favorite-add-id]')].find(b=>b.dataset.favoriteAddId===entry.id&&!b.disabled);
+        (target||root.querySelector('[data-close-photo-look]'))?.focus();
       };
       const remove=document.createElement('button');remove.textContent='Удалить';remove.setAttribute('aria-label','Удалить «'+entry.title+'» из избранного');
       remove.dataset.favoriteId=entry.id;
