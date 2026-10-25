@@ -92,6 +92,27 @@ try {
     await page.getByRole('button',{name:'Удалить сохранённый образ «Второй образ»',exact:true}).click();
     assert.equal(await page.getByLabel('Название образа',{exact:true}).evaluate(e=>e===document.activeElement),true,
       'deleting the final saved look must focus the naming field');
+    // Deleting a favorite should keep focus in its list when siblings remain.
+    // Use only synthetic demo products: no merchant links or photo rights implied.
+    await page.keyboard.press('Escape');
+    await page.evaluate(async()=>{
+      const {favorites}=await import('/src/shop/favorites.js');
+      for(const [id,name] of [['fav-one','Favorite One'],['fav-two','Favorite Two'],['fav-three','Favorite Three']]){
+        if(!favorites.add({id,name,demo:true},{name:'Fixture'},'/tools/test/fixtures/product.svg'))throw Error('Favorite fixture failed');
+      }
+      (await import('/src/shop/photo-looks.js')).openPhotoLook();
+    });
+    await page.getByRole('button',{name:'Удалить «Favorite Two» из избранного'}).click();
+    assert.equal(await page.getByRole('button',{name:'Удалить «Favorite Three» из избранного'}).evaluate(e=>e===document.activeElement),true,
+      'removing a middle favorite must focus the next favorite');
+    await page.getByRole('button',{name:'Удалить «Favorite Three» из избранного'}).click();
+    assert.equal(await page.getByRole('button',{name:'Удалить «Favorite One» из избранного'}).evaluate(e=>e===document.activeElement),true,
+      'removing the final favorite in a list must focus the previous favorite');
+    await page.getByRole('button',{name:'Удалить «Favorite One» из избранного'}).click();
+    assert.equal(await page.locator('#maxi-photo-look [data-close-photo-look]').evaluate(e=>e===document.activeElement),true,
+      'removing the last favorite must keep focus inside the dialog');
+    assert.equal(await page.getByRole('status').textContent(),'Товар удалён из избранного.');
+    assert.equal(await page.locator('#maxi-photo-look button[data-favorite-id]').count(),0);
     const horizontal=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
     assert.equal(await page.locator('#maxi-photo-look').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
     assert.equal(horizontal,false,`Unexpected horizontal page overflow at ${width}px`);
