@@ -67,3 +67,16 @@ test('withdrawn feed status suppresses stale visible items without mutating sour
  assert.equal(feed.depts[0].items[0],item);
  assert.deepEqual(catalogueProducts({...feed,catalogue_status:'active'}).map(p=>p.id),['still-visible']);
 });
+
+
+test('only active or legacy-status feeds may expose products',()=>{
+ const item={id:'sku',name:'Synthetic visible item'};
+ const feed={demo:true,depts:[{key:'a',items:[item]}]};
+ for(const status of ['draft','pending_review','withdrawn','withdrawn ',null,false,1,'ACTIVE',{}]){
+  assert.deepEqual(visibleDepartments({...feed,catalogue_status:status}),[],String(status));
+  assert.deepEqual(catalogueProducts({...feed,catalogue_status:status}),[],String(status));
+ }
+ assert.deepEqual(catalogueProducts(feed).map(p=>p.id),['sku'],'legacy feeds remain readable');
+ assert.deepEqual(catalogueProducts({...feed,catalogue_status:'active'}).map(p=>p.id),['sku']);
+ assert.equal(item.hidden,undefined,'status gate does not mutate raw items');
+});
