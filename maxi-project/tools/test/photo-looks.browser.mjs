@@ -61,6 +61,14 @@ try {
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
     await page.getByRole('button',{name:'Удалить «Jacket»',exact:true}).click();
     assert.equal(await page.locator('#maxi-photo-look article').count(),0);
+    // The last removed card owned focus; its disappearance must not strand
+    // keyboard users on the inert document outside the modal.
+    assert.equal(await page.locator('#maxi-photo-look [data-close-photo-look]').evaluate(e=>e===document.activeElement),true,
+      'deleting the final item must return focus to a live dialog control');
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await page.locator('#maxi-photo-look [data-close-photo-look]').evaluate(e=>e===document.activeElement),false,
+      'keyboard navigation must remain inside the dialog after the last deletion');
+    assert.equal(await page.evaluate(()=>document.querySelector('#maxi-photo-look').contains(document.activeElement)),true);
     await page.getByRole('button',{name:'Открыть образ «Осенний образ»',exact:true}).click();
     assert.equal(await page.locator('#maxi-photo-look article h3').textContent(),'Jacket');
     await page.getByRole('button',{name:'Удалить сохранённый образ «Осенний образ»',exact:true}).click();
