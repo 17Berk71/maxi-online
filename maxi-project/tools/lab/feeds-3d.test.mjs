@@ -132,3 +132,34 @@ test('3D feed adapter does not expose draft or unknown-status catalogue products
  }
  assert.equal(feedCatalog({name:'Synthetic',_feed:{...feed,catalogue_status:'active'}},DEPT)[0].items.length,1);
 });
+
+
+test('3D catalogue fails closed when feed index is unreachable or malformed',async()=>{
+ const original=globalThis.fetch;
+ try{
+  for(const [label,response] of [
+   ['unreachable',{ok:false,status:503}],
+   ['invalid-json',{ok:true,json:async()=>{throw Error('Invalid JSON');}}],
+   ['missing-shops',{ok:true,json:async()=>({demo:false})}],
+   ['array-shops',{ok:true,json:async()=>({shops:[]})}],
+  ]){
+   const requests=[];
+   globalThis.fetch=async url=>{requests.push(url);return response;};
+   // Each ESM module instance has its own cached index request, as in a fresh page.
+   const fresh=await import('../../src/shop/feeds.js?index-failure='+label);
+   const store={name:'Possibly configured store',id:250,cat:'wear'};
+   assert.equal(await fresh.loadFeed(store),false,label);
+   assert.equal(store._catalogueUnavailable,true,label);
+   assert.deepEqual(catalogOf(store),[],label+': no fabricated fallback assortment');
+   assert.deepEqual(requests,['feeds/index.json'],label+': never request unknown feed paths');
+  }
+  globalThis.fetch=async url=>{
+   assert.equal(url,'feeds/index.json');
+   return {ok:true,json:async()=>({shops:{}})};
+  };
+  const legacy=await import('../../src/shop/feeds.js?index-failure=valid-empty');
+  const store={name:'Unconfigured legacy store',id:251,cat:'wear'};
+  assert.equal(await legacy.loadFeed(store),false);
+  assert.notEqual(store._catalogueUnavailable,true,'an available index may explicitly have no feed for a store');
+ }finally{globalThis.fetch=original;}
+});
