@@ -361,3 +361,12 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - Hardened the shared `feedPath` relative-asset policy against raw C0 and DEL control characters. URL parsers can normalize these differently from filesystem paths; the shared 3D/quick path validator now rejects them before fetching. Added escaped-control regression inputs, preserving normal relative image/feed paths.
 - Commits: `41efbae` (audit), `b07bf95` (audit test), `2011536` (path guard), `0d40fee` and `2459434` (path regression). The latest code HEAD must pass its own GitHub Actions run before this batch is marked CI-verified; intermediate runs may be cancelled by the workflow concurrency policy.
 - These are offline input-integrity fixes, not real catalogue authorization, original-photo rights verification, live inventory proof or a physical-device/screen-reader audit. No `main` changes, PR merge or deployment.
+
+
+### 25 October 2026 — keyboard focus after quick-catalogue index failures
+
+- Recovered actual branch HEAD `c46557d` before edits; kept PR #18 targeting `codex/stage-18-recovery` and did not modify `main`.
+- A failed index request already offered a retry, but replacing the focused retry button after a second failure or a successful recovery could leave keyboard focus on the document body. The quick catalogue now focuses the retry action on error, restores focus to the first usable store after successful retry, preserves the selected store on Back, and focuses the heading when there is no selectable store.
+- Code commit: `174c0d3`. Chromium regression commit: `7a638c5`. The existing browser suite asserts focus after HTTP 503, malformed HTTP 200 index and successful recovery across its 390px/1280px direct-catalogue, WebGL-unavailable and 3D-startup-failure paths.
+- [MVP architecture checks #195](https://github.com/17Berk71/maxi-online/actions/runs/40181445634) **passed** on `7a638c5410691e89f39a227d1da08779be134e19`: syntax, Python importer tests, Node policy regressions, demo catalogue audit, production build and configured Chromium browser journeys.
+- These automated focus assertions are not a substitute for real screen-reader or physical-device testing. Real catalogue partnerships, photo rights and local stock remain unverified; no deployment or PR merge was performed.
