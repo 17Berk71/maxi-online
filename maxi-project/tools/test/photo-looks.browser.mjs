@@ -85,6 +85,12 @@ try {
     assert.equal(await page.evaluate(()=>document.querySelector('#maxi-photo-look').contains(document.activeElement)),true);
     await page.getByRole('button',{name:'Открыть образ «Осенний образ»',exact:true}).click();
     assert.equal(await page.locator('#maxi-photo-look article h3').textContent(),'Jacket');
+    assert.equal(await page.locator('#maxi-photo-look article h3').first().evaluate(e=>e===document.activeElement),true,
+      'opening a saved look must focus its restored product heading, not the Close button');
+    assert.equal(await page.getByRole('status').textContent(),'Образ открыт. Текущая композиция заменена сохранённой.');
+    await page.keyboard.press('Tab');
+    assert.equal(await page.getByRole('button',{name:'Удалить «Jacket»',exact:true}).evaluate(e=>e===document.activeElement),true,
+      'keyboard navigation should continue from the restored product');
     // Deleting a saved collection should focus its nearest remaining neighbor,
     // not jump to the unrelated naming field while keyboard users traverse the list.
     await page.getByLabel('Название образа',{exact:true}).fill('Второй образ');
