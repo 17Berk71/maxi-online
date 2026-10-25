@@ -4,9 +4,9 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||und
 try{
  for(const width of [390,1280]){
   const page=await browser.newPage({viewport:{width,height:844},isMobile:width<600,hasTouch:width<600}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(45000);
-  let withdraw=false,withdrawStatus=false;
+  let withdraw=false,withdrawStatus=false,draftStatus=false;
   await page.route('**/feeds/index.json',r=>r.fulfill({json:{demo:true,shops:{'Gloria Jeans':{file:'fixture.json',win:[]}}}}));
-  await page.route('**/feeds/fixture.json',r=>r.fulfill({json:{demo:false,catalogue_status:withdrawStatus?'withdrawn':'active',depts:[{key:'tshirts',type:'tshirts',title:'Test',items:[
+  await page.route('**/feeds/fixture.json',r=>r.fulfill({json:{demo:false,catalogue_status:withdrawStatus?'withdrawn':draftStatus?'draft':'active',depts:[{key:'tshirts',type:'tshirts',title:'Test',items:[
    {id:'shown',name:'Visible synthetic item',hidden:withdraw?'true':false,pic:'../tools/test/fixtures/product.svg',url:'https://example.org/fake'},
    {id:'hidden',name:'WITHDRAWN ITEM',hidden:'true',pic:'../tools/test/fixtures/product.svg'}
   ]},{key:'paused',type:'tshirts',title:'Paused',hidden:'true',items:[{id:'paused-product',name:'PAUSED DEPARTMENT ITEM'}]}]}}));
@@ -34,6 +34,13 @@ try{
   // A feed-level withdrawal must also block stale items whose individual hidden flags
   // were accidentally reset. Exercise the actual quick catalogue on both viewports.
   withdraw=false;withdrawStatus=true;
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:'Gloria Jeans · демонстрация',exact:true}).click();
+  await page.getByText('В каталоге нет доступных товаров.',{exact:true}).waitFor();
+  assert.equal(await page.locator('#quick-catalog article').count(),0);
+  assert.equal(await page.getByText('Visible synthetic item',{exact:true}).count(),0);
+  // Staged feeds must remain invisible even when every item is unhidden.
+  withdrawStatus=false;draftStatus=true;
   await page.reload({waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:'Gloria Jeans · демонстрация',exact:true}).click();
   await page.getByText('В каталоге нет доступных товаров.',{exact:true}).waitFor();
