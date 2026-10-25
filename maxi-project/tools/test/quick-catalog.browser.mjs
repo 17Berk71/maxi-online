@@ -11,12 +11,16 @@ try{
   let brokenIndex=true,brokenFeed=true;
   // Index-only and feed-only truthy demo markers must both suppress merchant links.
   const indexDemo=fallback===true?false:'true',feedDemo=fallback===true?'true':false;
-  await page.route('**/feeds/index.json',r=>brokenIndex?r.fulfill({status:503,body:'unavailable'}):r.fulfill({json:{demo:indexDemo,shops:{'Тестовый магазин':{file:'test.json'},'Unsafe':{file:'../secret.json'},'Hidden store':{file:'hidden.json',hidden:'true'}}}}));
+  await page.route('**/feeds/index.json',r=>brokenIndex===true?r.fulfill({status:503,body:'unavailable'}):brokenIndex==='invalid'?r.fulfill({json:{shops:[]}}):r.fulfill({json:{demo:indexDemo,shops:{'Тестовый магазин':{file:'test.json'},'Unsafe':{file:'../secret.json'},'Hidden store':{file:'hidden.json',hidden:'true'}}}}));
   await page.route('**/feeds/img/test.svg',r=>r.fulfill({path:'tools/test/fixtures/product.svg',contentType:'image/svg+xml'}));
   await page.route('**/feeds/test.json',r=>brokenFeed?r.fulfill({status:503,body:'unavailable'}):r.fulfill({json:{demo:feedDemo,updated:'2026-10-24',depts:[{title:'Тестовые товары',items:[{id:'1',name:'Тестовый товар',pic:'img/test.svg',url:'https://example.org/fake',original_image_url:'https://images.example.org/unreviewed.jpg'},{id:'2',name:'Товар без исходного фото',price:null}]}]}}));
   await page.goto((process.env.MAXI_URL||'http://127.0.0.1:5173')+(fallback?'/':'/?catalog=1'),{waitUntil:'domcontentloaded'});
   const root=page.locator('#quick-catalog');await root.waitFor();
   await root.getByRole('button',{name:'Повторить загрузку',exact:true}).waitFor();
+  brokenIndex='invalid';await root.getByRole('button',{name:'Повторить загрузку',exact:true}).click();
+  await root.getByRole('button',{name:'Повторить загрузку',exact:true}).waitFor();
+  assert.equal(await root.getByText('Нет доступных каталогов.',{exact:true}).count(),0,
+    'malformed index must show retry rather than claiming an empty catalogue');
   brokenIndex=false;await root.getByRole('button',{name:'Повторить загрузку',exact:true}).click();
   assert.equal(await root.getByRole('button',{name:'Unsafe',exact:false}).count(),0);
   assert.equal(await root.getByRole('button',{name:'Hidden store',exact:false}).count(),0,'index-hidden stores must not appear in quick catalogue');
