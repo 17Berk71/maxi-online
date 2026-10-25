@@ -33,11 +33,28 @@ for(const width of [390,1280]){
    // pedestrian input and real entry/exit remain covered by mall-navigation.browser.mjs.
    // Fail with a direct startup diagnostic instead of waiting 45 seconds for
    // a missing HUD element after a software-WebGL failure.
-   if(await page.locator('#shopCat').count()!==1){
-    const diagnostic=await page.evaluate(()=>({url:location.href,mode:window.__maxi?.mode,quick:!!document.querySelector('#quick-catalog'),hud:!!document.querySelector('#shopHud')}));
-    throw Error('Store HUD unavailable: '+JSON.stringify({width,name,...diagnostic}));
+   // A software-WebGL frame can tear down the HUD between locator.count()
+   // and dispatchEvent(). Find and click atomically in the page; if the HUD
+   // vanished during an asynchronous scene transition, re-enter once.
+   const clickCatalog=()=>page.evaluate(()=>{
+    const button=document.querySelector('#shopCat');
+    if(!button)return false;
+    button.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+    return true;
+   });
+   let clicked=await clickCatalog();
+   if(!clicked){
+    await page.evaluate(async name=>{
+     const T=window.__maxi,s=T.S.find(x=>x.name===name);
+     if(!s)throw Error('Missing store '+name);
+     await T.loadFeed(s);T.setFloor(s.floor);T.enterShop(s);
+    },name);
+    clicked=await clickCatalog();
    }
-   await page.locator('#shopCat').dispatchEvent('click');
+   if(!clicked){
+    const diagnostic=await page.evaluate(()=>({url:location.href,mode:window.__maxi?.mode,quick:!!document.querySelector('#quick-catalog'),hud:!!document.querySelector('#shopHud')}));
+    throw Error('Store HUD unavailable after one re-entry: '+JSON.stringify({width,name,...diagnostic}));
+   }
    await page.locator('#shop .sh-card').first().dispatchEvent('click');
    assert.equal(await page.locator('#shop .sh-name').textContent(),name==='Ostin'?'Тестовые брюки':'Тестовая куртка');
    assert.equal(await page.getByText('Наличие именно в ТРЦ «Макси» не подтверждено.',{exact:false}).count()>0,true);
