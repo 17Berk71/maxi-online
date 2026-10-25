@@ -11,7 +11,9 @@ export const isHidden = record => Boolean(record?.hidden);
 // A withdrawn feed is not publishable even if stale or malformed input still
 // contains unhidden items. This applies to both 3D and lightweight catalogues.
 export function visibleDepartments(feed){
-  if(feed?.catalogue_status==='withdrawn')return [];
+  // Legacy feeds omit status. Explicit non-active/unknown states must not leak
+  // products from staged, malformed or partially withdrawn catalogues.
+  if(feed?.catalogue_status !== undefined && feed.catalogue_status !== 'active')return [];
   const seen=new Set();
   return (Array.isArray(feed?.depts)?feed.depts:[])
     .filter(d=>d&&!isHidden(d)&&Array.isArray(d.items))
