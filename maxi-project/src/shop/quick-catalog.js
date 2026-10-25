@@ -45,7 +45,10 @@ export async function openQuickCatalog(reason=''){
   if(focusName)title.focus();
   try{
    const index=await read('feeds/index.json');if(token!==request)return;
-   const stores=Object.entries(index?.shops||{}).filter(([,entry])=>visibleStoreEntry(entry));
+   // A malformed index is a loading error, not evidence of an empty mall.
+   // Keep the retry control instead of silently reporting no catalogues.
+   if(!index || !index.shops || typeof index.shops!=='object' || Array.isArray(index.shops))throw Error('Invalid catalogue index');
+   const stores=Object.entries(index.shops).filter(([,entry])=>visibleStoreEntry(entry));
    status.textContent=stores.length?'Выберите магазин.':'Нет доступных каталогов.';
    for(const [name,entry] of stores){
     const button=el('button',name+(Boolean(index.demo)?' · демонстрация':''));button.className='quick-store';button.onclick=()=>showStore(name,entry,index);content.append(button);
