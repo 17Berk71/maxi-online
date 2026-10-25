@@ -13,6 +13,10 @@ test('demo links are suppressed; real originals are distinct from processed prev
  const p={id:'1',name:'Test',pic:'img/1.webp',url:'https://example.org/1',original_image_url:'https://example.org/original.jpg'};
  const feed={depts:[{items:[p]}]};const real=catalogueProducts(feed)[0];assert.equal(real.image,p.original_image_url);assert.equal(real.url,p.url);
  const demo=catalogueProducts({...feed,demo:true})[0];assert.equal(demo.url,null);assert.equal(demo.evidence.availability.status,'unknown');
+ assert.equal(demo.image,'feeds/img/1.webp','demo must not fetch an unreviewed external original');
+ assert.equal(demo.evidence.originalImage,p.original_image_url,'provenance is retained without displaying the URL');
+ assert.equal(catalogueProducts({...feed,demo:'true',depts:[{items:[{...p,pic:null}]}]})[0].image,null,
+  'a demo without a local preview must not fall back to an external image');
  assert.equal(catalogueProducts({demo:true,depts:[{items:[{...p,original_image_url:null}]}]})[0].image,'feeds/img/1.webp');
 });
 
