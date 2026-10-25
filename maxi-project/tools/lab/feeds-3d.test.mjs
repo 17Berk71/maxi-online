@@ -32,6 +32,7 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
    Fixture:{file:'../private.json',win:[{pic:'../private.webp'},{pic:'img/safe.webp'}]},
    Hidden:{file:'hidden.json',hidden:'true',win:[{pic:'img/hidden.webp'}]},
    Broken:{file:'broken.json'},
+   NullEntry:null,
    'Store A':{file:'a.json'},'Store B':{file:'b.json'}
   }})};
   if(url==='feeds/broken.json')return {ok:false,status:503};
@@ -51,6 +52,9 @@ test('3D index ignores unsafe window photos and never fetches a traversal feed',
   assert.equal(hiddenStore._catalogueUnavailable,true);
   assert.deepEqual(catalogOf(hiddenStore),[],'a hidden feed must not be replaced with generated legacy demo products');
   assert.deepEqual(catalogOf(store),[],'an unsafe index feed must not be replaced with generated demo products');
+  const nullEntry={name:'NullEntry',id:126,cat:'wear'};
+  assert.equal(await loadFeed(nullEntry),false);
+  assert.deepEqual(catalogOf(nullEntry),[],'a null configured index entry must not fall back to generated goods');
   const broken={name:'Broken',id:125,cat:'wear'};
   assert.equal(await loadFeed(broken),false);
   assert.equal(broken._catalogueUnavailable,true);
