@@ -1,7 +1,7 @@
 // Товары из выгрузок магазинов (готовит tools/feeds/import_feed.py → feeds/index.json и feeds/<магазин>.json).
 // Если выгрузки у магазина нет или файлы недоступны, остаётся демо-каталог из catalog.js.
 import {PHOTOS} from './photos.js';
-import {visibleDepartments,feedPath,visibleStoreEntry} from './catalog-feed.js';
+import {visibleDepartments,feedPath,visibleStoreEntry,isHidden} from './catalog-feed.js';
 import {catalogEvidence} from './catalog-evidence.js';
 
 export const FEED_BASE = 'feeds/';
@@ -37,6 +37,8 @@ export async function loadFeed(s) {
   if (s._feedP) return s._feedP;
   s._feedP = (async () => {
     const idx = await loadIndex(); const e = idx && idx.shops && idx.shops[s.name];
+    // An explicitly hidden index entry must not fall back to fabricated legacy products.
+    if (e && isHidden(e)) { s._catalogueHidden = true; s._cat = null; s._feedTried = true; return false; }
     const path = visibleStoreEntry(e) ? feedPath(e.file) : null;
     if (!path) { s._feedTried = true; return false; }
     try {
