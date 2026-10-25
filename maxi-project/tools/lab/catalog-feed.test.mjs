@@ -2,6 +2,8 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {catalogueProducts,feedPath,visibleDepartments,visibleStoreEntry,validFeedDocument} from '../../src/shop/catalog-feed.js';
 test('feed resources remain relative to the catalogue directory',()=>{
  assert.equal(feedPath('store.json'),'feeds/store.json');assert.equal(feedPath('img/a.webp'),'feeds/img/a.webp');
+ for(const path of ['img/a\\u0000.webp','img/a\\u001f.webp','img/a\\u007f.webp'])
+  assert.equal(feedPath(path),null,'control characters must not be normalized into asset URLs');
  for(const path of ['https://evil.test/f.json','//evil.test/a','../private.json','/x','a\\b','x?y','%2e%2e/x'])assert.equal(feedPath(path),null,path);
 });
 test('feed normalization rejects hidden, malformed and duplicate products without inventing prices or originals',()=>{
