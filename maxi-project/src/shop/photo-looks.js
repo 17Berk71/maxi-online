@@ -87,7 +87,7 @@ export function openPhotoLook(){
       const row=document.createElement('div');row.className='photo-look-saved-row';
       const title=document.createElement('span');title.textContent=look.name+' · '+look.items.length+' шт. · '+new Date(look.createdAt).toLocaleDateString('ru-RU');
       const load=document.createElement('button');load.textContent='Открыть';load.setAttribute('aria-label','Открыть образ «'+look.name+'»');
-      load.onclick=()=>{if(!loadPhotoLook(look.id)){status.textContent=store.message();return;}render(null,null,'Образ открыт. Текущая композиция заменена сохранённой.');root.querySelector('[data-close-photo-look]')?.focus();};
+      load.onclick=()=>{if(!loadPhotoLook(look.id)){status.textContent=store.message();return;}render(null,'loaded','Образ открыт. Текущая композиция заменена сохранённой.');};
       const remove=document.createElement('button');remove.textContent='Удалить';remove.setAttribute('aria-label','Удалить сохранённый образ «'+look.name+'»');
       remove.dataset.savedLookId=look.id;
       remove.onclick=()=>{
@@ -105,7 +105,7 @@ export function openPhotoLook(){
     for(const [index,it] of items.entries()){
       const card=document.createElement('article');Object.assign(card.style,{border:'1px solid #ddd',borderRadius:'12px',padding:'12px',background:'white'});
       const img=document.createElement('img');img.src=it.image;img.alt=it.title;img.loading='lazy';img.onerror=()=>{img.replaceWith(Object.assign(document.createElement('p'),{textContent:it.sourceUrl?'Изображение недоступно. Откройте страницу товара.':'Изображение недоступно. Ссылка на товар не подтверждена.'}));};Object.assign(img.style,{display:'block',width:'100%',height:'240px',objectFit:'contain'});
-      const title=document.createElement('h3');title.textContent=it.title;const shop=document.createElement('p');shop.textContent=it.shop;
+      const title=document.createElement('h3');title.textContent=it.title;title.tabIndex=-1;const shop=document.createElement('p');shop.textContent=it.shop;
       // Make the ordering understandable without relying on visual card positions.
       const position=document.createElement('p');position.className='photo-look-position';position.textContent=`Позиция ${index+1} из ${items.length}`;
       const controls=document.createElement('div');Object.assign(controls.style,{display:'flex',gap:'8px',flexWrap:'wrap'});
@@ -171,6 +171,10 @@ export function openPhotoLook(){
       // Removing the last draft item destroys the focused button. Keep keyboard
       // focus inside the dialog instead of dropping it onto the inert page.
       root.querySelector('[data-close-photo-look]')?.focus();
+    }else if(focusAction==='loaded'){
+      // Loading a saved look replaces the focused Open button's DOM node.
+      // Announce the first restored product rather than jumping to Close.
+      (root.querySelector('article h3')||root.querySelector('[data-close-photo-look]'))?.focus();
     }
   };
 
