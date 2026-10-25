@@ -67,15 +67,17 @@ export function openPhotoLook(){
   root.append(head,note,status,body);
   const render=(focusId=null,focusAction=null,notice='')=>{
     const items=store.items();
+    // Rebuilding the form after a reorder/delete must not erase an unsaved name.
+    const pendingName=root.querySelector('#photo-look-name')?.value||'';
     body.replaceChildren();
     status.textContent=notice||store.message();
     const saveForm=document.createElement('form');saveForm.className='photo-look-save';
     const label=document.createElement('label');label.textContent='Название образа';label.htmlFor='photo-look-name';
-    const name=document.createElement('input');name.id='photo-look-name';name.maxLength=80;name.required=true;name.placeholder='Например, прогулка осенью';
+    const name=document.createElement('input');name.id='photo-look-name';name.maxLength=80;name.required=true;name.placeholder='Например, прогулка осенью';name.value=pendingName;
     const save=document.createElement('button');save.type='submit';save.textContent='Сохранить образ';save.disabled=!items.length;
     saveForm.append(label,name,save);saveForm.onsubmit=e=>{e.preventDefault();
       if(!savePhotoLook(name.value)){status.textContent=store.message();return;}
-      render(null,null,'Образ сохранён в этом браузере.');root.querySelector('#photo-look-name')?.focus();
+      name.value='';render(null,null,'Образ сохранён в этом браузере.');root.querySelector('#photo-look-name')?.focus();
     };body.append(saveForm);
     const saved=document.createElement('section');saved.setAttribute('aria-label','Сохранённые образы');
     const heading=document.createElement('h3');heading.textContent='Сохранённые образы';saved.append(heading);

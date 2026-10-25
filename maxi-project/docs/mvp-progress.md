@@ -402,3 +402,10 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `7bb923b`: Chromium regression exercises deletion from the middle, end, and final remaining favorite at 390px and 1280px. Fixtures are synthetic demo products; they do not claim real merchant authorization or original-photo rights.
 - [MVP architecture checks #211](https://github.com/17Berk71/maxi-online/actions/runs/40202990177) was still running when the journal was updated; the browser suite must not be reported as passed until the workflow finishes successfully.
 - The PR remains draft; no merge, `main` change, deployment, live feed, inventory or photo-rights claim. Real screen-reader and physical-device audits remain open.
+
+### 25 October 2026 — navigation CI race and unsaved look-name continuity
+
+- GitHub Actions [#212](https://github.com/17Berk71/maxi-online/actions/runs/40203661945) **failed** in the desktop pedestrian-navigation browser test: `waitForFunction` timed out for Gloria Jeans, while the diagnostic snapshot already reported `mode: 'store'`. Syntax, importer, Node tests, catalogue audit, build and the earlier browser suites passed. This is a test-observation race under slow SwiftShader, not evidence of a verified real store.
+- `67a0b81`: the navigation test rechecks actual app mode on timeout. It accepts only a confirmed `store` state, then still verifies the visible shop name and exit; real navigation failures continue to fail.
+- Preserve an unsaved look name when moving/deleting items or rerendering saved/favorite collections. Clear it only after successful save. Chromium checks at 390px and 1280px cover draft-name retention and post-save clearing.
+- Verify the next GitHub Actions run on the final HEAD before claiming this batch passed. Real source rights, stock, screen-reader testing and physical-device testing remain outstanding. No merge or deployment.

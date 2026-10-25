@@ -34,6 +34,7 @@ try {
     // The status node must remain in the DOM so assistive technology can
     // observe text updates rather than newly inserted, pre-filled live regions.
     await page.evaluate(()=>{window.__photoStatusNode=document.querySelector('#maxi-photo-look [role="status"]');});
+    await page.getByLabel('Название образа',{exact:true}).fill('Черновик до перестановки');
     // Reordering keeps focus on the moved item's available control.
     await page.getByRole('button',{name:'Переместить «Jacket» вправо'}).click();
     assert.equal(await page.evaluate(()=>window.__photoStatusNode===document.querySelector('#maxi-photo-look [role="status"]')),true,
@@ -42,6 +43,7 @@ try {
     assert.deepEqual(await page.locator('#maxi-photo-look .photo-look-position').allTextContents(),['Позиция 1 из 2','Позиция 2 из 2']);
     assert.equal(await page.getByRole('button',{name:'Переместить «Jacket» влево'}).evaluate(e=>e===document.activeElement),true);
     assert.equal(await page.getByRole('status').textContent(),'Позиция товара «Jacket»: 2 из 2.');
+    assert.equal(await page.getByLabel('Название образа',{exact:true}).inputValue(),'Черновик до перестановки');
     assert.equal(await page.getByRole('button',{name:'Переместить «Trousers» влево'}).isDisabled(),true);
     // A failed localStorage write must leave the board unchanged and announce the failure.
     await page.evaluate(()=>{
@@ -55,6 +57,7 @@ try {
     await page.getByRole('button',{name:'Удалить «Trousers»'}).click();
     assert.equal(await page.getByRole('button',{name:'Удалить «Jacket»'}).evaluate(e=>e===document.activeElement),true);
     assert.equal(await page.getByRole('status').textContent(),'Товар удалён из образа.');
+    assert.equal(await page.getByLabel('Название образа',{exact:true}).inputValue(),'Черновик до перестановки');
     assert.equal(await page.evaluate(()=>window.__photoStatusNode===document.querySelector('#maxi-photo-look [role="status"]')),true,
       'removing a product must preserve the mounted live status node');
 
@@ -66,6 +69,7 @@ try {
     await page.getByLabel('Название образа',{exact:true}).fill('Осенний образ');
     await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
     assert.equal(await page.getByRole('status').textContent(),'Образ сохранён в этом браузере.');
+    assert.equal(await page.getByLabel('Название образа',{exact:true}).inputValue(),'','Successful save should clear the pending name');
     await page.reload({waitUntil:'domcontentloaded'});
     await page.evaluate(async()=>{(await import('/src/shop/photo-looks.js')).openPhotoLook();});
     assert.equal(await page.locator('#maxi-photo-look article').count(),1);
