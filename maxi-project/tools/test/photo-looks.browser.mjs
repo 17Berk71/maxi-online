@@ -81,8 +81,17 @@ try {
     assert.equal(await page.evaluate(()=>document.querySelector('#maxi-photo-look').contains(document.activeElement)),true);
     await page.getByRole('button',{name:'Открыть образ «Осенний образ»',exact:true}).click();
     assert.equal(await page.locator('#maxi-photo-look article h3').textContent(),'Jacket');
+    // Deleting a saved collection should focus its nearest remaining neighbor,
+    // not jump to the unrelated naming field while keyboard users traverse the list.
+    await page.getByLabel('Название образа',{exact:true}).fill('Второй образ');
+    await page.getByRole('button',{name:'Сохранить образ',exact:true}).click();
     await page.getByRole('button',{name:'Удалить сохранённый образ «Осенний образ»',exact:true}).click();
     assert.equal(await page.getByRole('button',{name:'Открыть образ «Осенний образ»',exact:true}).count(),0);
+    assert.equal(await page.getByRole('button',{name:'Удалить сохранённый образ «Второй образ»',exact:true}).evaluate(e=>e===document.activeElement),true,
+      'deleting a saved look must focus the neighboring saved look');
+    await page.getByRole('button',{name:'Удалить сохранённый образ «Второй образ»',exact:true}).click();
+    assert.equal(await page.getByLabel('Название образа',{exact:true}).evaluate(e=>e===document.activeElement),true,
+      'deleting the final saved look must focus the naming field');
     const horizontal=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
     assert.equal(await page.locator('#maxi-photo-look').evaluate(e=>e.scrollWidth<=e.clientWidth+2),true);
     assert.equal(horizontal,false,`Unexpected horizontal page overflow at ${width}px`);
