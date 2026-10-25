@@ -394,3 +394,11 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - `3be0ab2`: the 390px and 1280px Playwright photo-board suite now checks item positions before and after reordering, the precise announcement, and updated position after removing a card.
 - CI for this batch must be checked against the final branch HEAD before claiming success. Automated DOM/live-region assertions do not replace a real screen-reader or physical-device audit.
 - Real catalogues, original-photo permissions and physical-store inventory remain unverified. No merge, deployment or `main` modification.
+
+### 25 October 2026 — favorite deletion keyboard continuity
+
+- Recovered remote HEAD `173de0d` on draft PR #18. [MVP architecture checks #209](https://github.com/17Berk71/maxi-online/actions/runs/40198966057) **passed** on that baseline, including configured 390px/1280px Chromium journeys.
+- `3a51c93`: when a favorite is removed from the photo-board modal, focus moves to the next favorite, or the previous favorite if the last row was removed. If the list becomes empty, focus moves to Close. This avoids an unexpected jump away from a still-populated favorites list.
+- `7bb923b`: Chromium regression exercises deletion from the middle, end, and final remaining favorite at 390px and 1280px. Fixtures are synthetic demo products; they do not claim real merchant authorization or original-photo rights.
+- [MVP architecture checks #211](https://github.com/17Berk71/maxi-online/actions/runs/40202990177) was still running when the journal was updated; the browser suite must not be reported as passed until the workflow finishes successfully.
+- The PR remains draft; no merge, `main` change, deployment, live feed, inventory or photo-rights claim. Real screen-reader and physical-device audits remain open.
