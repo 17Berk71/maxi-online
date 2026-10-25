@@ -309,3 +309,13 @@ Verification results and screenshot notes are recorded in `docs/review-2026-10-2
 - The offline real-pilot audit now excludes index-hidden stores from the real multicategory count. This does not authenticate rights or a real partnership. Added Node regressions for hidden, malformed, failed and legacy index entries, and extended the existing 390px/1280px quick-catalogue browser suite to assert that hidden shops are not listed or fetched.
 - Implementation checkpoints: `109287f` (shared visibility), `e01d794` (null-entry regression); intervening small commits refine the no-fallback behavior. The newest GitHub Actions run must be checked on the final HEAD before claiming full CI/browser success.
 - No real merchant feeds, original-photo permissions or verified local stock were introduced. No changes to `main`, PR merge or deployment.
+
+
+### 25 October 2026 — 3D index outage must not fabricate an assortment
+
+- Verified preceding branch HEAD `e775f98` and [Actions #170](https://github.com/17Berk71/maxi-online/actions/runs/40159587180): successful, including the configured Chromium browser suites.
+- Found a remaining fail-open path: when `feeds/index.json` itself returned HTTP 503, invalid JSON or a malformed index, `loadFeed` treated every shop as unconfigured and the 3D `catalogOf` could generate unrelated legacy demo goods. This was different from the already-fixed case of a *configured individual feed* failing.
+- The 3D adapter now marks the shop catalogue unavailable when the index is missing or malformed, so a network failure cannot silently substitute fabricated products. A valid index with no entry for a shop still permits the existing explicitly unconfigured legacy demo fallback.
+- Added Node regression coverage for HTTP failure, invalid JSON, absent/array `shops` and valid empty index; extended the 390px/1280px Chromium visibility test to open a store during an index HTTP 503 and verify its catalogue remains empty.
+- Implementation commits: `5ef5c90`, `c446611`, `1a102d1`. CI for the newest HEAD must be checked before claiming browser success. A 3D index failure still requires a page reload to retry; a retry UI is not implemented.
+- No real catalogue, image licence or stock proof was introduced. No changes to `main`, PR merge or deployment.
