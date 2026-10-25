@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {auditCatalogue} from '../feeds/audit-catalog.mjs';
 import {fmtPrice} from '../../src/shop/pricing.js';
+import {catalogueProducts} from '../../src/shop/catalog-feed.js';
 const now=Date.parse('2026-10-24T12:00:00Z');
 const product={id:'1',name:'Fixture',price:null,source_url:'https://merchant.example/1',original_image_url:'https://images.example/1.jpg',last_checked_at:'2026-10-24T08:00:00Z'};
 const approval=category=>({approved_for_publication:true,permission_reference:'synthetic fixture only',reviewed_at:'2026-10-24T08:00:00Z',category,allowed_source_hosts:['merchant.example'],allowed_image_hosts:['images.example']});
@@ -142,4 +143,15 @@ test('malformed departments cannot pass offline publication review even beside v
  }
  const f=fixture();f.feeds['a.json'].depts.push({title:'Empty but valid',items:[]});
  assert.equal(auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true}).technicalGatePassed,true);
+});
+
+
+test('publication audit rejects whitespace-only SKUs hidden by both catalogue views',()=>{
+ const f=fixture();
+ f.feeds['a.json'].depts[0].items[0].id=' \t ';
+ const report=auditCatalogue(f.index,f.feeds,f.manifest,{now,requireReal:true});
+ assert.equal(report.technicalGatePassed,false);
+ assert(report.issues.some(issue=>issue.code==='product_identity_missing'&&issue.store==='A'));
+ assert.deepEqual(catalogueProducts(f.feeds['a.json']),[],
+  'a whitespace-only SKU is not displayed by the catalogue');
 });
